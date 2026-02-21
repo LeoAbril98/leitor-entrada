@@ -9,7 +9,8 @@ interface ExportModalProps {
     isOpen: boolean;
     status: ExportStatus;
     onClose: () => void;
-    onShare: () => void;
+    onShareImage: () => void;
+    onShareExcel: () => void;
     onDownload: () => void;
     hasFiles: boolean;
 }
@@ -18,7 +19,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     isOpen,
     status,
     onClose,
-    onShare,
+    onShareImage,
+    onShareExcel,
     onDownload,
     hasFiles
 }) => {
@@ -92,11 +94,19 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                                     <div className="w-full flex-col flex gap-3">
                                         {/* Só mostramos o botão de share se a API estiver disponível, mas no navegador PC às vezes canShare diz true e depois falha. A lógica tratará falhas. */}
                                         <button
-                                            onClick={onShare}
+                                            onClick={onShareImage}
                                             className="w-full h-12 bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
                                         >
                                             <Share2 className="w-5 h-5" />
-                                            Compartilhar
+                                            Compartilhar Imagem
+                                        </button>
+
+                                        <button
+                                            onClick={onShareExcel}
+                                            className="w-full h-12 bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                                        >
+                                            <Share2 className="w-5 h-5" />
+                                            Compartilhar Excel
                                         </button>
 
                                         <button

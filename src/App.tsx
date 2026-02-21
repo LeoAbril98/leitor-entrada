@@ -315,27 +315,44 @@ export default function App() {
     }
   };
 
-  const handleShareFiles = async () => {
-    const { excel, image } = generatedFiles;
-    const filesToShare = [];
-    if (image) filesToShare.push(image);
-    if (excel) filesToShare.push(excel);
+  const handleShareImage = async () => {
+    const { image } = generatedFiles;
+    if (!image) return;
 
-    if (navigator.canShare && navigator.canShare({ files: filesToShare })) {
+    if (navigator.canShare && navigator.canShare({ files: [image] })) {
       try {
         await navigator.share({
           title: `Contagem ${origin}`,
-          text: `Segue o relatório e fechamento de caixa: ${origin}`,
-          files: filesToShare
+          text: `Segue o fechamento de caixa: ${origin}`,
+          files: [image]
         });
-        toast.success('Arquivos compartilhados com sucesso!');
-        setIsExportModalOpen(false);
+        toast.success('Imagem compartilhada com sucesso!');
+        // Keep modal open so they can share excel next if they want, or download.
       } catch (error) {
-        console.log('Compartilhamento cancelado ou falhou', error);
-        // Se falhou, pode ser que o usuário cancelou. Deixe o modal aberto.
+        console.log('Compartilhamento de imagem cancelado ou falhou', error);
       }
     } else {
-      toast.error("O compartilhamento pelo navegador não está disponível neste dispositivo. Selecione 'Baixar Arquivos'.");
+      toast.error("Compartilhamento não disponível. Selecione 'Baixar Arquivos'.");
+    }
+  };
+
+  const handleShareExcel = async () => {
+    const { excel } = generatedFiles;
+    if (!excel) return;
+
+    if (navigator.canShare && navigator.canShare({ files: [excel] })) {
+      try {
+        await navigator.share({
+          title: `Contagem ${origin}`,
+          text: `Segue o relatório Excel da contagem: ${origin}`,
+          files: [excel]
+        });
+        toast.success('Planilha compartilhada com sucesso!');
+      } catch (error) {
+        console.log('Compartilhamento de planilha cancelado ou falhou', error);
+      }
+    } else {
+      toast.error("Compartilhamento não disponível. Selecione 'Baixar Arquivos'.");
     }
   };
 
@@ -501,7 +518,8 @@ export default function App() {
         isOpen={isExportModalOpen}
         status={exportStatus}
         onClose={() => setIsExportModalOpen(false)}
-        onShare={handleShareFiles}
+        onShareImage={handleShareImage}
+        onShareExcel={handleShareExcel}
         onDownload={handleDownloadFiles}
         hasFiles={generatedFiles.excel !== null}
       />

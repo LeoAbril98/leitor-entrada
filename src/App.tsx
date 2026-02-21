@@ -192,9 +192,15 @@ export default function App() {
       const timeString = now.toTimeString().split(' ')[0].replace(/:/g, '-').substring(0, 5);
       const fileName = `contagem_${origin}_${dateString}_${timeString}`;
 
-      XLSX.writeFile(wb, `${fileName}.xlsx`);
+      // Gerar Arquivo Excel na Memória
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const excelBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const excelFile = new File([excelBlob], `${fileName}.xlsx`, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
       // 2. Generate Image
+      let imageBlob: Blob | null = null;
+      let imgFile: File | null = null;
+
       if (exportRef.current) {
         exportRef.current.style.display = 'block';
 
@@ -211,13 +217,53 @@ export default function App() {
 
         exportRef.current.style.display = 'none';
 
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = `${fileName}.png`;
-        link.click();
+        // Convert base64 DataURL to Blob
+        const res = await fetch(dataUrl);
+        imageBlob = await res.blob();
+        imgFile = new File([imageBlob], `${fileName}.png`, { type: 'image/png' });
       }
 
-      toast.success('Arquivos gerados com sucesso!', { id: toastId });
+      // 3. Tentar Compartilhar via Web Share API (WhatsApp/etc)
+      // Nota: o Web Share API com arquivos suporta apenas compartilhamento de arquivos *únicos* em alguns dispositivos
+      // Então tentaremos enviar os dois arquivos. Se não der, tentamos fallback clássico.
+
+      const filesToShare = [];
+      if (imgFile) filesToShare.push(imgFile);
+      if (excelFile) filesToShare.push(excelFile);
+
+      let shared = false;
+
+      if (navigator.canShare && navigator.canShare({ files: filesToShare })) {
+        try {
+          await navigator.share({
+            title: `Contagem ${origin}`,
+            text: `Segue o relatório e fechamento de caixa: ${origin}`,
+            files: filesToShare
+          });
+          shared = true;
+          toast.success('Arquivos compartilhados com sucesso!', { id: toastId });
+        } catch (shareError: any) {
+          // Usuário pode ter cancelado o share, ignoramos e caímos no download padrão
+          console.log('Compartilhamento cancelado ou falhou', shareError);
+        }
+      }
+
+      // Se não suporta Web Share ou o usuário cancelou/falhou o share, fazemos o Download Padrão Clássico
+      if (!shared) {
+        // Baixar Excel
+        XLSX.writeFile(wb, `${fileName}.xlsx`);
+
+        // Baixar Imagem
+        if (imageBlob) {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(imageBlob);
+          link.download = `${fileName}.png`;
+          link.click();
+        }
+
+        toast.success('Arquivos baixados com sucesso!', { id: toastId });
+      }
+
     } catch (error) {
       console.error('Erro ao exportar:', error);
       toast.error('Erro ao gerar arquivos', { id: toastId });

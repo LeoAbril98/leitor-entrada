@@ -319,11 +319,14 @@ export default function App() {
     const { image } = generatedFiles;
     if (!image) return;
 
+    const shareTitle = origin === 'DEVOLUÇÃO' && client ? `Contagem ${origin} - ${client}` : `Contagem ${origin}`;
+    const shareText = origin === 'DEVOLUÇÃO' && client ? `Rodas que vieram de: ${origin} / Cliente: ${client}` : `Rodas que vieram de: ${origin}`;
+
     if (navigator.canShare && navigator.canShare({ files: [image] })) {
       try {
         await navigator.share({
-          title: `Contagem ${origin}`,
-          text: `Rodas que vieram de: ${origin}`,
+          title: shareTitle,
+          text: shareText,
           files: [image]
         });
         toast.success('Imagem compartilhada com sucesso!');
@@ -340,11 +343,14 @@ export default function App() {
     const { excel } = generatedFiles;
     if (!excel) return;
 
+    const shareTitle = origin === 'DEVOLUÇÃO' && client ? `Contagem ${origin} - ${client}` : `Contagem ${origin}`;
+    const shareText = origin === 'DEVOLUÇÃO' && client ? `Segue o relatório Excel da contagem: ${origin} / Cliente: ${client}` : `Segue o relatório Excel da contagem: ${origin}`;
+
     if (navigator.canShare && navigator.canShare({ files: [excel] })) {
       try {
         await navigator.share({
-          title: `Contagem ${origin}`,
-          text: `Segue o relatório Excel da contagem: ${origin}`,
+          title: shareTitle,
+          text: shareText,
           files: [excel]
         });
         toast.success('Planilha compartilhada com sucesso!');

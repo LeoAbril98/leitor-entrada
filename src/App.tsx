@@ -13,6 +13,7 @@ import { Header } from './components/Header';
 import { ScannerInput } from './components/ScannerInput';
 import { ResultsList } from './components/ResultsList';
 import { ExportTable } from './components/ExportTable';
+import { ExportModal, ExportStatus } from './components/ExportModal';
 
 export default function App() {
   const [view, setView] = useState<'setup' | 'counting'>('setup');
@@ -22,6 +23,12 @@ export default function App() {
   const [inputValue, setInputValue] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [customStock, setCustomStock] = useState<StockItem[]>([]);
+
+  // Export Modal State
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportStatus, setExportStatus] = useState<ExportStatus>('idle');
+  const [generatedFiles, setGeneratedFiles] = useState<{ excel: File | null; image: File | null; fileName: string }>({ excel: null, image: null, fileName: '' });
+
   const inputRef = useRef<HTMLInputElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
 
@@ -208,18 +215,25 @@ export default function App() {
     toast.success(`Quantidade atualizada para ${newQty}`);
   };
 
-  const handleExport = async () => {
+  const handleExportClick = () => {
     if (groupedData.length === 0 && readings.length === 0) {
       toast.error('Nada para exportar');
       return;
     }
 
-    const toastId = toast.loading('Gerando arquivos...');
+    setIsExportModalOpen(true);
+    setExportStatus('generating');
 
+    // We wait for the modal to fully render before starting the heavy generation
+    setTimeout(() => {
+      generateExportFiles();
+    }, 500);
+  };
+
+  const generateExportFiles = async () => {
     try {
       // 1. Gerar Excel (Formato Lado a Lado)
       const worksheetData = [];
-
       const maxRows = Math.max(groupedData.length, readings.length);
 
       for (let i = 0; i < maxRows; i++) {
@@ -287,51 +301,63 @@ export default function App() {
         imgFile = new File([imageBlob], `${fileName}.png`, { type: 'image/png' });
       }
 
-      // 3. Tentar Compartilhar via Web Share API (WhatsApp/etc)
-      // Nota: o Web Share API com arquivos suporta apenas compartilhamento de arquivos *únicos* em alguns dispositivos
-      // Então tentaremos enviar os dois arquivos. Se não der, tentamos fallback clássico.
+      setGeneratedFiles({
+        excel: excelFile,
+        image: imgFile,
+        fileName: fileName
+      });
 
-      const filesToShare = [];
-      if (imgFile) filesToShare.push(imgFile);
-      if (excelFile) filesToShare.push(excelFile);
-
-      let shared = false;
-
-      if (navigator.canShare && navigator.canShare({ files: filesToShare })) {
-        try {
-          await navigator.share({
-            title: `Contagem ${origin}`,
-            text: `Segue o relatório e fechamento de caixa: ${origin}`,
-            files: filesToShare
-          });
-          shared = true;
-          toast.success('Arquivos compartilhados com sucesso!', { id: toastId });
-        } catch (shareError: any) {
-          // Usuário pode ter cancelado o share, ignoramos e caímos no download padrão
-          console.log('Compartilhamento cancelado ou falhou', shareError);
-        }
-      }
-
-      // Se não suporta Web Share ou o usuário cancelou/falhou o share, fazemos o Download Padrão Clássico
-      if (!shared) {
-        // Baixar Excel
-        XLSX.writeFile(wb, `${fileName}.xlsx`);
-
-        // Baixar Imagem
-        if (imageBlob) {
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(imageBlob);
-          link.download = `${fileName}.png`;
-          link.click();
-        }
-
-        toast.success('Arquivos baixados com sucesso!', { id: toastId });
-      }
+      setExportStatus('ready');
 
     } catch (error) {
-      console.error('Erro ao exportar:', error);
-      toast.error('Erro ao gerar arquivos', { id: toastId });
+      console.error('Erro ao gerar exportação:', error);
+      setExportStatus('error');
     }
+  };
+
+  const handleShareFiles = async () => {
+    const { excel, image } = generatedFiles;
+    const filesToShare = [];
+    if (image) filesToShare.push(image);
+    if (excel) filesToShare.push(excel);
+
+    if (navigator.canShare && navigator.canShare({ files: filesToShare })) {
+      try {
+        await navigator.share({
+          title: `Contagem ${origin}`,
+          text: `Segue o relatório e fechamento de caixa: ${origin}`,
+          files: filesToShare
+        });
+        toast.success('Arquivos compartilhados com sucesso!');
+        setIsExportModalOpen(false);
+      } catch (error) {
+        console.log('Compartilhamento cancelado ou falhou', error);
+        // Se falhou, pode ser que o usuário cancelou. Deixe o modal aberto.
+      }
+    } else {
+      toast.error("O compartilhamento pelo navegador não está disponível neste dispositivo. Selecione 'Baixar Arquivos'.");
+    }
+  };
+
+  const handleDownloadFiles = () => {
+    const { excel, image, fileName } = generatedFiles;
+
+    if (excel) {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(excel);
+      link.download = `${fileName}.xlsx`;
+      link.click();
+    }
+
+    if (image) {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(image);
+      link.download = `${fileName}.png`;
+      link.click();
+    }
+
+    toast.success('Arquivos baixados com sucesso!');
+    setIsExportModalOpen(false);
   };
 
   const resetCounting = () => {
@@ -425,7 +451,7 @@ export default function App() {
         onReset={resetCounting}
         onUndo={undoLastReading}
         onClear={clearAllReadings}
-        onExport={handleExport}
+        onExport={handleExportClick}
         readingsCount={readings.length}
         uniqueCount={totalUnique}
         totalVolumes={totalVolumes}
@@ -468,6 +494,16 @@ export default function App() {
         totalUnique={totalUnique}
         totalReadings={readings.length}
         totalVolumes={totalVolumes}
+      />
+
+      {/* Modal de Exportação */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        status={exportStatus}
+        onClose={() => setIsExportModalOpen(false)}
+        onShare={handleShareFiles}
+        onDownload={handleDownloadFiles}
+        hasFiles={generatedFiles.excel !== null}
       />
     </div>
   );

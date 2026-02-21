@@ -17,7 +17,6 @@ export const ScannerInput = forwardRef<HTMLInputElement, ScannerInputProps>(
                 <input
                     ref={ref}
                     type="text"
-                    inputMode="numeric"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder="Leia ou digite o código..."

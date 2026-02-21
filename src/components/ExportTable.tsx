@@ -63,7 +63,10 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                                     fontWeight: '600',
                                     color: '#475569',
                                     textTransform: 'uppercase',
-                                    letterSpacing: '0.05em'
+                                    letterSpacing: '0.05em',
+                                    whiteSpace: 'nowrap',
+                                    display: 'flex',
+                                    gap: '6px'
                                 }}>
                                     Origem: <span style={{ color: '#0f172a', fontWeight: '900' }}>{origin}</span>
                                 </div>
@@ -78,7 +81,10 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                                         fontWeight: '700',
                                         color: '#4338ca',
                                         textTransform: 'uppercase',
-                                        letterSpacing: '0.05em'
+                                        letterSpacing: '0.05em',
+                                        whiteSpace: 'nowrap',
+                                        display: 'flex',
+                                        gap: '6px'
                                     }}>
                                         Cliente: <span style={{ color: '#312e81', fontWeight: '900' }}>{client}</span>
                                     </div>

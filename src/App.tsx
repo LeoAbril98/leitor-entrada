@@ -323,7 +323,7 @@ export default function App() {
       try {
         await navigator.share({
           title: `Contagem ${origin}`,
-          text: `Segue o fechamento de caixa: ${origin}`,
+          text: `Rodas que vieram de: ${origin}`,
           files: [image]
         });
         toast.success('Imagem compartilhada com sucesso!');

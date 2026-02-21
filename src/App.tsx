@@ -25,10 +25,21 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
 
+  // Audio refs
+  const successSound = useRef<HTMLAudioElement | null>(null);
+  const errorSound = useRef<HTMLAudioElement | null>(null);
+
   const [defaultStock, setDefaultStock] = useState<StockItem[]>(MOCK_STOCK);
 
   // Load custom stock from localStorage on mount, or fetch the default CSV
   useEffect(() => {
+    // Carregar os áudios
+    successSound.current = new Audio('/sounds/success.mp3');
+    errorSound.current = new Audio('/sounds/error.mp3');
+    // Preload them
+    if (successSound.current) successSound.current.load();
+    if (errorSound.current) errorSound.current.load();
+
     const savedStock = localStorage.getItem('scancount_custom_stock');
     if (savedStock) {
       try {
@@ -117,8 +128,16 @@ export default function App() {
     // Feedback
     const found = currentStock.some(item => item.codigo === code);
     if (found) {
+      if (successSound.current) {
+        successSound.current.currentTime = 0;
+        successSound.current.play().catch(() => { });
+      }
       toast.success(`Lido: ${code}`, { duration: 1000 });
     } else {
+      if (errorSound.current) {
+        errorSound.current.currentTime = 0;
+        errorSound.current.play().catch(() => { });
+      }
       toast.error(`Não encontrado: ${code}`, { duration: 1500 });
     }
   };
@@ -142,6 +161,51 @@ export default function App() {
       setReadings(prev => prev.filter(r => r.codigo !== codigo));
       toast.success('Item removido da contagem');
     }
+  };
+
+  const handleEditQuantity = (codigo: string, currentQty: number) => {
+    const newQtyStr = window.prompt(`Alterar quantidade para o código ${codigo}:`, String(currentQty));
+    if (newQtyStr === null) return; // user cancelled
+
+    const newQty = parseInt(newQtyStr, 10);
+    if (isNaN(newQty) || newQty < 0) {
+      toast.error('Quantidade inválida');
+      return;
+    }
+
+    if (newQty === currentQty) return; // no change
+
+    if (newQty === 0) {
+      removeReadingGroup(codigo);
+      return;
+    }
+
+    setReadings(prev => {
+      // Filtrar leituras que não são deste código
+      const outrasLeituras = prev.filter(r => r.codigo !== codigo);
+      // Pega as leituras atuais deste código para manter o mesmo timestamp das primeiras
+      const leiturasDeste = prev.filter(r => r.codigo === codigo);
+
+      const result = [...outrasLeituras];
+
+      // Adiciona N vezes a leitura baseada na quantidade solicitada, do mais antigo pro mais novo (para ficar na mesma ordem)
+      for (let i = 0; i < newQty; i++) {
+        if (i < leiturasDeste.length) {
+          result.push(leiturasDeste[i]); // reaproveita os dados e IDs originais
+        } else {
+          result.push({
+            id: crypto.randomUUID(),
+            codigo: codigo,
+            timestamp: Date.now() + i // slight offset
+          });
+        }
+      }
+
+      // Re-ordena pelo timestamp (descrente, mais novo primeiro) para o fluxo da UI se manter igual
+      return result.sort((a, b) => b.timestamp - a.timestamp);
+    });
+
+    toast.success(`Quantidade atualizada para ${newQty}`);
   };
 
   const handleExport = async () => {
@@ -186,6 +250,27 @@ export default function App() {
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Contagem");
+
+      // Adicionar aba de relatório de divergências (Itens não lidos da base atual)
+      const missingItems = currentStock.filter(
+        stockItem => !groupedData.some(scannedItem => scannedItem.codigo === stockItem.codigo)
+      );
+
+      if (missingItems.length > 0) {
+        const missingData = missingItems.map(item => ({
+          'Código': item.codigo,
+          'Descrição': item.descricao,
+          'Local': item.local
+        }));
+
+        const missingWs = XLSX.utils.json_to_sheet(missingData);
+        missingWs['!cols'] = [
+          { wch: 18 }, // Código
+          { wch: 45 }, // Descrição
+          { wch: 15 }  // Local
+        ];
+        XLSX.utils.book_append_sheet(wb, missingWs, "Não Lidos");
+      }
 
       const now = new Date();
       const dateString = now.toISOString().split('T')[0];
@@ -285,11 +370,18 @@ export default function App() {
 
   const groupedData = useMemo(() => {
     const groups: Record<string, number> = {};
+    const orderedCodes: string[] = [];
+
     readings.forEach(r => {
-      groups[r.codigo] = (groups[r.codigo] || 0) + 1;
+      if (!groups[r.codigo]) {
+        groups[r.codigo] = 0;
+        orderedCodes.push(r.codigo);
+      }
+      groups[r.codigo]++;
     });
 
-    return Object.entries(groups).map(([codigo, quantidade]): GroupedReading => {
+    return orderedCodes.map((codigo): GroupedReading => {
+      const quantidade = groups[codigo];
       const stockItem = currentStock.find(item => item.codigo === codigo);
       return {
         codigo,
@@ -344,7 +436,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors pb-20">
       <Toaster position="top-center" />
 
       {/* Header Stats */}
@@ -376,6 +468,7 @@ export default function App() {
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           onRemoveGroup={removeReadingGroup}
+          onEditQuantity={handleEditQuantity}
         />
       </main>
 

@@ -1,0 +1,5 @@
+{
+  "name": "ScanCount - Inventário Inteligente",
+  "description": "Sistema moderno de contagem de produtos por código de barras com agrupamento automático e exportação.",
+  "requestFramePermissions": []
+}

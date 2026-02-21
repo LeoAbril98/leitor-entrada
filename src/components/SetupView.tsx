@@ -14,6 +14,7 @@ interface SetupViewProps {
     setClient: (client: string) => void;
     onStartCounting: () => void;
     customStockCount: number;
+    defaultStockCount: number;
     onStockImported: (data: StockItem[]) => void;
 }
 
@@ -24,6 +25,7 @@ export function SetupView({
     setClient,
     onStartCounting,
     customStockCount,
+    defaultStockCount,
     onStockImported
 }: SetupViewProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -180,9 +182,13 @@ export function SetupView({
                             )}
                         </div>
 
-                        {customStockCount > 0 && (
+                        {customStockCount > 0 ? (
                             <p className="text-[11px] font-medium text-center text-slate-400 mt-2">
                                 <span className="text-emerald-600 font-bold">{customStockCount} itens</span> carregados na base atual
+                            </p>
+                        ) : (
+                            <p className="text-[11px] font-medium text-center text-slate-400 mt-2">
+                                <span className="text-indigo-600 font-bold">{defaultStockCount} itens</span> carregados do sistema
                             </p>
                         )}
                     </div>

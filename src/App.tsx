@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 import domtoimage from 'dom-to-image';
 import { Toaster, toast } from 'react-hot-toast';
 import { Barcode } from 'lucide-react';
@@ -24,7 +25,9 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
 
-  // Load custom stock from localStorage on mount
+  const [defaultStock, setDefaultStock] = useState<StockItem[]>(MOCK_STOCK);
+
+  // Load custom stock from localStorage on mount, or fetch the default CSV
   useEffect(() => {
     const savedStock = localStorage.getItem('scancount_custom_stock');
     if (savedStock) {
@@ -34,11 +37,49 @@ export default function App() {
         console.error('Erro ao carregar estoque salvo:', e);
       }
     }
+
+    // Carregar a tabela por padrão (tabela.csv) da pasta public
+    const loadDefaultCsv = async () => {
+      try {
+        const response = await fetch('/tabela.csv');
+        if (!response.ok) return;
+
+        const csvText = await response.text();
+
+        Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: true,
+          delimiter: ';', // Conforme vimos no log do CSV
+          complete: (results) => {
+            const parsedData: StockItem[] = results.data.map((row: any) => {
+              // Encontra a chave do código (às vezes o CSV vem com caracteres estranhos tipo Cdigo)
+              const codeKey = Object.keys(row).find(k => k.toLowerCase().includes('c') && k.toLowerCase().includes('digo')) || Object.keys(row)[0];
+              const descKey = Object.keys(row).find(k => k.toLowerCase().includes('descri')) || Object.keys(row)[1];
+              const localKey = Object.keys(row).find(k => k.toLowerCase().includes('local')) || Object.keys(row)[2];
+
+              return {
+                codigo: String(row[codeKey] || '').trim(),
+                descricao: String(row[descKey] || 'Sem descrição').trim(),
+                local: String(row[localKey] || '---').trim()
+              }
+            }).filter(item => item.codigo !== '');
+
+            if (parsedData.length > 0) {
+              setDefaultStock(parsedData);
+            }
+          }
+        })
+      } catch (err) {
+        console.error('Erro ao buscar tabela.csv local', err);
+      }
+    }
+
+    loadDefaultCsv();
   }, []);
 
   const currentStock = useMemo(() => {
-    return customStock.length > 0 ? customStock : MOCK_STOCK;
-  }, [customStock]);
+    return customStock.length > 0 ? customStock : defaultStock;
+  }, [customStock, defaultStock]);
 
   // Auto-focus input field
   useEffect(() => {
@@ -247,6 +288,7 @@ export default function App() {
         setClient={setClient}
         onStartCounting={handleStartCounting}
         customStockCount={customStock.length}
+        defaultStockCount={defaultStock.length}
         onStockImported={(data) => {
           setCustomStock(data);
           localStorage.setItem('scancount_custom_stock', JSON.stringify(data));

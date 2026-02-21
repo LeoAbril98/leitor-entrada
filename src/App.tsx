@@ -251,27 +251,6 @@ export default function App() {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Contagem");
 
-      // Adicionar aba de relatório de divergências (Itens não lidos da base atual)
-      const missingItems = currentStock.filter(
-        stockItem => !groupedData.some(scannedItem => scannedItem.codigo === stockItem.codigo)
-      );
-
-      if (missingItems.length > 0) {
-        const missingData = missingItems.map(item => ({
-          'Código': item.codigo,
-          'Descrição': item.descricao,
-          'Local': item.local
-        }));
-
-        const missingWs = XLSX.utils.json_to_sheet(missingData);
-        missingWs['!cols'] = [
-          { wch: 18 }, // Código
-          { wch: 45 }, // Descrição
-          { wch: 15 }  // Local
-        ];
-        XLSX.utils.book_append_sheet(wb, missingWs, "Não Lidos");
-      }
-
       const now = new Date();
       const dateString = now.toISOString().split('T')[0];
       const timeString = now.toTimeString().split(' ')[0].replace(/:/g, '-').substring(0, 5);

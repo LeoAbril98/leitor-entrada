@@ -13,9 +13,7 @@ interface SetupViewProps {
     client: string;
     setClient: (client: string) => void;
     onStartCounting: () => void;
-    customStockCount: number;
     defaultStockCount: number;
-    onStockImported: (data: StockItem[]) => void;
 }
 
 export function SetupView({
@@ -24,71 +22,8 @@ export function SetupView({
     client,
     setClient,
     onStartCounting,
-    customStockCount,
     defaultStockCount,
-    onStockImported
 }: SetupViewProps) {
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const toastId = toast.loading('Lendo arquivo Excel...');
-
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            try {
-                const bstr = evt.target?.result;
-                const wb = XLSX.read(bstr, { type: 'binary' });
-                const wsname = wb.SheetNames[0]; // Pega a primeira aba do Excel
-                const ws = wb.Sheets[wsname];
-
-                // Converte a planilha para JSON usando a primeira linha como chave
-                const rawData = XLSX.utils.sheet_to_json<any>(ws);
-
-                // Mapeia as colunas do Excel para o nosso formato StockItem
-                const mappedData: StockItem[] = rawData.map((row) => {
-                    // Função auxiliar para encontrar colunas ignorando maiúsculas, minúsculas e acentos
-                    const findValue = (possibleNames: string[]) => {
-                        const key = Object.keys(row).find(k => {
-                            const normalizedKey = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                            return possibleNames.some(pn => normalizedKey.includes(pn));
-                        });
-                        return key ? String(row[key]).trim() : '';
-                    };
-
-                    return {
-                        codigo: findValue(['codigo', 'cod', 'sku']),
-                        descricao: findValue(['descricao', 'desc', 'produto', 'nome', 'item']) || 'Sem descrição',
-                        local: findValue(['local', 'posicao', 'rua', 'endereco', 'prateleira']) || '---'
-                    };
-                }).filter(item => item.codigo !== ''); // Filtra linhas que não têm código
-
-                if (mappedData.length === 0) {
-                    toast.error('Nenhum dado válido encontrado. Certifique-se que as colunas tenham nomes como "Código", "Descrição" e "Local".', { id: toastId });
-                    return;
-                }
-
-                onStockImported(mappedData);
-                toast.success(`${mappedData.length} itens importados com sucesso!`, { id: toastId });
-            } catch (error) {
-                console.error('Erro ao processar Excel:', error);
-                toast.error('Erro ao ler o arquivo Excel', { id: toastId });
-            }
-        };
-        reader.readAsBinaryString(file);
-
-        // Limpa o input para permitir subir o mesmo arquivo novamente
-        if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-
-    const clearCustomStock = () => {
-        if (window.confirm('Tem certeza que deseja apagar a base de produtos importada? O sistema voltará a usar a base de testes.')) {
-            onStockImported([]); // Envia array vazio para limpar
-            toast.success('Base de produtos limpa.');
-        }
-    };
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 transition-colors">
@@ -152,45 +87,11 @@ export function SetupView({
                         <Plus className="w-5 h-5" />
                     </button>
 
-                    <div className="relative pt-2">
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleImportExcel}
-                            accept=".xlsx, .xls, .csv"
-                            className="hidden"
-                        />
-
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="flex-1 h-12 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-600 dark:text-slate-300 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-2"
-                            >
-                                <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                                {customStockCount > 0 ? 'Atualizar Estoque (Excel)' : 'Importar Estoque (Excel)'}
-                            </button>
-
-                            {/* Botão de limpar estoque importado */}
-                            {customStockCount > 0 && (
-                                <button
-                                    onClick={clearCustomStock}
-                                    className="h-12 w-12 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-red-100 dark:border-red-900/50 hover:border-red-300 dark:hover:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 dark:text-red-400 rounded-2xl transition-all flex-shrink-0"
-                                    title="Limpar base importada"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            )}
-                        </div>
-
-                        {customStockCount > 0 ? (
-                            <p className="text-[11px] font-medium text-center text-slate-400 dark:text-slate-500 mt-2">
-                                <span className="text-emerald-600 dark:text-emerald-400 font-bold">{customStockCount} itens</span> carregados na base atual
-                            </p>
-                        ) : (
-                            <p className="text-[11px] font-medium text-center text-slate-400 dark:text-slate-500 mt-2">
-                                <span className="text-indigo-600 dark:text-indigo-400 font-bold">{defaultStockCount} itens</span> carregados do sistema
-                            </p>
-                        )}
+                    <div className="relative pt-2 text-center">
+                        <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 mt-2 bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                            🟢 Conectado ao Supabase<br />
+                            <span className="text-indigo-600 dark:text-indigo-400 font-bold">{defaultStockCount} itens</span> sincronizados em tempo real.
+                        </p>
                     </div>
                 </div>
             </motion.div>

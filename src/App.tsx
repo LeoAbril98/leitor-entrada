@@ -5,6 +5,8 @@ import domtoimage from 'dom-to-image';
 import { Toaster, toast } from 'react-hot-toast';
 import { Barcode } from 'lucide-react';
 
+import { getInventory } from './lib/supabase';
+
 import { Origin, Reading, GroupedReading, StockItem } from './types';
 import { MOCK_STOCK } from './constants';
 
@@ -36,7 +38,7 @@ export default function App() {
   const successSound = useRef<HTMLAudioElement | null>(null);
   const errorSound = useRef<HTMLAudioElement | null>(null);
 
-  const [defaultStock, setDefaultStock] = useState<StockItem[]>(MOCK_STOCK);
+  const [defaultStock, setDefaultStock] = useState<StockItem[]>([]);
 
   // Load custom stock from localStorage on mount, or fetch the default CSV
   useEffect(() => {
@@ -47,57 +49,21 @@ export default function App() {
     if (successSound.current) successSound.current.load();
     if (errorSound.current) errorSound.current.load();
 
-    const savedStock = localStorage.getItem('scancount_custom_stock');
-    if (savedStock) {
+    const fetchStock = async () => {
       try {
-        setCustomStock(JSON.parse(savedStock));
-      } catch (e) {
-        console.error('Erro ao carregar estoque salvo:', e);
-      }
-    }
-
-    // Carregar a tabela por padrão (tabela.csv) da pasta public
-    const loadDefaultCsv = async () => {
-      try {
-        const response = await fetch('/tabela.csv');
-        if (!response.ok) return;
-
-        const csvText = await response.text();
-
-        Papa.parse(csvText, {
-          header: true,
-          skipEmptyLines: true,
-          delimiter: ';', // Conforme vimos no log do CSV
-          complete: (results) => {
-            const parsedData: StockItem[] = results.data.map((row: any) => {
-              // Encontra a chave do código (às vezes o CSV vem com caracteres estranhos tipo Cdigo)
-              const codeKey = Object.keys(row).find(k => k.toLowerCase().includes('c') && k.toLowerCase().includes('digo')) || Object.keys(row)[0];
-              const descKey = Object.keys(row).find(k => k.toLowerCase().includes('descri')) || Object.keys(row)[1];
-              const localKey = Object.keys(row).find(k => k.toLowerCase().includes('local')) || Object.keys(row)[2];
-
-              return {
-                codigo: String(row[codeKey] || '').trim(),
-                descricao: String(row[descKey] || 'Sem descrição').trim(),
-                local: String(row[localKey] || '---').trim()
-              }
-            }).filter(item => item.codigo !== '');
-
-            if (parsedData.length > 0) {
-              setDefaultStock(parsedData);
-            }
-          }
-        })
+        const data = await getInventory();
+        if (data && data.length > 0) {
+          setDefaultStock(data as StockItem[]); // We are using defaultStock to hold the DB data
+        }
       } catch (err) {
-        console.error('Erro ao buscar tabela.csv local', err);
+        console.error('Erro ao buscar do Supabase', err);
       }
-    }
+    };
 
-    loadDefaultCsv();
+    fetchStock();
   }, []);
 
-  const currentStock = useMemo(() => {
-    return customStock.length > 0 ? customStock : defaultStock;
-  }, [customStock, defaultStock]);
+  const currentStock = defaultStock;
 
   // Auto-focus input field
   useEffect(() => {
@@ -453,12 +419,7 @@ export default function App() {
         client={client}
         setClient={setClient}
         onStartCounting={handleStartCounting}
-        customStockCount={customStock.length}
         defaultStockCount={defaultStock.length}
-        onStockImported={(data) => {
-          setCustomStock(data);
-          localStorage.setItem('scancount_custom_stock', JSON.stringify(data));
-        }}
       />
     );
   }

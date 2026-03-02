@@ -41,6 +41,17 @@ export default function App() {
   const [defaultStock, setDefaultStock] = useState<StockItem[]>([]);
 
   // Load custom stock from localStorage on mount, or fetch the default CSV
+  const fetchStock = async () => {
+    try {
+      const data = await getInventory();
+      if (data && data.length > 0) {
+        setDefaultStock(data as StockItem[]); // We are using defaultStock to hold the DB data
+      }
+    } catch (err) {
+      console.error('Erro ao buscar do Supabase', err);
+    }
+  };
+
   useEffect(() => {
     // Carregar os áudios
     successSound.current = new Audio('/sounds/success.mp3');
@@ -48,17 +59,6 @@ export default function App() {
     // Preload them
     if (successSound.current) successSound.current.load();
     if (errorSound.current) errorSound.current.load();
-
-    const fetchStock = async () => {
-      try {
-        const data = await getInventory();
-        if (data && data.length > 0) {
-          setDefaultStock(data as StockItem[]); // We are using defaultStock to hold the DB data
-        }
-      } catch (err) {
-        console.error('Erro ao buscar do Supabase', err);
-      }
-    };
 
     fetchStock();
   }, []);
@@ -420,6 +420,7 @@ export default function App() {
         setClient={setClient}
         onStartCounting={handleStartCounting}
         defaultStockCount={defaultStock.length}
+        onRefreshStock={fetchStock}
       />
     );
   }

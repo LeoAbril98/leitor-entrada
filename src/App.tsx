@@ -204,19 +204,26 @@ export default function App() {
     }
   };
 
-  const handleEditQuantity = (codigo: string, currentQty: number) => {
-    const newQtyStr = window.prompt(`Alterar quantidade para o código ${codigo}:`, String(currentQty));
-    if (newQtyStr === null) return; // user cancelled
+  const handleEditQuantity = (codigo: string, newQty: number, promptUser: boolean = false) => {
+    let finalQty = newQty;
+    const currentQty = readings.filter(r => r.codigo === codigo).length;
 
-    const newQty = parseInt(newQtyStr, 10);
-    if (isNaN(newQty) || newQty < 0) {
-      toast.error('Quantidade inválida');
-      return;
+    if (promptUser) {
+      const newQtyStr = window.prompt(`Alterar quantidade para o código ${codigo}:`, String(currentQty));
+      if (newQtyStr === null) return; // user cancelled
+
+      finalQty = parseInt(newQtyStr, 10);
+      if (isNaN(finalQty) || finalQty < 0) {
+        toast.error('Quantidade inválida');
+        return;
+      }
+    } else {
+      if (isNaN(finalQty) || finalQty < 0) return;
     }
 
-    if (newQty === currentQty) return; // no change
+    if (finalQty === currentQty) return; // no change
 
-    if (newQty === 0) {
+    if (finalQty === 0) {
       removeReadingGroup(codigo);
       return;
     }
@@ -230,7 +237,7 @@ export default function App() {
       const result = [...outrasLeituras];
 
       // Adiciona N vezes a leitura baseada na quantidade solicitada, do mais antigo pro mais novo (para ficar na mesma ordem)
-      for (let i = 0; i < newQty; i++) {
+      for (let i = 0; i < finalQty; i++) {
         if (i < leiturasDeste.length) {
           result.push(leiturasDeste[i]); // reaproveita os dados e IDs originais
         } else {
@@ -246,7 +253,9 @@ export default function App() {
       return result.sort((a, b) => b.timestamp - a.timestamp);
     });
 
-    toast.success(`Quantidade atualizada para ${newQty}`);
+    if (promptUser) {
+      toast.success(`Quantidade atualizada para ${finalQty}`);
+    }
   };
 
   const handleExportClick = () => {

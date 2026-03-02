@@ -14,28 +14,48 @@ export async function getInventory() {
 
   // The PostgREST API limits single queries to 1000 rows by default.
   // We need to paginate to get all items.
-  while (hasMore) {
-    const { data, error } = await supabase
-      .from('inventario_itens')
-      .select('codigo, descricao, local')
-      .range(page * pageSize, (page + 1) * pageSize - 1)
+  try {
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('inventario_itens')
+        .select('codigo, descricao, local')
+        .range(page * pageSize, (page + 1) * pageSize - 1)
 
-    if (error) {
-      console.error('Erro ao buscar inventário do Supabase:', error.message)
-      return allData.length > 0 ? mapData(allData) : []
+      if (error) {
+        throw error;
+      }
+
+      if (data && data.length > 0) {
+        allData = [...allData, ...data]
+        page++
+        hasMore = data.length === pageSize
+      } else {
+        hasMore = false
+      }
     }
 
-    if (data && data.length > 0) {
-      allData = [...allData, ...data]
-      page++
-      // If we got exactly the page size, there might be more
-      hasMore = data.length === pageSize
-    } else {
-      hasMore = false
+    const mapped = mapData(allData);
+    // Salvar cache local para modo offline
+    localStorage.setItem('@MK_INVENTORY_CACHE', JSON.stringify(mapped));
+    localStorage.setItem('@MK_INVENTORY_LAST_SYNC', new Date().toISOString());
+    return mapped;
+
+  } catch (error: any) {
+    console.warn('Erro ao buscar inventário online (Supabase). Tentando cache local...', error);
+    
+    // Tentar carregar do cache offline
+    const cached = localStorage.getItem('@MK_INVENTORY_CACHE');
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch (e) {
+        console.error('Cache local corrompido.');
+        return [];
+      }
     }
+    
+    return [];
   }
-
-  return mapData(allData)
 }
 
 function mapData(data: any[]) {

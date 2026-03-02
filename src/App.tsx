@@ -4,6 +4,7 @@ import Papa from 'papaparse';
 import domtoimage from 'dom-to-image';
 import { Toaster, toast } from 'react-hot-toast';
 import { Barcode } from 'lucide-react';
+import { cn } from './utils';
 
 import { getInventory } from './lib/supabase';
 
@@ -16,15 +17,28 @@ import { ScannerInput } from './components/ScannerInput';
 import { ResultsList } from './components/ResultsList';
 import { ExportTable } from './components/ExportTable';
 import { ExportModal, ExportStatus } from './components/ExportModal';
+import { ManualAddModal } from './components/ManualAddModal';
 
 export default function App() {
   const [view, setView] = useState<'setup' | 'counting'>('setup');
   const [origin, setOrigin] = useState<Origin | null>(null);
   const [client, setClient] = useState(''); // Estado para Devolução
-  const [readings, setReadings] = useState<Reading[]>([]);
+  const [readings, setReadings] = useState<Reading[]>(() => {
+    const saved = localStorage.getItem('@MK_SAVED_READINGS');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  });
+  const [scanError, setScanError] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [customStock, setCustomStock] = useState<StockItem[]>([]);
+  const [isManualAddOpen, setIsManualAddOpen] = useState(false);
 
   // Export Modal State
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -65,16 +79,49 @@ export default function App() {
 
   const currentStock = defaultStock;
 
+  // Carregar os meta dados locais
+  useEffect(() => {
+    const savedOrigin = localStorage.getItem('@MK_SAVED_ORIGIN');
+    const savedClient = localStorage.getItem('@MK_SAVED_CLIENT');
+
+    if (savedOrigin) setOrigin(savedOrigin as Origin);
+    if (savedClient) setClient(savedClient);
+
+    // Se tinha algo salvo, já pular pra tela de counting?
+    // Somente se a view for setup e tiver readings
+    const savedReadings = localStorage.getItem('@MK_SAVED_READINGS');
+    if (savedReadings && savedReadings !== '[]' && savedOrigin) {
+      setView('counting');
+      toast('Contagem restaurada automaticamente', { icon: '🔄' });
+    }
+  }, []);
+
+  // Salvar no localStorage sempre que as leituras mudarem a partir de uma contagem
+  useEffect(() => {
+    localStorage.setItem('@MK_SAVED_READINGS', JSON.stringify(readings));
+    if (origin) localStorage.setItem('@MK_SAVED_ORIGIN', origin);
+    if (client) localStorage.setItem('@MK_SAVED_CLIENT', client);
+  }, [readings, origin, client]);
+
   // Auto-focus input field
   useEffect(() => {
-    if (view === 'counting') {
-      const focusInput = () => inputRef.current?.focus();
+    if (view === 'counting' && !isManualAddOpen && !isExportModalOpen) {
+      const focusInput = () => {
+        // Only focus if there is no active selection in another text input to prevent stealing focus 
+        // from other inputs accidentally if modals state glitches, but especially because the modals use inputs
+        if (
+          document.activeElement?.tagName !== 'INPUT' ||
+          document.activeElement === inputRef.current
+        ) {
+          inputRef.current?.focus();
+        }
+      };
       focusInput();
       // Keep focus even if user clicks away
       const interval = setInterval(focusInput, 1000);
       return () => clearInterval(interval);
     }
-  }, [view]);
+  }, [view, isManualAddOpen, isExportModalOpen]);
 
   const handleStartCounting = () => {
     if (!origin) {
@@ -107,12 +154,33 @@ export default function App() {
       }
       toast.success(`Lido: ${code}`, { duration: 1000 });
     } else {
+      setScanError(true);
+      setTimeout(() => setScanError(false), 400); // Pisca por 400ms
+
       if (errorSound.current) {
         errorSound.current.currentTime = 0;
         errorSound.current.play().catch(() => { });
       }
       toast.error(`Não encontrado: ${code}`, { duration: 1500 });
     }
+  };
+
+  const handleManualAdd = (codigo: string, quantity: number) => {
+    if (quantity < 1) return;
+
+    const newReadings: Reading[] = Array.from({ length: quantity }).map((_, i) => ({
+      id: crypto.randomUUID(),
+      codigo,
+      timestamp: Date.now() + i, // slight offset to maintain order
+    }));
+
+    setReadings(prev => [...newReadings, ...prev]);
+
+    if (successSound.current) {
+      successSound.current.currentTime = 0;
+      successSound.current.play().catch(() => { });
+    }
+    toast.success(`Adicionado: ${quantity}x ${codigo}`, { duration: 2000 });
   };
 
   const undoLastReading = () => {
@@ -360,6 +428,11 @@ export default function App() {
     setClient('');
     setReadings([]);
     setInputValue('');
+
+    // Limpar cache local
+    localStorage.removeItem('@MK_SAVED_READINGS');
+    localStorage.removeItem('@MK_SAVED_ORIGIN');
+    localStorage.removeItem('@MK_SAVED_CLIENT');
   };
 
   const groupedData = useMemo(() => {
@@ -426,7 +499,13 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors pb-20">
+    <div className={cn(
+      "min-h-screen transition-colors pb-20",
+      scanError ? "bg-red-500/20 dark:bg-red-900/40" : "bg-slate-50 dark:bg-slate-950"
+    )}>
+      {scanError && (
+        <div className="fixed inset-0 z-50 pointer-events-none border-8 border-red-500/50 animate-pulse" />
+      )}
       <Toaster position="top-center" />
 
       {/* Header Stats */}
@@ -444,13 +523,23 @@ export default function App() {
       />
 
       <main className="max-w-5xl mx-auto px-4 mt-8">
-        <section className="mb-8">
-          <ScannerInput
-            ref={inputRef}
-            value={inputValue}
-            onChange={setInputValue}
-            onSubmit={handleAddReading}
-          />
+        <section className="mb-8 flex gap-3">
+          <div className="flex-1">
+            <ScannerInput
+              ref={inputRef}
+              value={inputValue}
+              onChange={setInputValue}
+              onSubmit={handleAddReading}
+            />
+          </div>
+          <button
+            onClick={() => setIsManualAddOpen(true)}
+            className="h-16 px-6 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
+            title="Adicionar item manualmente"
+          >
+            <span className="hidden sm:inline">Busca Manual</span>
+            <Barcode className="w-6 h-6 sm:hidden" />
+          </button>
         </section>
 
         <ResultsList
@@ -479,6 +568,14 @@ export default function App() {
         totalUnique={totalUnique}
         totalReadings={readings.length}
         totalVolumes={totalVolumes}
+      />
+
+      {/* Manual Add Modal */}
+      <ManualAddModal
+        isOpen={isManualAddOpen}
+        onClose={() => setIsManualAddOpen(false)}
+        stock={currentStock}
+        onAdd={handleManualAdd}
       />
 
       {/* Modal de Exportação */}

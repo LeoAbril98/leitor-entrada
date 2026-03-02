@@ -173,8 +173,10 @@ export function SetupView({
                     <div className="relative pt-2 text-center">
                         <div className="bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 mt-2">
                             <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400">
-                                🟢 Conectado ao Supabase<br />
-                                <span className="text-indigo-600 dark:text-indigo-400 font-bold">{defaultStockCount} itens</span> sincronizados em tempo real.
+                                {localStorage.getItem('@MK_INVENTORY_LAST_SYNC')
+                                    ? `🛜 Usando base em Cache (Sinc: ${new Date(localStorage.getItem('@MK_INVENTORY_LAST_SYNC')!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})`
+                                    : '🟢 Conectado ao Supabase'}<br />
+                                <span className="text-indigo-600 dark:text-indigo-400 font-bold">{defaultStockCount} itens</span> sincronizados.
                             </p>
 
                             <button

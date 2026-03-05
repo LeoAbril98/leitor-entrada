@@ -18,7 +18,7 @@ export async function getInventory() {
     while (hasMore) {
       const { data, error } = await supabase
         .from('inventario_itens')
-        .select('codigo, descricao, local')
+        .select('codigo, descricao, local, quantidade')
         .range(page * pageSize, (page + 1) * pageSize - 1)
 
       if (error) {
@@ -70,7 +70,27 @@ function mapData(data: any[]) {
     return {
       codigo: String(item.codigo || '').trim(),
       descricao: String(item.descricao || 'Sem descrição').trim(),
-      local: localFormatado
+      local: localFormatado,
+      quantidade: Number(item.quantidade) || 0
     };
   })
+}
+
+export async function getLastUpdate(): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('inventarios')
+      .select('criado_em')
+      .order('criado_em', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error) {
+      throw error;
+    }
+    return data?.criado_em || null;
+  } catch (error) {
+    console.error('Erro ao buscar última atualização do inventário (Supabase):', error);
+    return null;
+  }
 }

@@ -1,9 +1,11 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Share2, Download, Loader2, X, CheckCircle2 } from 'lucide-react';
+import { Share2, Download, Loader2, X, CheckCircle2, FileSpreadsheet, FileImage } from 'lucide-react';
 import { cn } from '../utils';
 
 export type ExportStatus = 'idle' | 'generating' | 'ready' | 'error';
+
+export type ExportFile = { blob: Blob | File; name: string; type: 'excel' | 'image' };
 
 interface ExportModalProps {
     isOpen: boolean;
@@ -11,9 +13,64 @@ interface ExportModalProps {
     onClose: () => void;
     onShareImage: () => void;
     onShareExcel: () => void;
-    onDownload: () => void;
+    files: ExportFile[];
     hasFiles: boolean;
 }
+const FileItem: React.FC<{ file: ExportFile; onDownload: () => void }> = ({ file, onDownload }) => {
+    const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        if (file.type === 'image') {
+            const url = URL.createObjectURL(file.blob);
+            setPreviewUrl(url);
+            return () => URL.revokeObjectURL(url);
+        }
+    }, [file]);
+
+    const getFriendlyName = (name: string, type: string) => {
+        if (type === 'excel') return 'Planilha de Contagem';
+        if (name.includes('_parte')) {
+            const part = name.match(/_parte(\d+)/)?.[1];
+            return `Imagem da Contagem (Parte ${part})`;
+        }
+        return 'Imagem da Contagem';
+    };
+
+    return (
+        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3 overflow-hidden">
+                {file.type === 'excel' ? (
+                    <div className="w-12 h-12 shrink-0 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center justify-center">
+                        <FileSpreadsheet className="w-6 h-6" />
+                    </div>
+                ) : (
+                    <div className="w-12 h-12 shrink-0 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg flex items-center justify-center overflow-hidden border border-indigo-100 dark:border-indigo-800/50">
+                        {previewUrl ? (
+                            <img src={previewUrl} alt="Preview" className="w-full h-full object-cover opacity-90" />
+                        ) : (
+                            <FileImage className="w-6 h-6" />
+                        )}
+                    </div>
+                )}
+                <div className="flex flex-col truncate">
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
+                        {getFriendlyName(file.name, file.type)}
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {file.type === 'excel' ? 'Arquivo Excel (.xlsx)' : `Imagem PNG (${(file.blob.size / 1024).toFixed(0)} KB)`}
+                    </span>
+                </div>
+            </div>
+            <button
+                onClick={onDownload}
+                className="p-2 ml-2 bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-600 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600 transition-colors shrink-0"
+                title="Baixar arquivo"
+            >
+                <Download className="w-5 h-5" />
+            </button>
+        </div>
+    );
+};
 
 export const ExportModal: React.FC<ExportModalProps> = ({
     isOpen,
@@ -21,9 +78,36 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     onClose,
     onShareImage,
     onShareExcel,
-    onDownload,
+    files,
     hasFiles
 }) => {
+    const [view, setView] = React.useState<'options' | 'downloadList'>('options');
+    const [isDownloadingAll, setIsDownloadingAll] = React.useState(false);
+
+    React.useEffect(() => {
+        if (!isOpen) {
+            setView('options');
+            setIsDownloadingAll(false);
+        }
+    }, [isOpen]);
+
+    const handleDownload = (file: ExportFile) => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(file.blob);
+        link.download = file.name;
+        link.click();
+    };
+
+    const handleDownloadAll = async () => {
+        if (isDownloadingAll) return;
+        setIsDownloadingAll(true);
+        for (let i = 0; i < files.length; i++) {
+            handleDownload(files[i]);
+            await new Promise(resolve => setTimeout(resolve, 600)); // wait 600ms between downloads to avoid browser blocking
+        }
+        setIsDownloadingAll(false);
+    };
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -92,30 +176,58 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                                     </div>
 
                                     <div className="w-full flex-col flex gap-3">
-                                        {/* Só mostramos o botão de share se a API estiver disponível, mas no navegador PC às vezes canShare diz true e depois falha. A lógica tratará falhas. */}
-                                        <button
-                                            onClick={onShareImage}
-                                            className="w-full h-12 bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
-                                        >
-                                            <Share2 className="w-5 h-5" />
-                                            Compartilhar Imagem
-                                        </button>
+                                        {view === 'options' ? (
+                                            <>
+                                                {/* Só mostramos o botão de share se a API estiver disponível, mas no navegador PC às vezes canShare diz true e depois falha. A lógica tratará falhas. */}
+                                                <button
+                                                    onClick={onShareImage}
+                                                    className="w-full h-12 bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                                                >
+                                                    <Share2 className="w-5 h-5" />
+                                                    Compartilhar Imagens
+                                                </button>
 
-                                        <button
-                                            onClick={onShareExcel}
-                                            className="w-full h-12 bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
-                                        >
-                                            <Share2 className="w-5 h-5" />
-                                            Compartilhar Excel
-                                        </button>
+                                                <button
+                                                    onClick={onShareExcel}
+                                                    className="w-full h-12 bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                                                >
+                                                    <Share2 className="w-5 h-5" />
+                                                    Compartilhar Excel
+                                                </button>
 
-                                        <button
-                                            onClick={onDownload}
-                                            className="w-full h-12 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
-                                        >
-                                            <Download className="w-5 h-5" />
-                                            Baixar Arquivos
-                                        </button>
+                                                <button
+                                                    onClick={() => setView('downloadList')}
+                                                    className="w-full h-12 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                                                >
+                                                    <Download className="w-5 h-5" />
+                                                    Baixar Arquivos
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <button onClick={() => setView('options')} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors shrink-0">
+                                                        <X className="w-5 h-5 text-slate-500" />
+                                                    </button>
+                                                    <span className="font-bold text-slate-700 dark:text-slate-200">Arquivos gerados</span>
+                                                </div>
+
+                                                <div className="max-h-[220px] overflow-y-auto flex flex-col gap-2 p-1">
+                                                    {files.map((file, idx) => (
+                                                        <FileItem key={idx} file={file} onDownload={() => handleDownload(file)} />
+                                                    ))}
+                                                </div>
+
+                                                <button
+                                                    onClick={handleDownloadAll}
+                                                    disabled={isDownloadingAll}
+                                                    className="w-full h-12 mt-2 bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                                                >
+                                                    {isDownloadingAll ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                                                    {isDownloadingAll ? 'Baixando...' : 'Baixar Todos'}
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </motion.div>
                             )}

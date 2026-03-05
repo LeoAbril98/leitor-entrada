@@ -9,9 +9,10 @@ interface ManualAddModalProps {
     onClose: () => void;
     stock: StockItem[];
     onAdd: (codigo: string, quantity: number) => void;
+    mode?: 'add' | 'search';
 }
 
-export function ManualAddModal({ isOpen, onClose, stock, onAdd }: ManualAddModalProps) {
+export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: ManualAddModalProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedItem, setSelectedItem] = useState<StockItem | null>(null);
     const [quantity, setQuantity] = useState(1);
@@ -84,7 +85,9 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd }: ManualAddModal
                             <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center">
                                 <PackageOpen className="w-5 h-5" />
                             </div>
-                            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Adição Manual</h2>
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                                {mode === 'search' ? 'Busca Manual' : 'Adição Manual'}
+                            </h2>
                         </div>
                         <button
                             onClick={onClose}
@@ -126,7 +129,14 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd }: ManualAddModal
                                                 {filteredStock.map((item, index) => (
                                                     <button
                                                         key={`${item.codigo}-${index}`}
-                                                        onClick={() => setSelectedItem(item)}
+                                                        onClick={() => {
+                                                            if (mode === 'search') {
+                                                                onAdd(item.codigo, 1);
+                                                                onClose();
+                                                            } else {
+                                                                setSelectedItem(item);
+                                                            }
+                                                        }}
                                                         className="text-left w-full p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-md transition-all group"
                                                     >
                                                         <h3 className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
@@ -152,14 +162,14 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd }: ManualAddModal
                                 {!searchTerm.trim() && (
                                     <div className="p-8 text-center flex flex-col items-center gap-3 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800 border-dashed">
                                         <Search className="w-8 h-8 opacity-50" />
-                                        <p>Digite para buscar um modelo<br />e adicionar sua quantidade manualmente.</p>
+                                        <p>Digite para buscar um modelo<br />e {mode === 'search' ? 'localizá-lo' : 'adicionar sua quantidade'} manualmente.</p>
                                     </div>
                                 )}
                             </div>
                         )}
 
                         {/* Quantity Selector Section */}
-                        {selectedItem && (
+                        {selectedItem && mode === 'add' && (
                             <motion.div
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}

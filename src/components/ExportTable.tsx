@@ -8,16 +8,14 @@ interface ExportTableProps {
     totalUnique: number;
     totalReadings: number;
     totalVolumes: number;
+    page?: number;
+    totalPages?: number;
 }
-
 export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
-    ({ groupedData, origin, client, totalUnique, totalReadings, totalVolumes }, ref) => {
+    ({ groupedData, origin, client, totalUnique, totalReadings, totalVolumes, page, totalPages }, ref) => {
 
-        // 1. ORDENAÇÃO ALFABÉTICA COMPLETA
-        // Ordena todos os itens por descrição antes de renderizar
-        const sortedData = [...groupedData].sort((a, b) => 
-            a.descricao.localeCompare(b.descricao)
-        );
+        // Assumimos que groupedData já vem ordenado do pai
+        const sortedData = groupedData;
 
         const dataGeracao = new Date().toLocaleString('pt-BR', {
             day: '2-digit',
@@ -41,7 +39,7 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
                     color: '#1f2937',
                     // Altura automática para que todos os itens apareçam na mesma foto
-                    height: 'auto' 
+                    height: 'auto'
                 }}
             >
                 {/* Cabeçalho */}
@@ -100,6 +98,11 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
 
                         <p style={{ margin: 0, fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
                             Gerado em: {dataGeracao}
+                            {totalPages && totalPages > 1 && (
+                                <span style={{ marginLeft: '12px', fontWeight: 'bold' }}>
+                                    Página {page} de {totalPages}
+                                </span>
+                            )}
                         </p>
                     </div>
 

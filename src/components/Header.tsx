@@ -13,6 +13,7 @@ interface HeaderProps {
     uniqueCount: number;
     totalVolumes: number;
     lastReading: string;
+    onBackToMenu: () => void;
 }
 
 export function Header({
@@ -25,7 +26,8 @@ export function Header({
     readingsCount,
     uniqueCount,
     totalVolumes,
-    lastReading
+    lastReading,
+    onBackToMenu
 }: HeaderProps) {
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -70,42 +72,52 @@ export function Header({
                             </div>
                         </div>
                     </div>
-                    <div className="flex gap-2 w-full sm:w-auto justify-end">
+                    <div className="flex gap-2 w-full sm:w-auto justify-end mt-4 sm:mt-0">
                         <button
-                            onClick={toggleTheme}
-                            className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                            title="Alternar Tema"
+                            onClick={onBackToMenu}
+                            className="p-2 shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm font-bold flex items-center justify-center gap-2"
+                            title="Voltar ao Menu"
                         >
-                            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                            <ArrowLeft className="w-5 h-5" />
+                            <span className="hidden sm:inline">Menu</span>
                         </button>
-                        <button
-                            onClick={onUndo}
-                            disabled={readingsCount === 0}
-                            className="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/50 disabled:opacity-50 transition-colors"
-                            title="Desfazer última"
-                        >
-                            <RotateCcw className="w-6 h-6" />
-                        </button>
-                        <button
-                            onClick={onClear}
-                            disabled={readingsCount === 0}
-                            className="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 disabled:opacity-50 transition-colors"
-                            title="Limpar tudo"
-                        >
-                            <Trash2 className="w-6 h-6" />
-                        </button>
-                        <button
-                            onClick={onExport}
-                            disabled={readingsCount === 0}
-                            className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/50 disabled:opacity-50 transition-colors"
-                            title="Exportar Excel e Imagem"
-                        >
-                            <Download className="w-6 h-6" />
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={toggleTheme}
+                                className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                title="Alternar Tema"
+                            >
+                                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                            </button>
+                            <button
+                                onClick={onUndo}
+                                disabled={readingsCount === 0}
+                                className="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/50 disabled:opacity-50 transition-colors"
+                                title="Desfazer última"
+                            >
+                                <RotateCcw className="w-6 h-6" />
+                            </button>
+                            <button
+                                onClick={onClear}
+                                disabled={readingsCount === 0}
+                                className="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 disabled:opacity-50 transition-colors"
+                                title="Limpar tudo"
+                            >
+                                <Trash2 className="w-6 h-6" />
+                            </button>
+                            <button
+                                onClick={onExport}
+                                disabled={readingsCount === 0}
+                                className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/50 disabled:opacity-50 transition-colors"
+                                title="Exportar Excel e Imagem"
+                            >
+                                <Download className="w-6 h-6" />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-4 gap-4 mt-6">
                     <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
                         <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Total Leituras</span>
                         <span className="text-2xl font-mono font-bold text-indigo-600 dark:text-indigo-400">{readingsCount}</span>

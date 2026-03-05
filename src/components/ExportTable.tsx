@@ -13,7 +13,14 @@ interface ExportTableProps {
 export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
     ({ groupedData, origin, client, totalUnique, totalReadings, totalVolumes }, ref) => {
 
-        // Captura e formata a data/hora no momento da geração do relatório
+        // 1. ORDENAÇÃO ALFABÉTICA (Pela descrição)
+        const sortedData = [...groupedData].sort((a, b) => 
+            a.descricao.localeCompare(b.descricao)
+        );
+
+        // 2. LIMITAÇÃO DE ITENS (Máximo 15 itens)
+        const displayData = sortedData.slice(0, 15);
+
         const dataGeracao = new Date().toLocaleString('pt-BR', {
             day: '2-digit',
             month: '2-digit',
@@ -39,15 +46,13 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'flex-start', // Garante que o alinhamento acompanhe o topo
+                    alignItems: 'flex-start',
                     marginBottom: '28px',
                     paddingBottom: '20px',
                     borderBottom: '2px solid #e5e7eb'
                 }}>
 
-                    {/* Bloco da Esquerda: Título, Origem e Data empilhados */}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
-
                         <h2 style={{ margin: 0, fontSize: '26px', color: '#111827', fontWeight: '800', whiteSpace: 'nowrap', lineHeight: '1' }}>
                             Relatório de Contagem
                         </h2>
@@ -93,11 +98,11 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                         )}
 
                         <p style={{ margin: 0, fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
-                            Gerado em: {dataGeracao}
+                            Gerado em: {dataGeracao} 
+                            {groupedData.length > 15 && <span style={{ fontWeight: 'bold' }}> (Exibindo primeiros 15 itens)</span>}
                         </p>
                     </div>
 
-                    {/* Bloco da Direita: Grupo Unificado de Métricas */}
                     <div style={{
                         display: 'flex',
                         border: '1px solid #e2e8f0',
@@ -106,8 +111,6 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                         overflow: 'hidden',
                         boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
                     }}>
-
-                        {/* Seção: Itens Únicos */}
                         <div style={{ padding: '12px 24px', textAlign: 'center', borderRight: '1px solid #e2e8f0' }}>
                             <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: '700', letterSpacing: '0.05em' }}>
                                 Itens Únicos
@@ -117,7 +120,6 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                             </div>
                         </div>
 
-                        {/* Seção: Volumes */}
                         <div style={{ padding: '12px 24px', textAlign: 'center', borderRight: '1px solid #e2e8f0' }}>
                             <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: '700', letterSpacing: '0.05em' }}>
                                 Caixas/Vol.
@@ -127,7 +129,6 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                             </div>
                         </div>
 
-                        {/* Seção: Total Lido */}
                         <div style={{ padding: '12px 24px', textAlign: 'center', backgroundColor: '#f8fafc' }}>
                             <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#475569', fontWeight: '800', letterSpacing: '0.05em' }}>
                                 Total
@@ -136,11 +137,10 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                                 {totalReadings}
                             </div>
                         </div>
-
                     </div>
                 </div>
 
-                {/* Tabela */}
+                {/* Tabela usando displayData (Limitada e Ordenada) */}
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
@@ -156,7 +156,7 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                         </tr>
                     </thead>
                     <tbody>
-                        {groupedData.map((item, index) => (
+                        {displayData.map((item, index) => (
                             <tr
                                 key={item.codigo || index}
                                 style={{

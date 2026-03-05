@@ -13,13 +13,11 @@ interface ExportTableProps {
 export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
     ({ groupedData, origin, client, totalUnique, totalReadings, totalVolumes }, ref) => {
 
-        // 1. ORDENAÇÃO ALFABÉTICA (Pela descrição)
+        // 1. ORDENAÇÃO ALFABÉTICA COMPLETA
+        // Ordena todos os itens por descrição antes de renderizar
         const sortedData = [...groupedData].sort((a, b) => 
             a.descricao.localeCompare(b.descricao)
         );
-
-        // 2. LIMITAÇÃO DE ITENS (Máximo 15 itens)
-        const displayData = sortedData.slice(0, 15);
 
         const dataGeracao = new Date().toLocaleString('pt-BR', {
             day: '2-digit',
@@ -32,17 +30,21 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
         return (
             <div
                 ref={ref}
+                id="export-table-container"
                 style={{
-                    position: 'fixed',
+                    position: 'absolute', // Mudado de fixed para absolute para evitar problemas de scroll na captura
                     left: '-9999px',
+                    top: '0',
                     width: '900px',
                     backgroundColor: '#ffffff',
                     padding: '30px',
                     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
-                    color: '#1f2937'
+                    color: '#1f2937',
+                    // Altura automática para que todos os itens apareçam na mesma foto
+                    height: 'auto' 
                 }}
             >
-                {/* Cabeçalho do Relatório */}
+                {/* Cabeçalho */}
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -51,7 +53,6 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                     paddingBottom: '20px',
                     borderBottom: '2px solid #e5e7eb'
                 }}>
-
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
                         <h2 style={{ margin: 0, fontSize: '26px', color: '#111827', fontWeight: '800', whiteSpace: 'nowrap', lineHeight: '1' }}>
                             Relatório de Contagem
@@ -98,11 +99,11 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                         )}
 
                         <p style={{ margin: 0, fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
-                            Gerado em: {dataGeracao} 
-                            {groupedData.length > 15 && <span style={{ fontWeight: 'bold' }}> (Exibindo primeiros 15 itens)</span>}
+                            Gerado em: {dataGeracao}
                         </p>
                     </div>
 
+                    {/* Métricas */}
                     <div style={{
                         display: 'flex',
                         border: '1px solid #e2e8f0',
@@ -140,7 +141,7 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                     </div>
                 </div>
 
-                {/* Tabela usando displayData (Limitada e Ordenada) */}
+                {/* Tabela Completa */}
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
@@ -156,7 +157,7 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                         </tr>
                     </thead>
                     <tbody>
-                        {displayData.map((item, index) => (
+                        {sortedData.map((item, index) => (
                             <tr
                                 key={item.codigo || index}
                                 style={{
@@ -182,4 +183,5 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
         );
     }
 );
+
 ExportTable.displayName = 'ExportTable';

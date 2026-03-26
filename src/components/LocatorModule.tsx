@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
-import { ArrowLeft, MapPin, Search, Package2, RefreshCcw } from 'lucide-react';
+import { ArrowLeft, MapPin, Search, Package2, RefreshCcw, Hash } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScannerInput } from './ScannerInput';
 import { ManualAddModal } from './ManualAddModal';
@@ -116,7 +116,6 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
             )}
             <Toaster position="top-center" />
 
-            {/* Header Simples */}
             <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-sm transition-colors">
                 <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
                     <button
@@ -135,7 +134,6 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
             </header>
 
             <main className="max-w-3xl mx-auto px-4 mt-8">
-                {/* Section de Busca */}
                 <section className="mb-8 flex gap-3">
                     <div className="flex-1 bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
                         <h2 className="text-slate-500 dark:text-slate-400 font-semibold mb-4 flex items-center gap-2">
@@ -151,15 +149,13 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                     <button
                         onClick={() => setIsManualAddOpen(true)}
                         className="h-auto w-32 sm:w-auto px-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-3xl font-bold flex flex-col sm:flex-row items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all shadow-sm shrink-0"
-                        title="Buscar item manualmente"
                     >
                         <Search className="w-6 h-6" />
-                        <span className="hidden sm:inline">Busca Manual</span>
                         <span className="sm:hidden text-xs mt-1">Busca<br />Manual</span>
+                        <span className="hidden sm:inline">Busca Manual</span>
                     </button>
                 </section>
 
-                {/* Resultado */}
                 <AnimatePresence mode="wait">
                     {scannedItem ? (
                         <motion.div
@@ -167,44 +163,46 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-emerald-100 dark:border-emerald-900/30 overflow-hidden relative"
+                            className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-xl border border-emerald-100 dark:border-emerald-900/30 overflow-hidden relative"
                         >
                             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 dark:bg-emerald-900/20 rounded-bl-full -z-10" />
 
-                            <div className="flex gap-4 mb-6">
-                                <div className="w-16 h-16 shrink-0 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center">
+                            <div className="flex gap-4 mb-8">
+                                <div className="w-16 h-16 shrink-0 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center shadow-inner">
                                     <Package2 className="w-8 h-8" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 uppercase leading-tight">
+                                    <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase leading-tight tracking-tight">
                                         {scannedItem.descricao}
                                     </h3>
-                                    <p className="text-slate-500 dark:text-slate-400 font-mono mt-1">
-                                        Cód: {scannedItem.codigo}
-                                    </p>
+                                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-mono mt-1 text-sm bg-slate-100 dark:bg-slate-800 w-fit px-2 py-0.5 rounded-lg">
+                                        <Hash className="w-3.5 h-3.5" /> {scannedItem.codigo}
+                                    </div>
                                 </div>
                             </div>
 
+                            {/* GRID INVERTIDO: Quantidade Primeiro, Local Depois */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
-                                    <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Localização</p>
-                                    <p className="text-2xl font-black text-slate-800 dark:text-slate-100">
-                                        {scannedItem.local || '---'}
+                                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 shadow-sm">
+                                    <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] mb-2">Quantidade</p>
+                                    <p className="text-4xl font-black text-emerald-700 dark:text-emerald-300">
+                                        {scannedItem.quantidade}
                                     </p>
                                 </div>
-                                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
-                                    <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Quantidade</p>
-                                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                                        {scannedItem.quantidade}
+                                
+                                <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">Localização</p>
+                                    <p className="text-4xl font-black text-slate-800 dark:text-slate-100">
+                                        {scannedItem.local || '---'}
                                     </p>
                                 </div>
                             </div>
 
                             <button
                                 onClick={() => setScannedItem(null)}
-                                className="mt-6 w-full h-12 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                className="mt-8 w-full h-14 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-2xl font-black flex items-center justify-center gap-3 hover:opacity-90 transition-all active:scale-[0.98] shadow-lg shadow-slate-200 dark:shadow-none"
                             >
-                                <RefreshCcw className="w-5 h-5" /> Nova Busca
+                                <RefreshCcw className="w-5 h-5" /> NOVA CONSULTA
                             </button>
                         </motion.div>
                     ) : (
@@ -213,9 +211,14 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                             animate={{ opacity: 1 }}
                             className="bg-transparent border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[300px]"
                         >
-                            <MapPin className="w-16 h-16 text-slate-300 dark:text-slate-700 mb-4" />
-                            <p className="text-slate-500 dark:text-slate-400 font-medium text-lg">
-                                Bipe um produto para descobrir sua localização.
+                            <div className="w-20 h-20 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center mb-4">
+                                <MapPin className="w-10 h-10 text-slate-300 dark:text-slate-700" />
+                            </div>
+                            <p className="text-slate-500 dark:text-slate-400 font-bold text-xl">
+                                Aguardando bipagem...
+                            </p>
+                            <p className="text-slate-400 dark:text-slate-600 text-sm mt-2">
+                                Insira o código para ver o estoque e local.
                             </p>
                         </motion.div>
                     )}

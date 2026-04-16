@@ -137,18 +137,26 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
                                                                 setSelectedItem(item);
                                                             }
                                                         }}
-                                                        className="text-left w-full p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-md transition-all group"
+                                                        className="text-left w-full p-4 flex flex-col gap-2 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-md transition-all group"
                                                     >
+                                                        {/* 1. Código em cima */}
+                                                        <div className="flex items-center gap-1.5 font-mono text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 w-fit px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                            <Hash className="w-3.5 h-3.5" />
+                                                            {item.codigo}
+                                                        </div>
+
+                                                        {/* 2. Descrição no meio */}
                                                         <h3 className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                                             {item.descricao}
                                                         </h3>
-                                                        <div className="flex items-center gap-4 mt-2 text-sm text-slate-500 dark:text-slate-400">
-                                                            <div className="flex items-center gap-1.5 font-mono bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                                                                <Hash className="w-3.5 h-3.5" />
-                                                                {item.codigo}
-                                                            </div>
-                                                            <span className="flex items-center gap-1.5">
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600" />
+
+                                                        {/* 3. Quantidade | Local embaixo */}
+                                                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                                                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                                                                Qtd: {item.quantidade}
+                                                            </span>
+                                                            <span className="text-slate-300 dark:text-slate-600">|</span>
+                                                            <span>
                                                                 Local: {item.local || 'N/A'}
                                                             </span>
                                                         </div>

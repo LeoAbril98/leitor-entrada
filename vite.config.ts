@@ -13,6 +13,9 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
+        workbox: {
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        },
         manifest: {
           name: 'Leitor Contagem',
           short_name: 'Leitor',
@@ -41,6 +44,18 @@ export default defineConfig(({mode}) => {
         }
       })
     ],
+    build: {
+      chunkSizeWarningLimit: 1000,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-excel': ['exceljs', 'xlsx'],
+            'vendor-ui': ['motion/react', 'lucide-react', 'clsx', 'tailwind-merge'],
+            'vendor-react': ['react', 'react-dom'],
+          }
+        }
+      }
+    },
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },

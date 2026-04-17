@@ -273,6 +273,18 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
     }, 500);
   };
 
+  const waitForImages = (container: HTMLElement) => {
+    const imgs = Array.from(container.querySelectorAll('img'));
+    const promises = imgs.map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve; // Continue even if one image fails to avoid hanging
+      });
+    });
+    return Promise.all(promises);
+  };
+
   const generateExportFiles = async () => {
     try {
       // 1. Gerar Excel (Formato Lado a Lado)
@@ -329,6 +341,9 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
         const el = exportRefs.current[i];
         if (el) {
           el.style.display = 'block';
+          
+          // CRITICAL: Wait for all wheel photos to load before capturing the PNG
+          await waitForImages(el);
 
           const dataUrl = await domtoimage.toPng(el, {
             bgcolor: '#ffffff',

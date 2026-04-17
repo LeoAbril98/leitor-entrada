@@ -460,10 +460,21 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
         local: stockItem?.local || '---',
         found: !!stockItem
       };
-    }).filter(item =>
-      item.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.descricao.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    }).filter(item => {
+      if (!searchTerm) return true;
+      const terms = searchTerm.toUpperCase().trim().split(/\s+/).filter(Boolean);
+      const desc = item.descricao.toUpperCase();
+      const cod = item.codigo.toUpperCase();
+
+      return terms.every(term => {
+          const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const endsWithDigit = /\d$/.test(term);
+          const rightBoundary = endsWithDigit ? '(?![0-9])' : '';
+          const regex = new RegExp(`(^|\\s|X|/|-)${escapedTerm}${rightBoundary}`, 'i');
+          
+          return regex.test(desc) || cod.startsWith(term);
+      });
+    });
   }, [readings, searchTerm, currentStock]);
 
   const chunks = useMemo(() => {

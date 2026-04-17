@@ -451,12 +451,29 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                 return false;
             }
         }
-        
         if (searchQuery) {
-            const sqMatch = searchQuery.toUpperCase();
-            if (!item.descricao.toUpperCase().includes(sqMatch) && !item.codigo.toUpperCase().includes(sqMatch)) {
-                return false;
-            }
+            // Se o usuário digitou espaços (ex: "R 50"), nós buscamos os termos separados
+            const terms = searchQuery.toUpperCase().trim().split(/\s+/).filter(Boolean);
+            const desc = item.descricao.toUpperCase();
+            const cod = item.codigo.toUpperCase();
+            
+            const matchesAll = terms.every(term => {
+                const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                
+                // Boundaries inteligentes:
+                // 1. O termo tem que começar com espaço, X, -, início da string, ou O termo exato para código.
+                // 2. Se o termo tem 2 caracteres ou mais e termina com letra, aceita partial (ex: "BLA" acha "BLACK").
+                // 3. Se termina com número, não aceitamos outro número depois (ex: "R50" não acha "R500").
+                const endsWithDigit = /\d$/.test(term);
+                const rightBoundary = endsWithDigit ? '(?![0-9])' : '';
+                
+                const regex = new RegExp(`(^|\\s|X|/|-)${escapedTerm}${rightBoundary}`, 'i');
+                
+                // Verifica a descrição OU se o código COMEÇA EXATAMENTE com o termo
+                return regex.test(desc) || cod.startsWith(term);
+            });
+            
+            if (!matchesAll) return false;
         }
 
         const { linha, aro, furacao, model, acabamento } = getFields(item);
@@ -652,36 +669,36 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                     </div>
 
                     <div className="flex-1 overflow-auto relative">
-                        <table className="w-full text-sm text-left whitespace-nowrap">
-                            <thead className="sticky top-0 z-20 text-[10px] font-black uppercase bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                        <table className="w-full text-[15px] text-left whitespace-nowrap border-separate border-spacing-0">
+                            <thead className="sticky top-0 z-20 text-xs font-black uppercase bg-white dark:bg-slate-900 shadow-sm">
                                 {/* Linha 1: Cabeçalhos de Grupo */}
-                                <tr className="bg-slate-50 dark:bg-slate-800">
-                                    <th rowSpan={2} className="sticky left-0 z-30 px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-w-[100px] text-slate-400">FOTO</th>
-                                    <th rowSpan={2} className="sticky left-[100px] z-30 px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-w-[300px] lg:min-w-[400px] border-r shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] text-slate-400">IDENTIFICAÇÃO DO PRODUTO</th>
-                                    <th rowSpan={2} className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-right min-w-[80px] text-slate-400">PREÇO</th>
+                                <tr className="h-10">
+                                    <th rowSpan={2} className="sticky left-0 z-30 px-4 py-0 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-w-[100px] text-slate-400 align-middle">FOTO</th>
+                                    <th rowSpan={2} className="sticky left-[100px] z-30 px-4 py-0 border-b border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-w-[300px] lg:min-w-[400px] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] text-slate-400 align-middle">IDENTIFICAÇÃO DO PRODUTO</th>
+                                    <th rowSpan={2} className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-right min-w-[80px] text-slate-400 align-middle bg-slate-50 dark:bg-slate-800">PREÇO</th>
                                     
-                                    <th colSpan={3} className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 tracking-[0.2em]">MK - PARANÁ</th>
-                                    <th colSpan={3} className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-50/50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 tracking-[0.2em]">MOLERI</th>
-                                    <th colSpan={3} className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-50/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 tracking-[0.2em]">CM</th>
-                                    <th colSpan={3} className="px-2 py-2 border-b border-slate-200 dark:border-slate-700 text-center bg-rose-50/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 tracking-[0.2em]">OLIMPO</th>
+                                    <th colSpan={3} className="px-2 py-0 border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-300 tracking-[0.2em] align-middle">MK - PARANÁ</th>
+                                    <th colSpan={3} className="px-2 py-0 border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-300 tracking-[0.2em] align-middle">MOLERI</th>
+                                    <th colSpan={3} className="px-2 py-0 border-r border-slate-200 dark:border-slate-700 text-center bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-300 tracking-[0.2em] align-middle">CM</th>
+                                    <th colSpan={3} className="px-2 py-0 border-slate-200 dark:border-slate-700 text-center bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-300 tracking-[0.2em] align-middle">OLIMPO</th>
                                 </tr>
                                 {/* Linha 2: Cabeçalhos Individuais */}
-                                <tr>
-                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-50/30 dark:bg-indigo-900/10">EST.</th>
-                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-50/30 dark:bg-indigo-900/10">PEND.</th>
-                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-100/50 dark:bg-indigo-800/30">PEDIDO</th>
+                                <tr className="h-8">
+                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-100 dark:bg-indigo-900">EST.</th>
+                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-100 dark:bg-indigo-900">PEND.</th>
+                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-200 dark:bg-indigo-800">PEDIDO</th>
                                     
-                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-50/30 dark:bg-emerald-900/10">EST.</th>
-                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-50/30 dark:bg-emerald-900/10">PEND.</th>
-                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-100/50 dark:bg-emerald-800/30">PEDIDO</th>
+                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-100 dark:bg-emerald-900">EST.</th>
+                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-100 dark:bg-emerald-900">PEND.</th>
+                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-200 dark:bg-emerald-800">PEDIDO</th>
                                     
-                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-50/30 dark:bg-amber-900/10">EST.</th>
-                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-50/30 dark:bg-amber-900/10">PEND.</th>
-                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-100/50 dark:bg-amber-800/30">PEDIDO</th>
+                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-100 dark:bg-amber-900">EST.</th>
+                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-100 dark:bg-amber-900">PEND.</th>
+                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-200 dark:bg-amber-800">PEDIDO</th>
                                     
-                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-rose-50/30 dark:bg-rose-900/10">EST.</th>
-                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-rose-50/30 dark:bg-rose-900/10">PEND.</th>
-                                    <th className="px-2 py-2 border-b border-slate-200 dark:border-slate-700 text-center bg-rose-100/50 dark:bg-rose-800/30">PEDIDO</th>
+                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-rose-100 dark:bg-rose-900">EST.</th>
+                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-rose-100 dark:bg-rose-900">PEND.</th>
+                                    <th className="px-2 py-0 border-b border-slate-200 dark:border-slate-700 text-center bg-rose-200 dark:bg-rose-800">PEDIDO</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-medium">
@@ -703,59 +720,59 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                                     className="w-16 h-16 rounded-md object-cover border border-slate-200 dark:border-slate-700 shadow-sm" 
                                                 />
                                             </td>
-                                            <td className={cn("sticky left-[100px] z-10 px-4 py-3 text-slate-600 dark:text-slate-400 min-w-[300px] lg:min-w-[400px] border-r border-slate-200 dark:border-slate-700/50 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]", bgNormal)}>{item.descricao}</td>
+                                            <td className={cn("sticky left-[100px] z-10 px-4 py-3 text-slate-700 dark:text-slate-200 font-bold text-base min-w-[300px] lg:min-w-[400px] border-r border-slate-200 dark:border-slate-700/50 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]", bgNormal)}>{item.descricao}</td>
                                             <td className={cn("px-2 py-3 text-right text-slate-500", bgNormal)}>
                                                 {item.preco ? item.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}
                                             </td>
                                             
                                             {/* MK */}
-                                            <td className={cn("px-2 py-3 text-center font-bold text-slate-500", "bg-indigo-50/20 dark:bg-indigo-900/5")}>{item.est_mk || 0}</td>
-                                            <td className={cn("px-2 py-3 text-center text-slate-400", "bg-indigo-50/20 dark:bg-indigo-900/5")}>{item.pend_mk || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center font-bold text-slate-500 text-base", "bg-indigo-50/20 dark:bg-indigo-900/5")}>{item.est_mk || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center text-slate-400 text-base", "bg-indigo-50/20 dark:bg-indigo-900/5")}>{item.pend_mk || 0}</td>
                                             <td 
                                                 className={cn("px-2 py-3 text-center cursor-pointer hover:bg-indigo-100/50 dark:hover:bg-indigo-800/20 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", "bg-indigo-100/30 dark:bg-indigo-800/10")}
                                                 onClick={() => openModal(item, 'MK')}
                                             >
                                                 <div className="flex items-center justify-center gap-1 mx-auto w-16 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-1.5 shadow-sm group-hover:border-indigo-400 group-hover:ring-1 group-hover:ring-indigo-400/50 transition-all">
-                                                    <span className="text-lg">{pendencies[item.codigo]?.MK || 0}</span>
+                                                    <span className="text-xl">{pendencies[item.codigo]?.MK || 0}</span>
                                                     <Pencil className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-indigo-500 transition-colors" />
                                                 </div>
                                             </td>
 
                                             {/* MOLERI */}
-                                            <td className={cn("px-2 py-3 text-center font-bold text-slate-500", "bg-emerald-50/20 dark:bg-emerald-900/5")}>{item.est_moleri || 0}</td>
-                                            <td className={cn("px-2 py-3 text-center text-slate-400", "bg-emerald-50/20 dark:bg-emerald-900/5")}>{item.pend_moleri || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center font-bold text-slate-500 text-base", "bg-emerald-50/20 dark:bg-emerald-900/5")}>{item.est_moleri || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center text-slate-400 text-base", "bg-emerald-50/20 dark:bg-emerald-900/5")}>{item.pend_moleri || 0}</td>
                                             <td 
                                                 className={cn("px-2 py-3 text-center cursor-pointer hover:bg-emerald-100/50 dark:hover:bg-emerald-800/20 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", "bg-emerald-100/30 dark:bg-emerald-800/10")}
                                                 onClick={() => openModal(item, 'MOLERI')}
                                             >
                                                 <div className="flex items-center justify-center gap-1 mx-auto w-16 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-1.5 shadow-sm group-hover:border-emerald-400 group-hover:ring-1 group-hover:ring-emerald-400/50 transition-all">
-                                                    <span className="text-lg">{pendencies[item.codigo]?.MOLERI || 0}</span>
+                                                    <span className="text-xl">{pendencies[item.codigo]?.MOLERI || 0}</span>
                                                     <Pencil className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-emerald-500 transition-colors" />
                                                 </div>
                                             </td>
 
                                             {/* CM */}
-                                            <td className={cn("px-2 py-3 text-center font-bold text-slate-500", "bg-amber-50/20 dark:bg-amber-900/5")}>{item.est_cm || 0}</td>
-                                            <td className={cn("px-2 py-3 text-center text-slate-400", "bg-amber-50/20 dark:bg-amber-900/5")}>{item.pend_cm || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center font-bold text-slate-500 text-base", "bg-amber-50/20 dark:bg-amber-900/5")}>{item.est_cm || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center text-slate-400 text-base", "bg-amber-50/20 dark:bg-amber-900/5")}>{item.pend_cm || 0}</td>
                                             <td 
                                                 className={cn("px-2 py-3 text-center cursor-pointer hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", "bg-amber-100/30 dark:bg-amber-900/10")}
                                                 onClick={() => openModal(item, 'CM')}
                                             >
                                                 <div className="flex items-center justify-center gap-1 mx-auto w-16 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-1.5 shadow-sm group-hover:border-amber-400 group-hover:ring-1 group-hover:ring-amber-400/50 transition-all">
-                                                    <span className="text-lg">{pendencies[item.codigo]?.CM || 0}</span>
+                                                    <span className="text-xl">{pendencies[item.codigo]?.CM || 0}</span>
                                                     <Pencil className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-amber-500 transition-colors" />
                                                 </div>
                                             </td>
 
                                             {/* OLIMPO */}
-                                            <td className={cn("px-2 py-3 text-center font-bold text-slate-500", "bg-rose-50/20 dark:bg-rose-900/5")}>{item.est_olimpo || 0}</td>
-                                            <td className={cn("px-2 py-3 text-center text-slate-400", "bg-rose-50/20 dark:bg-rose-900/5")}>{item.pend_olimpo || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center font-bold text-slate-500 text-base", "bg-rose-50/20 dark:bg-rose-900/5")}>{item.est_olimpo || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center text-slate-400 text-base", "bg-rose-50/20 dark:bg-rose-900/5")}>{item.pend_olimpo || 0}</td>
                                             <td 
                                                 className={cn("px-2 py-3 text-center cursor-pointer hover:bg-rose-100/50 dark:hover:bg-rose-900/30 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", "bg-rose-100/30 dark:bg-rose-900/10")}
                                                 onClick={() => openModal(item, 'OLIMPO')}
                                             >
                                                 <div className="flex items-center justify-center gap-1 mx-auto w-16 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-1.5 shadow-sm group-hover:border-rose-400 group-hover:ring-1 group-hover:ring-rose-400/50 transition-all">
-                                                    <span className="text-lg">{pendencies[item.codigo]?.OLIMPO || 0}</span>
+                                                    <span className="text-xl">{pendencies[item.codigo]?.OLIMPO || 0}</span>
                                                     <Pencil className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-rose-500 transition-colors" />
                                                 </div>
                                             </td>
@@ -780,52 +797,52 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                 <div className="flex items-start justify-start gap-6 min-w-max pb-1">
                                     {/* MK */}
                                     <div className="flex flex-col gap-1 border-r border-slate-200 dark:border-slate-700 pr-6">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">MK</span>
+                                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">MK</span>
                                         <div className="flex items-center gap-4">
-                                            <div className="flex flex-col"><span className="text-[9px] text-slate-500 uppercase">Est</span><span className="text-sm font-bold">{filteredStock.reduce((acc, item) => acc + (item.est_mk || 0), 0)}</span></div>
-                                            <div className="flex flex-col"><span className="text-[9px] text-slate-500 uppercase">Pnd</span><span className="text-sm font-bold">{filteredStock.reduce((acc, item) => acc + (item.pend_mk || 0), 0)}</span></div>
+                                            <div className="flex flex-col"><span className="text-[10px] text-slate-500 uppercase">Est</span><span className="text-base font-bold">{filteredStock.reduce((acc, item) => acc + (item.est_mk || 0), 0)}</span></div>
+                                            <div className="flex flex-col"><span className="text-[10px] text-slate-500 uppercase">Pnd</span><span className="text-base font-bold">{filteredStock.reduce((acc, item) => acc + (item.pend_mk || 0), 0)}</span></div>
                                             <div className="flex flex-col bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
-                                                <span className="text-[9px] text-amber-700 dark:text-amber-400 font-bold uppercase">Ped</span>
-                                                <span className="text-sm font-black text-amber-800 dark:text-amber-300">{filteredStock.reduce((acc, item) => acc + (pendencies[item.codigo]?.MK || 0), 0)}</span>
+                                                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold uppercase">Ped</span>
+                                                <span className="text-lg font-black text-amber-800 dark:text-amber-300">{filteredStock.reduce((acc, item) => acc + (pendencies[item.codigo]?.MK || 0), 0)}</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* MOLERI */}
                                     <div className="flex flex-col gap-1 border-r border-slate-200 dark:border-slate-700 pr-6">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">MOLERI</span>
+                                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">MOLERI</span>
                                         <div className="flex items-center gap-4">
-                                            <div className="flex flex-col"><span className="text-[9px] text-slate-500 uppercase">Est</span><span className="text-sm font-bold">{filteredStock.reduce((acc, item) => acc + (item.est_moleri || 0), 0)}</span></div>
-                                            <div className="flex flex-col"><span className="text-[9px] text-slate-500 uppercase">Pnd</span><span className="text-sm font-bold">{filteredStock.reduce((acc, item) => acc + (item.pend_moleri || 0), 0)}</span></div>
+                                            <div className="flex flex-col"><span className="text-[10px] text-slate-500 uppercase">Est</span><span className="text-base font-bold">{filteredStock.reduce((acc, item) => acc + (item.est_moleri || 0), 0)}</span></div>
+                                            <div className="flex flex-col"><span className="text-[10px] text-slate-500 uppercase">Pnd</span><span className="text-base font-bold">{filteredStock.reduce((acc, item) => acc + (item.pend_moleri || 0), 0)}</span></div>
                                             <div className="flex flex-col bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
-                                                <span className="text-[9px] text-amber-700 dark:text-amber-400 font-bold uppercase">Ped</span>
-                                                <span className="text-sm font-black text-amber-800 dark:text-amber-300">{filteredStock.reduce((acc, item) => acc + (pendencies[item.codigo]?.MOLERI || 0), 0)}</span>
+                                                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold uppercase">Ped</span>
+                                                <span className="text-lg font-black text-amber-800 dark:text-amber-300">{filteredStock.reduce((acc, item) => acc + (pendencies[item.codigo]?.MOLERI || 0), 0)}</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* CM */}
                                     <div className="flex flex-col gap-1 border-r border-slate-200 dark:border-slate-700 pr-6">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CM</span>
+                                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">CM</span>
                                         <div className="flex items-center gap-4">
-                                            <div className="flex flex-col"><span className="text-[9px] text-slate-500 uppercase">Est</span><span className="text-sm font-bold">{filteredStock.reduce((acc, item) => acc + (item.est_cm || 0), 0)}</span></div>
-                                            <div className="flex flex-col"><span className="text-[9px] text-slate-500 uppercase">Pnd</span><span className="text-sm font-bold">{filteredStock.reduce((acc, item) => acc + (item.pend_cm || 0), 0)}</span></div>
+                                            <div className="flex flex-col"><span className="text-[10px] text-slate-500 uppercase">Est</span><span className="text-base font-bold">{filteredStock.reduce((acc, item) => acc + (item.est_cm || 0), 0)}</span></div>
+                                            <div className="flex flex-col"><span className="text-[10px] text-slate-500 uppercase">Pnd</span><span className="text-base font-bold">{filteredStock.reduce((acc, item) => acc + (item.pend_cm || 0), 0)}</span></div>
                                             <div className="flex flex-col bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
-                                                <span className="text-[9px] text-amber-700 dark:text-amber-400 font-bold uppercase">Ped</span>
-                                                <span className="text-sm font-black text-amber-800 dark:text-amber-300">{filteredStock.reduce((acc, item) => acc + (pendencies[item.codigo]?.CM || 0), 0)}</span>
+                                                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold uppercase">Ped</span>
+                                                <span className="text-lg font-black text-amber-800 dark:text-amber-300">{filteredStock.reduce((acc, item) => acc + (pendencies[item.codigo]?.CM || 0), 0)}</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* OLIMPO */}
                                     <div className="flex flex-col gap-1 pr-6 border-r border-slate-200 dark:border-slate-700">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">OLIMPO</span>
+                                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">OLIMPO</span>
                                         <div className="flex items-center gap-4">
-                                            <div className="flex flex-col"><span className="text-[9px] text-slate-500 uppercase">Est</span><span className="text-sm font-bold">{filteredStock.reduce((acc, item) => acc + (item.est_olimpo || 0), 0)}</span></div>
-                                            <div className="flex flex-col"><span className="text-[9px] text-slate-500 uppercase">Pnd</span><span className="text-sm font-bold">{filteredStock.reduce((acc, item) => acc + (item.pend_olimpo || 0), 0)}</span></div>
+                                            <div className="flex flex-col"><span className="text-[10px] text-slate-500 uppercase">Est</span><span className="text-base font-bold">{filteredStock.reduce((acc, item) => acc + (item.est_olimpo || 0), 0)}</span></div>
+                                            <div className="flex flex-col"><span className="text-[10px] text-slate-500 uppercase">Pnd</span><span className="text-base font-bold">{filteredStock.reduce((acc, item) => acc + (item.pend_olimpo || 0), 0)}</span></div>
                                             <div className="flex flex-col bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
-                                                <span className="text-[9px] text-amber-700 dark:text-amber-400 font-bold uppercase">Ped</span>
-                                                <span className="text-sm font-black text-amber-800 dark:text-amber-300">{filteredStock.reduce((acc, item) => acc + (pendencies[item.codigo]?.OLIMPO || 0), 0)}</span>
+                                                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold uppercase">Ped</span>
+                                                <span className="text-lg font-black text-amber-800 dark:text-amber-300">{filteredStock.reduce((acc, item) => acc + (pendencies[item.codigo]?.OLIMPO || 0), 0)}</span>
                                             </div>
                                         </div>
                                     </div>

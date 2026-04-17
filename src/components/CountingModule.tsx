@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import domtoimage from 'dom-to-image';
-import html2canvas from 'html2canvas';
 import { Toaster, toast } from 'react-hot-toast';
 import { Barcode } from 'lucide-react';
 import { cn } from '../utils';
@@ -274,17 +273,16 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
     }, 500);
   };
 
-  const waitForImages = (container: HTMLElement, timeoutMs = 3000) => {
+  const waitForImages = (container: HTMLElement, timeoutMs = 2000) => {
     const imgs = Array.from(container.querySelectorAll('img'));
     const promises = imgs.map(img => {
-      if (img.complete) return Promise.resolve();
+      if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
       return new Promise(resolve => {
         img.onload = resolve;
-        img.onerror = resolve; // Continue even if one image fails to avoid hanging
+        img.onerror = resolve;
       });
     });
     
-    // Race between image loading and safety timeout
     return Promise.race([
       Promise.all(promises),
       new Promise(resolve => setTimeout(resolve, timeoutMs))
@@ -348,36 +346,34 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
         if (el) {
           el.style.display = 'block';
           
-          // Wait for images (max 3s)
-          await waitForImages(el, 3000);
+          // Wait for images (max 2s)
+          await waitForImages(el, 2000);
+          
+          // Small delay for browser paint
+          await new Promise(resolve => setTimeout(resolve, 50));
 
           try {
-            const canvas = await html2canvas(el, {
-              useCORS: true,
-              allowTaint: true,
-              backgroundColor: '#ffffff',
-              scale: 2, // Double resolution for crisp images
-              logging: false,
+            const dataUrl = await domtoimage.toPng(el, {
+              bgcolor: '#ffffff',
               width: 900,
-              onclone: (doc) => {
-                const clonedEl = doc.getElementById('export-table-container');
-                if (clonedEl) {
-                  clonedEl.style.display = 'block';
-                  clonedEl.style.position = 'static';
-                }
+              quality: 1,
+              cacheBust: true, // Forces fresh images
+              style: {
+                display: 'block',
+                position: 'static',
+                left: '0'
               }
             });
 
             el.style.display = 'none';
 
-            const dataUrl = canvas.toDataURL('image/png');
             const res = await fetch(dataUrl);
             const imageBlob = await res.blob();
             const imgFileName = chunks.length > 1 ? `${fileName}_parte${i + 1}.png` : `${fileName}.png`;
             const imgFile = new File([imageBlob], imgFileName, { type: 'image/png' });
             imageFiles.push({ blob: imgFile, name: imgFileName, type: 'image' });
-          } catch (canvasError) {
-            console.error('Erro ao capturar canvas:', canvasError);
+          } catch (error) {
+            console.error('Erro ao capturar imagem:', error);
             el.style.display = 'none';
           }
         }

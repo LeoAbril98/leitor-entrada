@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, Minus, Plus, PackageOpen, X, Hash } from 'lucide-react';
+import { Check, Minus, Plus, X } from 'lucide-react';
 import { StockItem } from '../types';
+import { NumericKeypad } from './NumericKeypad';
+import { cn } from '../utils';
 
 interface PendencyQuantityModalProps {
     isOpen: boolean;
@@ -28,6 +30,25 @@ export function PendencyQuantityModal({ isOpen, onClose, item, factory, photoUrl
 
     const increaseQty = () => setQuantity(prev => prev + 1);
     const decreaseQty = () => setQuantity(prev => (prev > 0 ? prev - 1 : 0));
+
+    const handleKeyPress = (digit: string) => {
+        setQuantity(prev => {
+            const currentStr = String(prev);
+            if (currentStr.length >= 4) return prev;
+            const newStr = prev === 0 ? digit : currentStr + digit;
+            return parseInt(newStr, 10) || 0;
+        });
+    };
+
+    const handleBackspace = () => {
+        setQuantity(prev => {
+            const currentStr = String(prev);
+            if (currentStr.length <= 1) return 0;
+            return parseInt(currentStr.slice(0, -1), 10) || 0;
+        });
+    };
+
+    const handleClear = () => setQuantity(0);
 
     const handleConfirm = () => {
         onConfirm(quantity);
@@ -66,7 +87,7 @@ export function PendencyQuantityModal({ isOpen, onClose, item, factory, photoUrl
                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                    className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl flex flex-col overflow-hidden"
+                    className="relative w-full max-w-lg md:max-w-4xl bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl flex flex-col overflow-hidden transition-all duration-300"
                 >
                     {/* Banner de Topo - Compacto e Elegante */}
                     <div className="bg-amber-500 p-4 flex items-center justify-between text-white shadow-md relative z-20">
@@ -89,76 +110,119 @@ export function PendencyQuantityModal({ isOpen, onClose, item, factory, photoUrl
                         </button>
                     </div>
 
-                    {/* Imagem da Roda (Tamanho Equilibrado) */}
-                    <div className="bg-slate-50 dark:bg-slate-950/20 flex items-center justify-center p-6 border-b border-slate-100 dark:border-slate-800 relative">
-                        <motion.img 
-                            layoutId={`photo-${item.codigo}`}
-                            src={photoUrl || "https://placehold.co/400x400/e2e8f0/64748b?text=FOTO"} 
-                            alt={`Foto ${item.codigo}`} 
-                            className="w-48 h-48 object-contain rounded-full bg-white shadow-xl border-4 border-white dark:border-slate-800"
-                        />
-                    </div>
-                    <div className="p-6 flex flex-col gap-5">
-                        <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 text-center shadow-inner">
-                            <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 leading-tight mb-3">
-                                {item.descricao}
-                            </h3>
-                            
-                            {/* Indicadores de Inventário */}
-                            <div className="flex items-center justify-center gap-4">
-                                <div className="flex flex-col items-center bg-white dark:bg-slate-900 px-4 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 w-24">
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Estoque</span>
-                                    <span className="text-base font-bold text-slate-700 dark:text-slate-200">{stockQty}</span>
-                                </div>
-                                <div className="flex flex-col items-center bg-white dark:bg-slate-900 px-4 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 w-24">
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pendência</span>
-                                    <span className="text-base font-bold text-slate-700 dark:text-slate-200">{pendencyQty}</span>
+                    <div className="flex flex-col md:flex-row">
+                        {/* LADO ESQUERDO: FOTO E INFO */}
+                        <div className="w-full md:w-[45%] flex flex-col items-center bg-slate-50 dark:bg-slate-950/20 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800">
+                            {/* Imagem da Roda */}
+                            <div className="flex items-center justify-center p-6 relative">
+                                <motion.img 
+                                    layoutId={`photo-${item.codigo}`}
+                                    src={photoUrl || "https://placehold.co/400x400/e2e8f0/64748b?text=FOTO"} 
+                                    alt={`Foto ${item.codigo}`} 
+                                    className="w-40 h-40 md:w-64 md:h-64 object-contain rounded-full bg-white shadow-xl border-4 border-white dark:border-slate-800"
+                                />
+                            </div>
+
+                            <div className="p-6 pt-0 w-full flex flex-col gap-4">
+                                <div className="bg-white dark:bg-slate-800/40 p-5 rounded-3xl border border-slate-200 dark:border-slate-700/50 text-center shadow-sm">
+                                    <h3 className="text-lg md:text-xl font-black text-slate-800 dark:text-slate-100 leading-tight mb-4">
+                                        {item.descricao}
+                                    </h3>
+                                    
+                                    <div className="flex items-center justify-center gap-4">
+                                        <div className="flex flex-col items-center bg-slate-50 dark:bg-slate-900 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-800 w-28">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Estoque</span>
+                                            <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{stockQty}</span>
+                                        </div>
+                                        <div className="flex flex-col items-center bg-slate-50 dark:bg-slate-900 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-800 w-28">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pendência</span>
+                                            <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{pendencyQty}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                        <span className="font-mono text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">CÓDIGO: {item.codigo}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                    <div className="flex flex-col items-center gap-4">
-                        <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Quantidade do Pedido:</p>
-                        
-                        <div className="flex items-center gap-6">
-                            <button
-                                onClick={decreaseQty}
-                                className="w-14 h-14 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 active:scale-95 transition-all"
-                            >
-                                <Minus className="w-6 h-6" />
-                            </button>
+                        {/* LADO DIREITO: CONTROLES E TECLADO */}
+                        <div className="w-full md:w-[55%] p-6 flex flex-col gap-6 bg-white dark:bg-slate-900">
+                            <div className="flex flex-col items-center gap-4">
+                                <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Quantidade do Pedido</span>
+                                
+                                <div className="flex items-center gap-6">
+                                    <button
+                                        type="button"
+                                        onClick={decreaseQty}
+                                        className="w-14 h-14 flex items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-amber-400 dark:hover:border-amber-500/50 active:scale-95 transition-all"
+                                    >
+                                        <Minus className="w-6 h-6" />
+                                    </button>
 
-                            <input
-                                type="number"
-                                value={quantity}
-                                onFocus={(e) => e.target.select()}
-                                onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-                                className="w-24 h-20 text-center text-4xl font-black text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-3xl outline-none focus:ring-2 focus:ring-amber-500/50 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
+                                    <div className="w-32 h-20 flex items-center justify-center bg-white dark:bg-slate-900 border-4 border-amber-500/20 dark:border-amber-500/10 rounded-3xl shadow-inner group">
+                                        <span className={cn(
+                                            "text-5xl font-black transition-all",
+                                            quantity === 0 ? "text-slate-300 dark:text-slate-700" : "text-amber-600 dark:text-amber-400"
+                                        )}>
+                                            {quantity}
+                                        </span>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={increaseQty}
+                                        className="w-14 h-14 flex items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-amber-400 dark:hover:border-amber-500/50 active:scale-95 transition-all"
+                                    >
+                                        <Plus className="w-6 h-6" />
+                                    </button>
+                                </div>
+
+                                {/* Quick Adds */}
+                                <div className="flex gap-2 w-full max-w-xs transition-all">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setQuantity(prev => prev + 4)} 
+                                        className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-black border-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600 transition-all active:scale-95"
+                                    >
+                                        +4
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setQuantity(prev => prev + 12)} 
+                                        className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-black border-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600 transition-all active:scale-95"
+                                    >
+                                        +12
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setQuantity(prev => prev + 100)} 
+                                        className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-black border-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600 transition-all active:scale-95"
+                                    >
+                                        +100
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Teclado Numérico customizado para Tablet/Mobile */}
+                            <div className="w-full max-w-xs mx-auto">
+                                <NumericKeypad 
+                                    onPress={handleKeyPress}
+                                    onBackspace={handleBackspace}
+                                    onClear={handleClear}
+                                />
+                            </div>
 
                             <button
-                                onClick={increaseQty}
-                                className="w-14 h-14 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 active:scale-95 transition-all"
+                                type="button"
+                                onClick={handleConfirm}
+                                className="w-full h-16 mt-2 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-base shadow-xl shadow-amber-200 dark:shadow-none transition-all active:scale-[0.98] flex items-center justify-center gap-3 uppercase tracking-wider"
                             >
-                                <Plus className="w-6 h-6" />
+                                CONFIRMAR PEDIDO
+                                <Check className="w-6 h-6" />
                             </button>
                         </div>
-
-                        {/* Quick Adds */}
-                        <div className="flex gap-2 w-full mt-2">
-                            <button onClick={() => setQuantity(prev => prev + 4)} className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">+4</button>
-                            <button onClick={() => setQuantity(prev => prev + 12)} className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">+12</button>
-                            <button onClick={() => setQuantity(prev => prev + 100)} className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">+100</button>
-                        </div>
-                    </div>
-
-                        <button
-                            onClick={handleConfirm}
-                            className="w-full h-14 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black text-sm shadow-lg shadow-amber-200/50 dark:shadow-none transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                        >
-                            CONFIRMAR PEDIDO
-                            <Check className="w-5 h-5" />
-                        </button>
                     </div>
                 </motion.div>
             </div>

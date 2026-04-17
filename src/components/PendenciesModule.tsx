@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
-import { ArrowLeft, ClipboardList, Pencil, Search, Filter, Upload, Trash2, Archive } from 'lucide-react';
-import { motion } from 'motion/react';
-import { getInventory, loadPedidosFabrica, upsertPedidoFabrica, archiveAndClearPedidos } from '../lib/supabase';
+import { ArrowLeft, ClipboardList, Pencil, Search, Filter, Upload, Trash2, Archive, X, CloudUpload, FileSpreadsheet, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { getInventory, loadPedidosFabrica, upsertPedidoFabrica, archiveAndClearPedidos, syncPendenciasToCloud, getPendenciasInventory } from '../lib/supabase';
 import { StockItem } from '../types';
 import { PendencyQuantityModal } from './PendencyQuantityModal';
 import { cn } from '../utils';
@@ -10,6 +10,7 @@ import photoMap from '../data/photoMap.json';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { getWheelPhotoUrl } from '../utils/photoUtils';
 
 const finishMapping: Record<string, string> = {
   'PRETO DIAMANTADO': 'BD',
@@ -115,6 +116,11 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
         pendencyQty: number;
         photoUrl?: string;
     }>({ item: null, factory: 'MK', currentQty: 0, stockQty: 0, pendencyQty: 0, photoUrl: '' });
+ 
+    // Upload Modal State
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [tempProcessedData, setTempProcessedData] = useState<StockItem[]>([]);
+    const [isSyncingCloud, setIsSyncingCloud] = useState(false);
 
     const openModal = (item: StockItem, factory: FactoryName) => {
         const currentQty = pendencies[item.codigo]?.[factory] || 0;
@@ -141,22 +147,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                 break;
         }
 
-        // Calcular URL da foto para o modal
-        const modelCode = item.descricao.split(' ')[0].toUpperCase();
-        const modelPhotos = (photoMap as Record<string, Record<string, string>>)[modelCode] || {};
-        const descUpper = item.descricao.toUpperCase();
-        let finishAbbr: string | undefined;
-
-        for (const key of sortedFinishKeys) {
-            if (descUpper.includes(key)) {
-                finishAbbr = finishMapping[key];
-                break;
-            }
-        }
-
-        const photoUrl = (finishAbbr && modelPhotos[finishAbbr]) 
-            ? modelPhotos[finishAbbr] 
-            : (Object.values(modelPhotos)[0] || "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO");
+        const photoUrl = getWheelPhotoUrl(item.descricao);
 
         setModalConfig({ item, factory, currentQty, stockQty, pendencyQty, photoUrl });
         setIsModalOpen(true);
@@ -315,11 +306,9 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
         }
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
+    const processExcelFile = (file: File) => {
         const reader = new FileReader();
+        const toastId = toast.loading("Lendo planilha...");
         reader.onload = (evt) => {
             try {
                 const bstr = evt.target?.result;
@@ -327,18 +316,14 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                 const wsname = wb.SheetNames.find(n => n.toUpperCase() === 'PRINCIPAL') || wb.SheetNames[0];
                 const ws = wb.Sheets[wsname];
                 const data = XLSX.utils.sheet_to_json(ws);
-                console.log("Planilha lida. Primeiras chaves:", Object.keys(data[0] || {}));
-                console.log("Exemplo de linha:", data[0]);
 
                 const mappedData: StockItem[] = data.map((row: any) => {
-                    // Função para normalizar strings (remove acentos, espaços e pontos)
                     const normalize = (s: string) => 
                         String(s || '').normalize("NFD")
                             .replace(/[\u0300-\u036f]/g, "")
                             .replace(/[^A-Z0-9]/gi, "")
                             .toUpperCase();
 
-                    // Função para converter números no padrão brasileiro (1.000,00)
                     const parseBrNumber = (val: any) => {
                         if (typeof val === 'number') return val;
                         if (!val) return 0;
@@ -372,25 +357,46 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                     };
                 }).filter(item => item.codigo);
 
-                    if (mappedData.length > 0) {
-                        setStock(mappedData);
-                        const now = new Date().toISOString();
-                        setLastUploadDate(now);
-                        // Salvar no storage local para persistir entre recarregamentos
-                        localStorage.setItem('inventory_cache', JSON.stringify({
-                            data: mappedData,
-                            updatedAt: now
-                        }));
-                        toast.success(`${mappedData.length} itens importados da planilha com sucesso!`);
-                    } else {
-                    toast.error("Nenhum dado válido encontrado na planilha.");
+                if (mappedData.length > 0) {
+                    setTempProcessedData(mappedData);
+                    toast.success(`${mappedData.length} itens extraídos com sucesso!`, { id: toastId });
+                } else {
+                    toast.error("Nenhum dado válido encontrado na planilha.", { id: toastId });
                 }
             } catch (err) {
                 console.error("Erro ao ler Excel:", err);
-                toast.error("Erro ao processar o arquivo Excel.");
+                toast.error("Erro ao processar o arquivo Excel.", { id: toastId });
             }
         };
         reader.readAsBinaryString(file);
+    };
+
+    const handleSyncToCloud = async () => {
+        if (tempProcessedData.length === 0) return;
+        
+        setIsSyncingCloud(true);
+        const syncToast = toast.loading("Sincronizando com a nuvem...");
+        try {
+            await syncPendenciasToCloud(tempProcessedData);
+            
+            // Sucesso! Atualizar estado local
+            setStock(tempProcessedData);
+            const now = new Date().toISOString();
+            setLastUploadDate(now);
+            localStorage.setItem('inventory_cache', JSON.stringify({
+                data: tempProcessedData,
+                updatedAt: now
+            }));
+
+            toast.success("Estoque sincronizado com a nuvem v!", { id: syncToast });
+            setIsUploadModalOpen(false); // Fecha o modal automaticamente
+            setTempProcessedData([]); // Limpa dados temporários
+        } catch (err) {
+            console.error(err);
+            toast.error("Erro ao sincronizar. Tente novamente.", { id: syncToast });
+        } finally {
+            setIsSyncingCloud(false);
+        }
     };
 
     // Filtros
@@ -479,18 +485,23 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                     setPendencies(loadedPendencies);
                 }
 
-                // 2. Tentar carregar Inventário do Cache Local (Excel Importado anteriormente)
-                const savedCache = localStorage.getItem('inventory_cache');
-                if (savedCache) {
-                    const { data, updatedAt } = JSON.parse(savedCache);
-                    setStock(data as StockItem[]);
-                    setLastUploadDate(updatedAt || null);
-                    toast.success('Usando inventário carregado da última planilha.', { duration: 2000 });
+                // 2. Tentar buscar inventário base das PENDÊNCIAS na Nuvem
+                const inventoryData = await getPendenciasInventory();
+                if (inventoryData && inventoryData.length > 0) {
+                    setStock(inventoryData as StockItem[]);
+                    // Atualizar cache local com dados da nuvem
+                    localStorage.setItem('inventory_cache', JSON.stringify({
+                        data: inventoryData,
+                        updatedAt: new Date().toISOString()
+                    }));
                 } else {
-                    // 3. Se não houver cache, buscar inventário base do Supabase
-                    const inventoryData = await getInventory();
-                    if (inventoryData && inventoryData.length > 0) {
-                        setStock(inventoryData as StockItem[]);
+                    // 3. Se não houver nada na nuvem, tentar carregar do Cache Local (Backup)
+                    const savedCache = localStorage.getItem('inventory_cache');
+                    if (savedCache) {
+                        const { data, updatedAt } = JSON.parse(savedCache);
+                        setStock(data as StockItem[]);
+                        setLastUploadDate(updatedAt || null);
+                        toast.success('Usando inventário carregado localmente.', { duration: 2000 });
                     }
                 }
             } catch (err) {
@@ -568,10 +579,15 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                 📌 Pedidos
                             </button>
 
-                            <label className="px-2.5 py-1.5 text-xs font-bold rounded-lg border bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer flex items-center gap-1.5 shadow-sm">
+                            <button 
+                                onClick={() => {
+                                    setTempProcessedData([]);
+                                    setIsUploadModalOpen(true);
+                                }}
+                                className="px-2.5 py-1.5 text-xs font-bold rounded-lg border bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer flex items-center gap-1.5 shadow-sm"
+                            >
                                 <Upload className="w-3.5 h-3.5" /> Importar
-                                <input type="file" accept=".xlsx, .xlsm, .xls" onChange={handleFileUpload} className="hidden" />
-                            </label>
+                            </button>
 
                             <button 
                                 onClick={handleExport}
@@ -629,23 +645,35 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
 
                     <div className="flex-1 overflow-auto relative">
                         <table className="w-full text-sm text-left whitespace-nowrap">
-                            <thead className="sticky top-0 z-20 text-xs text-slate-700 dark:text-slate-300 uppercase bg-slate-50 dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 ring-1 ring-slate-200 dark:ring-slate-700">
+                            <thead className="sticky top-0 z-20 text-[10px] font-black uppercase bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                {/* Linha 1: Cabeçalhos de Grupo */}
+                                <tr className="bg-slate-50 dark:bg-slate-800">
+                                    <th rowSpan={2} className="sticky left-0 z-30 px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-w-[100px] text-slate-400">FOTO</th>
+                                    <th rowSpan={2} className="sticky left-[100px] z-30 px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-w-[300px] lg:min-w-[400px] border-r shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] text-slate-400">IDENTIFICAÇÃO DO PRODUTO</th>
+                                    <th rowSpan={2} className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-right min-w-[80px] text-slate-400">PREÇO</th>
+                                    
+                                    <th colSpan={3} className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 tracking-[0.2em]">MK - PARANÁ</th>
+                                    <th colSpan={3} className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-50/50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 tracking-[0.2em]">MOLERI</th>
+                                    <th colSpan={3} className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-50/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 tracking-[0.2em]">CM</th>
+                                    <th colSpan={3} className="px-2 py-2 border-b border-slate-200 dark:border-slate-700 text-center bg-rose-50/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 tracking-[0.2em]">OLIMPO</th>
+                                </tr>
+                                {/* Linha 2: Cabeçalhos Individuais */}
                                 <tr>
-                                    <th className="sticky left-0 z-30 px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-w-[100px]">FOTO</th>
-                                    <th className="sticky left-[100px] z-30 px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-w-[300px] lg:min-w-[400px] border-r shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">CATÁLOGO</th>
-                                    <th className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-right min-w-[80px]">PREÇO</th>
-                                    <th className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-center bg-slate-100 dark:bg-slate-800">EST. MK</th>
-                                    <th className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-center bg-slate-100 dark:bg-slate-800">PEND MK</th>
-                                    <th className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-center bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200">MK</th>
-                                    <th className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-center">EST. MOLERI</th>
-                                    <th className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-center">PEND MOLERI</th>
-                                    <th className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-center bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200">MOLERI</th>
-                                    <th className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-center bg-slate-100 dark:bg-slate-800">EST. CM</th>
-                                    <th className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-center bg-slate-100 dark:bg-slate-800">PEND CM</th>
-                                    <th className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-center bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200">CM</th>
-                                    <th className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-center">EST. OLIMPO</th>
-                                    <th className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-center">PEND OLIMPO</th>
-                                    <th className="px-2 py-3 border-b border-slate-200 dark:border-slate-700 text-center bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200">OLIMPO</th>
+                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-50/30 dark:bg-indigo-900/10">EST.</th>
+                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-50/30 dark:bg-indigo-900/10">PEND.</th>
+                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-100/50 dark:bg-indigo-800/30">PEDIDO</th>
+                                    
+                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-50/30 dark:bg-emerald-900/10">EST.</th>
+                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-50/30 dark:bg-emerald-900/10">PEND.</th>
+                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-100/50 dark:bg-emerald-800/30">PEDIDO</th>
+                                    
+                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-50/30 dark:bg-amber-900/10">EST.</th>
+                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-50/30 dark:bg-amber-900/10">PEND.</th>
+                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-100/50 dark:bg-amber-800/30">PEDIDO</th>
+                                    
+                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-rose-50/30 dark:bg-rose-900/10">EST.</th>
+                                    <th className="px-2 py-2 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-rose-50/30 dark:bg-rose-900/10">PEND.</th>
+                                    <th className="px-2 py-2 border-b border-slate-200 dark:border-slate-700 text-center bg-rose-100/50 dark:bg-rose-800/30">PEDIDO</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-medium">
@@ -655,22 +683,8 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                     const bgHighlight = isEven ? "bg-slate-50 dark:bg-slate-800" : "bg-slate-100 dark:bg-slate-700";
                                     const bgInput = isEven ? "bg-white dark:bg-slate-900" : "bg-slate-50 dark:bg-slate-800";
 
+                                    const photoUrl = getWheelPhotoUrl(item.descricao);
                                     const modelCode = item.descricao.split(' ')[0].toUpperCase();
-                                    const modelPhotos = (photoMap as Record<string, Record<string, string>>)[modelCode] || {};
-                                    
-                                    const descUpper = item.descricao.toUpperCase();
-                                    let finishAbbr: string | undefined;
-                                    
-                                    for (const key of sortedFinishKeys) {
-                                        if (descUpper.includes(key)) {
-                                            finishAbbr = finishMapping[key];
-                                            break;
-                                        }
-                                    }
-                                    
-                                    const photoUrl = (finishAbbr && modelPhotos[finishAbbr]) 
-                                        ? modelPhotos[finishAbbr] 
-                                        : (Object.values(modelPhotos)[0] || "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO");
 
                                     return (
                                         <tr key={idx} className="hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors group">
@@ -687,36 +701,36 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                             </td>
                                             
                                             {/* MK */}
-                                            <td className={cn("px-2 py-3 text-center font-bold", bgHighlight)}>{item.est_mk || 0}</td>
-                                            <td className={cn("px-2 py-3 text-center", bgNormal)}>{item.pend_mk || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center font-bold text-slate-500", "bg-indigo-50/20 dark:bg-indigo-900/5")}>{item.est_mk || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center text-slate-400", "bg-indigo-50/20 dark:bg-indigo-900/5")}>{item.pend_mk || 0}</td>
                                             <td 
-                                                className={cn("px-2 py-3 text-center cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", bgInput)}
+                                                className={cn("px-2 py-3 text-center cursor-pointer hover:bg-indigo-100/50 dark:hover:bg-indigo-800/20 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", "bg-indigo-100/30 dark:bg-indigo-800/10")}
                                                 onClick={() => openModal(item, 'MK')}
                                             >
-                                                <div className="flex items-center justify-center gap-1 mx-auto w-16 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-1.5 shadow-sm group-hover:border-amber-400 group-hover:ring-1 group-hover:ring-amber-400/50 transition-all">
+                                                <div className="flex items-center justify-center gap-1 mx-auto w-16 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-1.5 shadow-sm group-hover:border-indigo-400 group-hover:ring-1 group-hover:ring-indigo-400/50 transition-all">
                                                     <span className="text-lg">{pendencies[item.codigo]?.MK || 0}</span>
-                                                    <Pencil className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-amber-500 transition-colors" />
+                                                    <Pencil className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-indigo-500 transition-colors" />
                                                 </div>
                                             </td>
 
                                             {/* MOLERI */}
-                                            <td className={cn("px-2 py-3 text-center", bgNormal)}>{item.est_moleri || 0}</td>
-                                            <td className={cn("px-2 py-3 text-center", bgHighlight)}>{item.pend_moleri || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center font-bold text-slate-500", "bg-emerald-50/20 dark:bg-emerald-900/5")}>{item.est_moleri || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center text-slate-400", "bg-emerald-50/20 dark:bg-emerald-900/5")}>{item.pend_moleri || 0}</td>
                                             <td 
-                                                className={cn("px-2 py-3 text-center cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", bgInput)}
+                                                className={cn("px-2 py-3 text-center cursor-pointer hover:bg-emerald-100/50 dark:hover:bg-emerald-800/20 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", "bg-emerald-100/30 dark:bg-emerald-800/10")}
                                                 onClick={() => openModal(item, 'MOLERI')}
                                             >
-                                                <div className="flex items-center justify-center gap-1 mx-auto w-16 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-1.5 shadow-sm group-hover:border-amber-400 group-hover:ring-1 group-hover:ring-amber-400/50 transition-all">
+                                                <div className="flex items-center justify-center gap-1 mx-auto w-16 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-1.5 shadow-sm group-hover:border-emerald-400 group-hover:ring-1 group-hover:ring-emerald-400/50 transition-all">
                                                     <span className="text-lg">{pendencies[item.codigo]?.MOLERI || 0}</span>
-                                                    <Pencil className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-amber-500 transition-colors" />
+                                                    <Pencil className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-emerald-500 transition-colors" />
                                                 </div>
                                             </td>
 
                                             {/* CM */}
-                                            <td className={cn("px-2 py-3 text-center font-bold", bgHighlight)}>{item.est_cm || 0}</td>
-                                            <td className={cn("px-2 py-3 text-center", bgNormal)}>{item.pend_cm || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center font-bold text-slate-500", "bg-amber-50/20 dark:bg-amber-900/5")}>{item.est_cm || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center text-slate-400", "bg-amber-50/20 dark:bg-amber-900/5")}>{item.pend_cm || 0}</td>
                                             <td 
-                                                className={cn("px-2 py-3 text-center cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", bgInput)}
+                                                className={cn("px-2 py-3 text-center cursor-pointer hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", "bg-amber-100/30 dark:bg-amber-900/10")}
                                                 onClick={() => openModal(item, 'CM')}
                                             >
                                                 <div className="flex items-center justify-center gap-1 mx-auto w-16 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-1.5 shadow-sm group-hover:border-amber-400 group-hover:ring-1 group-hover:ring-amber-400/50 transition-all">
@@ -726,15 +740,15 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                             </td>
 
                                             {/* OLIMPO */}
-                                            <td className={cn("px-2 py-3 text-center", bgNormal)}>{item.est_olimpo || 0}</td>
-                                            <td className={cn("px-2 py-3 text-center", bgHighlight)}>{item.pend_olimpo || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center font-bold text-slate-500", "bg-rose-50/20 dark:bg-rose-900/5")}>{item.est_olimpo || 0}</td>
+                                            <td className={cn("px-2 py-3 text-center text-slate-400", "bg-rose-50/20 dark:bg-rose-900/5")}>{item.pend_olimpo || 0}</td>
                                             <td 
-                                                className={cn("px-2 py-3 text-center cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", bgInput)}
+                                                className={cn("px-2 py-3 text-center cursor-pointer hover:bg-rose-100/50 dark:hover:bg-rose-900/30 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", "bg-rose-100/30 dark:bg-rose-900/10")}
                                                 onClick={() => openModal(item, 'OLIMPO')}
                                             >
-                                                <div className="flex items-center justify-center gap-1 mx-auto w-16 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-1.5 shadow-sm group-hover:border-amber-400 group-hover:ring-1 group-hover:ring-amber-400/50 transition-all">
+                                                <div className="flex items-center justify-center gap-1 mx-auto w-16 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-1.5 shadow-sm group-hover:border-rose-400 group-hover:ring-1 group-hover:ring-rose-400/50 transition-all">
                                                     <span className="text-lg">{pendencies[item.codigo]?.OLIMPO || 0}</span>
-                                                    <Pencil className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-amber-500 transition-colors" />
+                                                    <Pencil className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-rose-500 transition-colors" />
                                                 </div>
                                             </td>
                                         </tr>
@@ -863,6 +877,96 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                 currentQty={modalConfig.currentQty}
                 onConfirm={handleConfirmQty}
             />
+
+            {/* Modal de Importação e Sincronização Cloud */}
+            <AnimatePresence>
+                {isUploadModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+                        >
+                            <div className="p-8">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                        <CloudUpload className="text-amber-500 w-6 h-6" /> Importar
+                                    </h2>
+                                    <button 
+                                        onClick={() => setIsUploadModalOpen(false)}
+                                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400"
+                                    >
+                                        <X className="w-6 h-6" />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-6">
+                                    {tempProcessedData.length === 0 ? (
+                                        <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl hover:border-amber-400 dark:hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-amber-900/20 transition-all cursor-pointer group">
+                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                <FileSpreadsheet className="w-12 h-12 text-slate-300 dark:text-slate-600 mb-4 group-hover:scale-110 transition-transform" />
+                                                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Clique para carregar planilha</p>
+                                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">.XLSX ou .XLS</p>
+                                            </div>
+                                            <input 
+                                                type="file" 
+                                                className="hidden" 
+                                                accept=".xlsx, .xlsm, .xls"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) processExcelFile(file);
+                                                }}
+                                            />
+                                        </label>
+                                    ) : (
+                                        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 rounded-3xl p-6 text-center">
+                                            <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
+                                            <h3 className="text-xl font-black text-emerald-800 dark:text-emerald-300">Planilha Carregada!</h3>
+                                            <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 mt-1">
+                                                Identificamos <span className="text-lg font-black">{tempProcessedData.length}</span> rodas prontas para sincronizar.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 text-center">Instruções</p>
+                                        <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2 font-medium">
+                                            <li className="flex gap-2"><span>1.</span> A aba deve se chamar <strong>"PRINCIPAL"</strong></li>
+                                            <li className="flex gap-2"><span>2.</span> Colunas obrigatórias: Código, Catálogo, Preço.</li>
+                                            <li className="flex gap-2"><span>3.</span> Campos de estoque MK, Moleri, CM e Olimpo são opcionais.</li>
+                                        </ul>
+                                    </div>
+
+                                    {tempProcessedData.length > 0 && (
+                                        <button
+                                            onClick={handleSyncToCloud}
+                                            disabled={isSyncingCloud}
+                                            className="w-full h-14 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-2xl font-black flex items-center justify-center gap-3 hover:opacity-90 transition-all active:scale-[0.98] shadow-lg shadow-slate-200 dark:shadow-none disabled:opacity-50"
+                                        >
+                                            {isSyncingCloud ? (
+                                                <div className="w-5 h-5 border-2 border-slate-400 border-t-white rounded-full animate-spin" />
+                                            ) : (
+                                                <CloudUpload className="w-5 h-5" />
+                                            )}
+                                            {isSyncingCloud ? 'SINCRONIZANDO...' : 'SINCRONIZAR COM NUVEM'}
+                                        </button>
+                                    )}
+
+                                    {tempProcessedData.length > 0 && !isSyncingCloud && (
+                                        <button 
+                                            onClick={() => setTempProcessedData([])}
+                                            className="w-full text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors uppercase tracking-widest"
+                                        >
+                                            Trocar Planilha
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

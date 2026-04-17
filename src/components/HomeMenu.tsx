@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ScanBarcode, MapPin, PackageOpen, RefreshCw, ClipboardList } from 'lucide-react';
+import { ScanBarcode, MapPin, PackageOpen, RefreshCw, ClipboardList, RotateCcw } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
-import { getInventory, getLastUpdate } from '../lib/supabase';
+import { getInventory, getLastUpdate, clearLocalInventoryCache } from '../lib/supabase';
 import { cn } from '../utils';
 
 interface HomeMenuProps {
@@ -230,6 +230,20 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                             </p>
                         </div>
                     </motion.button>
+                </div>
+
+                <div className="mt-12 flex justify-center">
+                    <button 
+                        onClick={() => {
+                            if (window.confirm("Deseja limpar todo o cache local e recarregar o App? Isso resolve problemas de dados misturados entre tabelas.")) {
+                                clearLocalInventoryCache();
+                            }
+                        }}
+                        className="flex items-center gap-2 px-6 py-2 text-[10px] font-black text-slate-400 hover:text-red-500 transition-all uppercase tracking-[0.2em] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full hover:border-red-200 shadow-sm active:scale-95"
+                    >
+                        <RotateCcw className="w-3 h-3" />
+                        Limpar Cache e Resetar App
+                    </button>
                 </div>
             </div>
         </div >

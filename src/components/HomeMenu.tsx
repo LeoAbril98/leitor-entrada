@@ -226,7 +226,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                                 Pendências
                             </h2>
                             <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
-                                Verifique itens que ainda não foram contados ou que apresentam divergências em relação ao estoque.
+                                Gerencie as pendências referentes aos pedidos de rodas feitos para a fábrica.
                             </p>
                         </div>
                     </motion.button>

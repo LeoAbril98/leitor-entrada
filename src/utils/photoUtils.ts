@@ -81,10 +81,11 @@ const sortedFinishKeys = Object.keys(finishMapping).sort((a, b) => b.length - a.
 
 /**
  * Resolve a URL da foto de uma roda baseada na sua descrição.
- * Busca o modelo (primeira palavra) e o acabamento no mapeamento.
+ * Transforma caminhos locais do photoMap em URLs públicas do Supabase Storage.
  */
 export function getWheelPhotoUrl(description: string): string {
-    if (!description) return "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO";
+    const placeholder = "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO";
+    if (!description) return placeholder;
 
     const descUpper = description.toUpperCase();
     const modelCode = descUpper.split(' ')[0];
@@ -98,9 +99,37 @@ export function getWheelPhotoUrl(description: string): string {
         }
     }
 
-    const photoUrl = (finishAbbr && modelPhotos[finishAbbr]) 
+    const rawPath = (finishAbbr && modelPhotos[finishAbbr]) 
         ? modelPhotos[finishAbbr] 
-        : (Object.values(modelPhotos)[0] || "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO");
+        : (Object.values(modelPhotos)[0] || "");
 
-    return photoUrl;
+    if (!rawPath) return placeholder;
+
+    // Se já for uma URL completa, retorna ela
+    if (rawPath.startsWith('http')) return rawPath;
+
+    // Transformar caminho local (/fotos/LINHA C/...) em URL do Supabase
+    // O script de upload remove /public e normaliza o nome
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl) return rawPath; // Fallback para local se não houver URL do Supabase
+
+    // 1. Extrair caminho relativo (remove /fotos/ se existir)
+    let relativePath = rawPath.replace(/^\/fotos\//, '');
+    
+    // 2. Trocar extensão para .webp
+    relativePath = relativePath.substring(0, relativePath.lastIndexOf('.')) + '.webp';
+    
+    // 3. Normalizar (mesmo processo do upload-photos.mjs)
+    // Remove acentos e caracteres especiais
+    let normalizedPath = relativePath.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    normalizedPath = normalizedPath.replace(/[^\w\s\/\.\-]/g, '');
+
+    // 4. Montar URL pública (bucket 'fotos')
+    // O URL do Supabase geralmente termina em .co ou .net
+    const publicBaseUrl = `${supabaseUrl}/storage/v1/object/public/fotos/`;
+    
+    // Precisamos codificar os espaços para a URL (mas não as barras)
+    const finalUrl = publicBaseUrl + normalizedPath.split('/').map(part => encodeURIComponent(part)).join('/');
+
+    return finalUrl;
 }

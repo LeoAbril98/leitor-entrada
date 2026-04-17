@@ -273,22 +273,6 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
     }, 500);
   };
 
-  const waitForImages = (container: HTMLElement, timeoutMs = 2000) => {
-    const imgs = Array.from(container.querySelectorAll('img'));
-    const promises = imgs.map(img => {
-      if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
-      return new Promise(resolve => {
-        img.onload = resolve;
-        img.onerror = resolve;
-      });
-    });
-    
-    return Promise.race([
-      Promise.all(promises),
-      new Promise(resolve => setTimeout(resolve, timeoutMs))
-    ]);
-  };
-
   const generateExportFiles = async () => {
     try {
       // 1. Gerar Excel (Formato Lado a Lado)
@@ -345,19 +329,12 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
         const el = exportRefs.current[i];
         if (el) {
           el.style.display = 'block';
-          
-          // Wait for images (max 2s)
-          await waitForImages(el, 2000);
-          
-          // Small delay for browser paint
-          await new Promise(resolve => setTimeout(resolve, 50));
 
           try {
             const dataUrl = await domtoimage.toPng(el, {
               bgcolor: '#ffffff',
               width: 900,
               quality: 1,
-              cacheBust: true, // Forces fresh images
               style: {
                 display: 'block',
                 position: 'static',

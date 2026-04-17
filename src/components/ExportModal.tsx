@@ -155,7 +155,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                                     </div>
                                     <div>
                                         <p className="font-bold text-slate-800 dark:text-slate-100 text-lg">Gerando Arquivos</p>
-                                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Sincronizando fotos e tabelas...</p>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Isso pode levar alguns segundos...</p>
                                     </div>
                                 </motion.div>
                             )}

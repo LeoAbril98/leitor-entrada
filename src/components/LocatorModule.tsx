@@ -6,6 +6,7 @@ import { ScannerInput } from './ScannerInput';
 import { ManualAddModal } from './ManualAddModal';
 import { getInventory } from '../lib/supabase';
 import { StockItem } from '../types';
+import { getWheelPhotoUrl } from '../utils/photoUtils';
 
 interface LocatorModuleProps {
     onBackToMenu: () => void;
@@ -168,8 +169,15 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 dark:bg-emerald-900/20 rounded-bl-full -z-10" />
 
                             <div className="flex gap-4 mb-8">
-                                <div className="w-16 h-16 shrink-0 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center shadow-inner">
-                                    <Package2 className="w-8 h-8" />
+                                <div className="w-20 h-20 shrink-0 bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-md">
+                                    <img 
+                                        src={getWheelPhotoUrl(scannedItem.descricao)} 
+                                        alt={scannedItem.descricao}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO";
+                                        }}
+                                    />
                                 </div>
                                 <div>
                                     <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase leading-tight tracking-tight">

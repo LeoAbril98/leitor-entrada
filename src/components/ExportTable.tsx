@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import { GroupedReading, Origin } from '../types';
+import { getWheelPhotoUrl } from '../utils/photoUtils';
 
 interface ExportTableProps {
     groupedData: GroupedReading[];
@@ -148,6 +149,9 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
+                            <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', width: '80px' }}>
+                                Foto
+                            </th>
                             <th style={{ padding: '12px', textAlign: 'left', fontSize: '13px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 Descrição
                             </th>
@@ -168,6 +172,20 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                                     borderBottom: '1px solid #e2e8f0'
                                 }}
                             >
+                                <td style={{ padding: '10px', textAlign: 'center' }}>
+                                    <img 
+                                        src={getWheelPhotoUrl(item.descricao)} 
+                                        alt="" 
+                                        crossOrigin="anonymous"
+                                        style={{ 
+                                            width: '60px', 
+                                            height: '60px', 
+                                            objectFit: 'cover', 
+                                            borderRadius: '8px',
+                                            border: '1px solid #e2e8f0'
+                                        }} 
+                                    />
+                                </td>
                                 <td style={{ padding: '14px 12px', textAlign: 'left', fontSize: '15px', color: '#334155' }}>
                                     <div style={{ fontWeight: '600', marginBottom: '4px' }}>{item.descricao}</div>
                                     <div style={{ fontSize: '12px', color: '#64748b', fontFamily: 'monospace' }}>{item.codigo}</div>

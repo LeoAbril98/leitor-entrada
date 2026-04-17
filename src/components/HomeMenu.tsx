@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ScanBarcode, MapPin, PackageOpen, RefreshCw } from 'lucide-react';
+import { ScanBarcode, MapPin, PackageOpen, RefreshCw, ClipboardList } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { getInventory, getLastUpdate } from '../lib/supabase';
 import { cn } from '../utils';
 
 interface HomeMenuProps {
-    onSelectMode: (mode: 'counting' | 'locator') => void;
+    onSelectMode: (mode: 'counting' | 'locator' | 'pendencies') => void;
 }
 
 export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
@@ -170,7 +170,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                     </motion.div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <motion.button
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -207,6 +207,26 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                             </h2>
                             <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
                                 Faça buscas rápidas por códigos de barras para descobrir instantaneamente a posição e quantidade do item no estoque.
+                            </p>
+                        </div>
+                    </motion.button>
+
+                    <motion.button
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        onClick={() => onSelectMode('pendencies')}
+                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 hover:border-amber-600 dark:hover:border-amber-500 hover:shadow-2xl hover:shadow-amber-100 dark:hover:shadow-none transition-all text-left flex flex-col items-start gap-4 active:scale-95 md:col-span-2 lg:col-span-1"
+                    >
+                        <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <ClipboardList className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+                                Pendências
+                            </h2>
+                            <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
+                                Verifique itens que ainda não foram contados ou que apresentam divergências em relação ao estoque.
                             </p>
                         </div>
                     </motion.button>

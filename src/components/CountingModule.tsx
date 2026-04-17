@@ -169,7 +169,7 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
     if (quantity < 1) return;
 
     const newReadings: Reading[] = Array.from({ length: quantity }).map((_, i) => ({
-      id: crypto.randomUUID(),
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${i}`,
       codigo,
       timestamp: Date.now() + i, // slight offset to maintain order
     }));
@@ -242,7 +242,7 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
           result.push(leiturasDeste[i]); // reaproveita os dados e IDs originais
         } else {
           result.push({
-            id: crypto.randomUUID(),
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${i}`,
             codigo: codigo,
             timestamp: Date.now() + i // slight offset
           });
@@ -276,11 +276,15 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
   const generateExportFiles = async () => {
     try {
       // 1. Gerar Excel (Formato Lado a Lado)
+      const sortedAlphaData = [...groupedData].sort((a, b) => 
+        a.descricao.localeCompare(b.descricao)
+      );
+      
       const worksheetData = [];
-      const maxRows = Math.max(groupedData.length, readings.length);
+      const maxRows = Math.max(sortedAlphaData.length, readings.length);
 
       for (let i = 0; i < maxRows; i++) {
-        const itemAgrupado = groupedData[i];
+        const itemAgrupado = sortedAlphaData[i];
         const itemLido = readings[i];
 
         worksheetData.push({

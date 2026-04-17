@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Search, Plus, Minus, X, PackageOpen, Check, Hash } from 'lucide-react';
 import { StockItem } from '../types';
 import { cn } from '../utils';
+import { getWheelPhotoUrl } from '../utils/photoUtils';
 
 interface ManualAddModalProps {
     isOpen: boolean;
@@ -24,7 +25,7 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
         if (isOpen) {
             setSearchTerm('');
             setSelectedItem(null);
-            setQuantity(0);
+            setQuantity(1); // Iniciar com 1 para facilitar
             setTimeout(() => {
                 searchInputRef.current?.focus();
             }, 100);
@@ -34,7 +35,6 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
     const filteredStock = useMemo(() => {
         if (!searchTerm.trim()) return [];
 
-        // Ignorar vírgulas, pontos e transformar em array de palavras limpas
         const terms = searchTerm
             .toLowerCase()
             .replace(/[,.]/g, '')
@@ -45,10 +45,8 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
             const codeClean = item.codigo.toLowerCase().replace(/[,.]/g, '');
             const descClean = item.descricao.toLowerCase().replace(/[,.]/g, '');
             const searchSource = `${codeClean} ${descClean}`;
-
-            // Cada palavra pesquisada precisa estar em algum lugar da string (código OU descrição)
             return terms.every(t => searchSource.includes(t));
-        }).slice(0, 50); // limit to 50 results for performance
+        }).slice(0, 50);
     }, [searchTerm, stock]);
 
     const handleConfirm = () => {
@@ -98,7 +96,6 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-5 pb-8 space-y-6">
-                        {/* Search Input */}
                         {!selectedItem && (
                             <div className="space-y-4">
                                 <div className="relative">
@@ -113,7 +110,6 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
                                     />
                                 </div>
 
-                                {/* Results */}
                                 {searchTerm.trim() && (
                                     <div className="space-y-2">
                                         <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 px-1 uppercase tracking-wider">
@@ -137,28 +133,34 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
                                                                 setSelectedItem(item);
                                                             }
                                                         }}
-                                                        className="text-left w-full p-4 flex flex-col gap-2 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-md transition-all group"
+                                                        className="text-left w-full p-3 flex items-center gap-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-md transition-all group"
                                                     >
-                                                        {/* 1. Código em cima */}
-                                                        <div className="flex items-center gap-1.5 font-mono text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 w-fit px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                                                            <Hash className="w-3.5 h-3.5" />
-                                                            {item.codigo}
+                                                        <div className="w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                                                            <img 
+                                                                src={getWheelPhotoUrl(item.descricao)} 
+                                                                alt={item.descricao}
+                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                                                loading="lazy"
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).src = "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO";
+                                                                }}
+                                                            />
                                                         </div>
 
-                                                        {/* 2. Descrição no meio */}
-                                                        <h3 className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                                            {item.descricao}
-                                                        </h3>
+                                                        <div className="flex-1 min-w-0">
+                                                            <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-1 leading-snug">
+                                                                {item.descricao}
+                                                            </h3>
 
-                                                        {/* 3. Quantidade | Local embaixo */}
-                                                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
-                                                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                                                                Qtd: {item.quantidade}
-                                                            </span>
-                                                            <span className="text-slate-300 dark:text-slate-600">|</span>
-                                                            <span>
-                                                                Local: {item.local || 'N/A'}
-                                                            </span>
+                                                            <div className="flex items-center gap-3 text-[11px] font-bold">
+                                                                <span className="text-emerald-600 dark:text-emerald-400">
+                                                                    ESTOQUE: {item.quantidade}
+                                                                </span>
+                                                                <span className="text-slate-300 dark:text-slate-700">|</span>
+                                                                <span className="text-slate-500 dark:text-slate-400">
+                                                                    LOCAL: {item.local || 'N/A'}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     </button>
                                                 ))}
@@ -176,7 +178,6 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
                             </div>
                         )}
 
-                        {/* Quantity Selector Section */}
                         {selectedItem && mode === 'add' && (
                             <motion.div
                                 initial={{ opacity: 0, x: 20 }}
@@ -185,15 +186,24 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
                             >
                                 <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 rounded-2xl">
                                     <div className="flex items-start justify-between">
-                                        <div>
-                                            <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">Item Selecionado</p>
-                                            <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">
-                                                {selectedItem.descricao}
-                                            </h3>
-                                            <div className="flex items-center gap-4 mt-2 text-sm text-slate-600 dark:text-slate-300">
-                                                <span className="font-mono bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg shadow-sm border border-indigo-100/50 dark:border-indigo-800/30">
-                                                    {selectedItem.codigo}
-                                                </span>
+                                        <div className="flex gap-4">
+                                            <div className="w-16 h-16 rounded-xl overflow-hidden border border-indigo-200 dark:border-indigo-800 shadow-sm shrink-0">
+                                                <img 
+                                                    src={getWheelPhotoUrl(selectedItem.descricao)} 
+                                                    alt={selectedItem.descricao}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">Item Selecionado</p>
+                                                <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight">
+                                                    {selectedItem.descricao}
+                                                </h3>
+                                                <div className="flex items-center gap-4 mt-1 text-sm text-slate-600 dark:text-slate-300">
+                                                    <span className="font-mono bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg shadow-sm border border-indigo-100/50 dark:border-indigo-800/30">
+                                                        {selectedItem.codigo}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                         <button
@@ -229,10 +239,11 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
                                         </button>
                                     </div>
 
-                                    {/* Quick Adds */}
-                                    <div className="flex gap-2 w-full max-w-[200px] mt-2">
-                                        <button onClick={() => setQuantity(prev => prev + 4)} className="flex-1 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700">+4</button>
-                                        <button onClick={() => setQuantity(prev => prev + 10)} className="flex-1 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700">+10</button>
+                                    {/* Quick Adds Restaurados */}
+                                    <div className="flex gap-2 w-full mt-2">
+                                        <button onClick={() => setQuantity(prev => prev + 4)} className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">+4</button>
+                                        <button onClick={() => setQuantity(prev => prev + 10)} className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">+10</button>
+                                        <button onClick={() => setQuantity(prev => prev + 40)} className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">+40</button>
                                     </div>
                                 </div>
 

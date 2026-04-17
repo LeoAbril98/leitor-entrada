@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { HomeMenu } from './components/HomeMenu';
 import { CountingModule } from './components/CountingModule';
 import { LocatorModule } from './components/LocatorModule';
+import { PendenciesModule } from './components/PendenciesModule';
 
-type AppMode = 'menu' | 'counting' | 'locator';
+type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>(() => {
@@ -33,6 +34,10 @@ export default function App() {
 
   if (mode === 'locator') {
     return <LocatorModule onBackToMenu={handleBackToMenu} />;
+  }
+
+  if (mode === 'pendencies') {
+    return <PendenciesModule onBackToMenu={handleBackToMenu} />;
   }
 
   // mode === 'counting'

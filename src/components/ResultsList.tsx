@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Search, History, Package, MapPin, Hash, Barcode, X, Box, Trash2, Plus, Minus, Pencil } from 'lucide-react';
 import { cn } from '../utils';
 import { GroupedReading } from '../types';
+import { getWheelPhotoUrl } from '../utils/photoUtils';
 
 interface ResultsListProps {
     groupedData: GroupedReading[];
@@ -59,34 +60,48 @@ export function ResultsList({ groupedData, searchTerm, setSearchTerm, onRemoveGr
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     className={cn(
-                                        "bg-white dark:bg-slate-900 p-3 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 transition-colors",
+                                        "bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors",
                                         !item.found && "border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/10"
                                     )}
                                 >
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1.5">
-                                            <span className={cn(
-                                                "font-bold truncate",
-                                                !item.found ? "text-red-900 dark:text-red-400" : "text-slate-900 dark:text-slate-100"
-                                            )} title={item.descricao}>
-                                                {item.descricao}
-                                            </span>
-                                            {!item.found && (
-                                                <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 text-[10px] font-extrabold rounded-full uppercase flex-shrink-0 border border-red-200 dark:border-red-800/50">
-                                                    Não encontrado
-                                                </span>
-                                            )}
+                                    <div className="flex-1 min-w-0 flex items-start gap-3">
+                                        {/* Foto da Roda na Contagem */}
+                                        <div className="w-14 h-14 shrink-0 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                                            <img 
+                                                src={getWheelPhotoUrl(item.descricao)} 
+                                                alt={item.descricao}
+                                                className="w-full h-full object-cover"
+                                                loading="lazy"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO";
+                                                }}
+                                            />
                                         </div>
 
-                                        <div className="flex flex-wrap gap-x-4 gap-y-1">
-                                            {/* 3. MELHORIA VISUAL: Ícones ficam vermelhos se o item não existir na base */}
-                                            <div className={cn("flex items-center gap-1 text-xs", !item.found ? "text-red-500 dark:text-red-400" : "text-slate-500 dark:text-slate-400")}>
-                                                <Barcode className="w-3 h-3" />
-                                                <span className="font-mono font-medium">{item.codigo}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className={cn(
+                                                    "font-bold text-sm leading-tight",
+                                                    !item.found ? "text-red-900 dark:text-red-400" : "text-slate-900 dark:text-slate-100"
+                                                )} title={item.descricao}>
+                                                    {item.descricao}
+                                                </span>
+                                                {!item.found && (
+                                                    <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 text-[9px] font-extrabold rounded-full uppercase flex-shrink-0 border border-red-200 dark:border-red-800/50">
+                                                        ERRO
+                                                    </span>
+                                                )}
                                             </div>
-                                            <div className={cn("flex items-center gap-1 text-xs", !item.found ? "text-red-500 dark:text-red-400" : "text-slate-500 dark:text-slate-400")}>
-                                                <MapPin className="w-3 h-3" />
-                                                <span className="font-medium">{item.local}</span>
+
+                                            <div className="flex flex-wrap gap-x-3 gap-y-1">
+                                                <div className={cn("flex items-center gap-1 text-[11px]", !item.found ? "text-red-500 dark:text-red-400" : "text-slate-500 dark:text-slate-400")}>
+                                                    <Barcode className="w-3 h-3" />
+                                                    <span className="font-mono font-medium">{item.codigo}</span>
+                                                </div>
+                                                <div className={cn("flex items-center gap-1 text-[11px]", !item.found ? "text-red-500 dark:text-red-400" : "text-slate-500 dark:text-slate-400")}>
+                                                    <MapPin className="w-3 h-3" />
+                                                    <span className="font-medium">{item.local}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

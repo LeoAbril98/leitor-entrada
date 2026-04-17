@@ -1,0 +1,1137 @@
+{
+  "C10": {
+    "BD": "/fotos/LINHA C/C10/C10 15X10  4F BD.png",
+    "POLIDA": "/fotos/LINHA C/C10/C10 15X4 4F POLIDA.png"
+  },
+  "C14": {
+    "BD": "/fotos/LINHA C/C14/C14 15X4 4F BD.png"
+  },
+  "C17": {
+    "BD": "/fotos/LINHA C/C17/C17 15X4 4F BD.png",
+    "HD": "/fotos/LINHA C/C17/C17 15X4 4F HD.png"
+  },
+  "C65": {
+    "B": "/fotos/LINHA C/C65/C65 15X4 4F B.png"
+  },
+  "C9": {
+    "HD": "/fotos/LINHA C/C9/C9 15X4 4F HD.png",
+    "POLIDA": "/fotos/LINHA C/C9/C9 15X4 4F POLIDA.png"
+  },
+  "E47": {
+    "BD": "/fotos/LINHA E/E47/E47 17 4X130 BD.png"
+  },
+  "E55": {
+    "GD": "/fotos/LINHA E/E55/E55 15X10 5F GD.png",
+    "HD": "/fotos/LINHA E/E55/E55 15X10 5F HD.png",
+    "POLIDA": "/fotos/LINHA E/E55/E55 15X10 5F POLIDA.png",
+    "BD": "/fotos/LINHA E/E55/E55 15X7 5F BD.png"
+  },
+  "E56": {
+    "BD": "/fotos/LINHA E/E56/E56 15X10 BD.png",
+    "D": "/fotos/LINHA E/E56/E56 15X10 D.png",
+    "LVD": "/fotos/LINHA E/E56/E56 15X10 LVD.png"
+  },
+  "E58": {
+    "GD": "/fotos/LINHA E/E58/E58 17X7 5F GD.png",
+    "HD": "/fotos/LINHA E/E58/E58 17X7 5F HD.png",
+    "GFD": "/fotos/LINHA E/E58/E58 18 5F GFD.png",
+    "POLIDA": "/fotos/LINHA E/E58/E58 18 5F POLIDA.png",
+    "BD": "/fotos/LINHA E/E58/E58 20 5F BD.png"
+  },
+  "E63": {
+    "HD": "/fotos/LINHA E/E63/E63 15X7 5X114 HD.png",
+    "POLIDA": "/fotos/LINHA E/E63/E63 15X7 5X114 POLIDA.png",
+    "GD": "/fotos/LINHA E/E63/E63 15X7 5X139 GD.png"
+  },
+  "E64": {
+    "GD": "/fotos/LINHA E/E64/E64 17X7 5F GD.png",
+    "HD": "/fotos/LINHA E/E64/E64 17X7 5F HD.png"
+  },
+  "E75": {
+    "BD": "/fotos/LINHA E/E75/E75 BD.jpg",
+    "HD": "/fotos/LINHA E/E75/E75 HD.jpg",
+    "MANHATTAN": "/fotos/LINHA E/E75/TABELA ESTOQUE/E75 BD MANHATTAN.jpg"
+  },
+  "E87": {
+    "BD": "/fotos/LINHA E/E87/E87 20X10 5F BD.png",
+    "GD": "/fotos/LINHA E/E87/E87 20X10 5F GD.png"
+  },
+  "E90": {
+    "BD": "/fotos/LINHA E/E90/E90 17 5F BD.png"
+  },
+  "F1": {
+    "B": "/fotos/LINHA F/F1/F1 17X7 4F B.png",
+    "HG": "/fotos/LINHA F/F1/F1 17X7 4F HG.png"
+  },
+  "F2": {
+    "B": "/fotos/LINHA F/F2/F2 20 5F B.png",
+    "BD": "/fotos/LINHA F/F2/F2 20 5F BD.png",
+    "HG": "/fotos/LINHA F/F2/F2 20 5F HG.png"
+  },
+  "F3": {
+    "HG": "/fotos/LINHA F/F3/F3 17  4F HG.png"
+  },
+  "F4": {
+    "HG": "/fotos/LINHA F/F4/F4 15 4F HG.png"
+  },
+  "F5": {
+    "BD": "/fotos/LINHA F/F5/F5 20 5F BD.png",
+    "GS": "/fotos/LINHA F/F5/F5 20 5F GS.png",
+    "HG": "/fotos/LINHA F/F5/F5 20 5F HG.png"
+  },
+  "G07": {
+    "SS": "/fotos/LINHA G/G07/G7 17 4F SS.png"
+  },
+  "G10": {
+    "BD": "/fotos/LINHA G/G10/G10 15 4F BD.png"
+  },
+  "G109": {
+    "(2)": "/fotos/LINHA G/G109/MKR (2).png",
+    "(3)": "/fotos/LINHA G/G109/MKR (3).png"
+  },
+  "G11": {
+    "BD": "/fotos/LINHA G/G11/G11 19 5F BD.png"
+  },
+  "G125": {
+    "ESTEPE": "/fotos/LINHA G/G125/G125 ESTEPE.png"
+  },
+  "G130": {
+    "BD": "/fotos/LINHA G/G130/G130 BD.png"
+  },
+  "G140": {
+    "B": "/fotos/LINHA G/G140/G140 17 4F B.png",
+    "GB": "/fotos/LINHA G/G140/G140 17 4F GB.png",
+    "OURO": "/fotos/LINHA G/G140/G140 17 4F OURO.png",
+    "SS": "/fotos/LINHA G/G140/G140 17 4F SS.png"
+  },
+  "G15": {
+    "BD": "/fotos/LINHA G/G15/G15 5X112 BD.png"
+  },
+  "G16": {
+    "BD": "/fotos/LINHA G/G16/G16 16 6X139 BD.png"
+  },
+  "G1739": {
+    "BD": "/fotos/LINHA G/G1739/G1739 18 6F BD.png"
+  },
+  "G1741": {
+    "GF": "/fotos/LINHA G/G1741/G1741 17 4F GF.png",
+    "SS": "/fotos/LINHA G/G1741/G1741 17 4F SS.png"
+  },
+  "G18": {
+    "SS": "/fotos/LINHA G/G18/G18 18 6X139 SS.png"
+  },
+  "G180": {
+    "MKR": "/fotos/LINHA G/G180/MKR.png"
+  },
+  "G1810": {
+    "OURO": "/fotos/LINHA G/G1810/G1810 17-18 4F OURO.png",
+    "SS": "/fotos/LINHA G/G1810/G1810 17-18 4F SS.png"
+  },
+  "G19": {
+    "INOX": "/fotos/LINHA G/G19/G19 5F INOX.png"
+  },
+  "G2010": {
+    "(1)": "/fotos/LINHA G/G2010/MKR (1).png",
+    "MKR": "/fotos/LINHA G/G2010/MKR.png"
+  },
+  "G3": {
+    "HG": "/fotos/LINHA G/G3/G3 14 4F HG.png"
+  },
+  "G37": {
+    "B": "/fotos/LINHA G/G37/G37 17 4F B.png",
+    "GB": "/fotos/LINHA G/G37/G37 17 4F GB.png",
+    "OURO": "/fotos/LINHA G/G37/G37 17 4F OURO.png",
+    "SS": "/fotos/LINHA G/G37/G37 17 4F SS.png",
+    "MKR": "/fotos/LINHA G/G37/MKR.png"
+  },
+  "G6": {
+    "SS": "/fotos/LINHA G/G6/G6 18 4F SS.png"
+  },
+  "G66": {
+    "BD": "/fotos/LINHA G/G66/G66 15 5X205 BD.png"
+  },
+  "G87": {
+    "POLIDA": "/fotos/LINHA G/G87/G87 15 5F POLIDA.png",
+    "SD": "/fotos/LINHA G/G87/G87 15 5F SD.png"
+  },
+  "K15": {
+    "FRENTE": "/fotos/LINHA K/K15/K15 BLACK FRENTE.jpg",
+    "BLACK": "/fotos/LINHA K/K15/K15 BLACK.jpg",
+    "GL": "/fotos/LINHA K/K15/K15 GL.jpg"
+  },
+  "K16": {
+    "FORD": "/fotos/LINHA K/K16/K16 GL FORD.jpg",
+    "GM": "/fotos/LINHA K/K16/K16 GL GM.jpg",
+    "VW": "/fotos/LINHA K/K16/K16 GL VW.jpg",
+    "GL": "/fotos/LINHA K/K16/K16 GL.jpg"
+  },
+  "K18": {
+    "BD": "/fotos/LINHA K/K18/K18 4F BD.jpg",
+    "BG": "/fotos/LINHA K/K18/K18 4F BG.jpg"
+  },
+  "K27": {
+    "BD": "/fotos/LINHA K/K27/K27 14-15 BD.png",
+    "GD": "/fotos/LINHA K/K27/K27 14-15 GD.png",
+    "FORD": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/FORD/K27 BD FORD.jpg",
+    "GM": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/GM/K27 BD GM.jpg",
+    "HONDA": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/HONDA/K27 BD HONDA.jpg",
+    "HYUNDAI": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/HYUNDAI/K27 BD HYUNDAI.jpg",
+    "NISSAN": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/NISSAN/K27 BD NISSAN.jpg",
+    "TOYOTA": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/TOYOTA/K27 BD TOYOTA.jpg",
+    "VW": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/VW/K27 BD VW.jpg"
+  },
+  "K28": {
+    "BD": "/fotos/LINHA K/K28/K28 4F BD.jpg",
+    "GD": "/fotos/LINHA K/K28/k28 gd.jpg"
+  },
+  "K34": {
+    "BD": "/fotos/LINHA K/K34/K34 14-15  4F  BD.png"
+  },
+  "K38": {
+    "(2)": "/fotos/LINHA K/K38/K38 BD Ford (2).jpeg",
+    "FORD": "/fotos/LINHA K/K38/K38 BD FORD.jpeg",
+    "BD": "/fotos/LINHA K/K38/K38 BD.jpeg"
+  },
+  "K40": {
+    "FORD": "/fotos/LINHA K/K40/K40 4F FORD.jpg",
+    "GL": "/fotos/LINHA K/K40/K40 4F GL.jpg"
+  },
+  "K42": {
+    "HG": "/fotos/LINHA K/K42/K42 4F HG.jpg"
+  },
+  "K45": {
+    "BD": "/fotos/LINHA K/K45/K45 BD.jpg",
+    "BG": "/fotos/LINHA K/K45/K45 bg.jpeg",
+    "SD": "/fotos/LINHA K/K45/K45 SD.jpg"
+  },
+  "K46": {
+    "HG": "/fotos/LINHA K/K46/K46 4F HG.jpg"
+  },
+  "K47": {
+    "HG": "/fotos/LINHA K/K47/k47 20 5x100 hg.jpg",
+    "BF": "/fotos/LINHA K/K47/K47 BF.JPG"
+  },
+  "K51": {
+    "BDGM": "/fotos/LINHA K/K51/GM/K51 4F BDGM.jpg",
+    "GM": "/fotos/LINHA K/K51/GM/K51 4F GD GM.jpg",
+    "HYUNDAI": "/fotos/LINHA K/K51/HYUNDAI/K51 4F BD HYUNDAI.jpg",
+    "BD": "/fotos/LINHA K/K51/K51 4F BD.jpg",
+    "GD": "/fotos/LINHA K/K51/K51 4F GD.jpg",
+    "HG": "/fotos/LINHA K/K51/K51 4F HG.jpg",
+    "TOYOTA": "/fotos/LINHA K/K51/TOYOTA/K51 4F BD TOYOTA.jpg",
+    "VW": "/fotos/LINHA K/K51/VW/K51 4F BD VW.jpg"
+  },
+  "K54": {
+    "HG": "/fotos/LINHA K/K54/K54 15 HG.png"
+  },
+  "K56": {
+    "BD": "/fotos/LINHA K/K56/FORA DE LINHA/K56 BD.jpg",
+    "DD": "/fotos/LINHA K/K56/FORA DE LINHA/K56 DD.jpg",
+    "GD": "/fotos/LINHA K/K56/K56 17 GD.png",
+    "HD": "/fotos/LINHA K/K56/K56 17 HD.png"
+  },
+  "K57": {
+    "FRENTE": "/fotos/LINHA K/K57/FORA DE LINHA/K54 BD FRENTE.jpg",
+    "DD": "/fotos/LINHA K/K57/FORA DE LINHA/K57 4F DD.jpg",
+    "BD": "/fotos/LINHA K/K57/FORA DE LINHA/K57 BD.jpg",
+    "BLACK": "/fotos/LINHA K/K57/K57 15 BLACK.png",
+    "GD": "/fotos/LINHA K/K57/K57 15 GD.png",
+    "HD": "/fotos/LINHA K/K57/K57 15 HD.png"
+  },
+  "K58": {
+    "B": "/fotos/LINHA K/K58/K58 17 5F B.png"
+  },
+  "K59": {
+    "HD": "/fotos/LINHA K/K59/K59 4F HD.jpg",
+    "FORD": "/fotos/LINHA K/K59/K59 FORD.jpg",
+    "GM": "/fotos/LINHA K/K59/K59 MULTI GOLD GM.jpg",
+    "VW": "/fotos/LINHA K/K59/K59 MULTI GOLD VW.jpg",
+    "GOLD": "/fotos/LINHA K/K59/K59 MULTI GOLD.jpg"
+  },
+  "K60": {
+    "FORD": "/fotos/LINHA K/K60/FORA DE LINHA/FORD/K60 4F BD FORD.jpg",
+    "GM": "/fotos/LINHA K/K60/FORA DE LINHA/GM/K60 4F BD GM.jpg",
+    "HG": "/fotos/LINHA K/K60/FORA DE LINHA/k60 4f hg.jpg",
+    "GFD": "/fotos/LINHA K/K60/FORA DE LINHA/K60 5F GFD.jpg",
+    "TOYOTA": "/fotos/LINHA K/K60/FORA DE LINHA/TOYOTA/K60 5F TOYOTA.jpg",
+    "VW": "/fotos/LINHA K/K60/FORA DE LINHA/VW/K60 4F BD VW.jpg",
+    "BD": "/fotos/LINHA K/K60/K60 15 BD.png",
+    "BLACK": "/fotos/LINHA K/K60/K60 15 BLACK.png"
+  },
+  "K61": {
+    "FRENTE": "/fotos/LINHA K/K61/K61 4F BG FRENTE.jpg",
+    "BG": "/fotos/LINHA K/K61/K61 4F BG.jpg",
+    "BD": "/fotos/LINHA K/K61/K61 BD.jpeg"
+  },
+  "K62": {
+    "HD": "/fotos/LINHA K/K62/K62 5F HD.jpg"
+  },
+  "K63": {
+    "B": "/fotos/LINHA K/K63/K63 15-17 4F B.png",
+    "BD": "/fotos/LINHA K/K63/K63 15-17 4F BD.png",
+    "GD": "/fotos/LINHA K/K63/K63 15-17 4F GD.png",
+    "GFD": "/fotos/LINHA K/K63/K63 15-17 GFD.png",
+    "HG": "/fotos/LINHA K/K63/K63 15-17 HG.png",
+    "FORD": "/fotos/LINHA K/K63/OUTROS EMBLEMAS/FORD/K63 4F BD FORD.jpg",
+    "GM": "/fotos/LINHA K/K63/OUTROS EMBLEMAS/GM/K63 4F BLACK GM.jpg",
+    "HONDA": "/fotos/LINHA K/K63/OUTROS EMBLEMAS/HONDA/K63 5F BD HONDA.jpg",
+    "HYUNDAI": "/fotos/LINHA K/K63/OUTROS EMBLEMAS/HYUNDAI/K63 5F BD HYUNDAI.jpg",
+    "VW": "/fotos/LINHA K/K63/OUTROS EMBLEMAS/VW/K63 4F BG VW.jpg"
+  },
+  "K64": {
+    "BD": "/fotos/LINHA K/K64/K64 14-15 BD.png"
+  },
+  "K65": {
+    "BD": "/fotos/LINHA K/K65/K65 4F BD.jpg",
+    "GD": "/fotos/LINHA K/K65/K65 4F GD.jpg",
+    "HD": "/fotos/LINHA K/K65/K65 4F HD.jpg"
+  },
+  "K66": {
+    "HD": "/fotos/LINHA K/K66/FORA DE LINHA/k66 5f hd.jpg",
+    "FRENTE": "/fotos/LINHA K/K66/FORA DE LINHA/K66 BLACK FRENTE.jpg",
+    "GD": "/fotos/LINHA K/K66/FORA DE LINHA/K66 GD.jpg",
+    "HG": "/fotos/LINHA K/K66/K66 4F HG.jpg",
+    "BLACK": "/fotos/LINHA K/K66/K66 BLACK.jpg"
+  },
+  "K67": {
+    "BD": "/fotos/LINHA K/K67/K67 17-18-20  4F BD.png",
+    "B": "/fotos/LINHA K/K67/K67 17-18-20 5F B.png"
+  },
+  "K68": {
+    "BD": "/fotos/LINHA K/K68/K68 5F BD.jpg",
+    "GD": "/fotos/LINHA K/K68/k68 gd.jpg",
+    "HD": "/fotos/LINHA K/K68/k68 hd.jpg"
+  },
+  "K69": {
+    "GM": "/fotos/LINHA K/K69/K69 4F BD GM.jpg",
+    "VW": "/fotos/LINHA K/K69/K69 4F BD VW.jpg",
+    "BD": "/fotos/LINHA K/K69/K69 4F BD.jpg",
+    "GD": "/fotos/LINHA K/K69/K69 4F GD.jpg",
+    "HD": "/fotos/LINHA K/K69/K69 5F HD.jpg",
+    "FORD": "/fotos/LINHA K/K69/K69 BD FORD.jpeg"
+  },
+  "K70": {
+    "70": "/fotos/LINHA K/K70/FORA DE LINHA/K 70.jpg",
+    "BMW": "/fotos/LINHA K/K70/BMW/K70 5F BD BMW.jpg",
+    "GD": "/fotos/LINHA K/K70/FORA DE LINHA/K70 GD.jpeg",
+    "FORD": "/fotos/LINHA K/K70/FORD/K70 5F HG FORD.jpg",
+    "GM": "/fotos/LINHA K/K70/GM/K70 5F BD GM.jpg",
+    "KR": "/fotos/LINHA K/K70/K70 5F BD KR.jpg",
+    "VW": "/fotos/LINHA K/K70/VW/K70 5F HG VW.jpg"
+  },
+  "K71": {
+    "1": "/fotos/LINHA K/K71/K71 18 5F BD 1.png",
+    "BFD": "/fotos/LINHA K/K71/FORA DE LINHA/BFD.jpeg",
+    "BD": "/fotos/LINHA K/K71/FORA DE LINHA/FIAT/K71 14-15 4X98 BD.png",
+    "HG": "/fotos/LINHA K/K71/FORA DE LINHA/K71 4F HG.jpeg"
+  },
+  "K72": {
+    "BD": "/fotos/LINHA K/K72/K72 15-17 4F BD.png",
+    "FORD": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/FORD/K72 4F BD FORD.jpg",
+    "FRENTE": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/frente/K72 BD FRENTE.jpg",
+    "GM": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/GM/K72 4F BD GM.jpg",
+    "HONDA": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/HONDA/K72 4F BD HONDA.jpg",
+    "HYUNDAI": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/HYUNDAI/K72 4F BD HYUNDAI.jpg",
+    "KR": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/KR/K72 BD KR.jpg",
+    "RENAULT": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/RENAULT/K72 4F BD RENAULT.jpg",
+    "TOYOTA": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/TOYOTA/K72 4F BD TOYOTA.jpg"
+  },
+  "K73": {
+    "17": "/fotos/LINHA K/K73/FOLDERS/K73 17.jpg",
+    "18": "/fotos/LINHA K/K73/FOLDERS/k73 18.jpg",
+    "K73": "/fotos/LINHA K/K73/FOLDERS/K73.jpg",
+    "B": "/fotos/LINHA K/K73/K73 17-18 4F B.png",
+    "BD": "/fotos/LINHA K/K73/K73 17-18 4F BD.png",
+    "FIAT": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/FIAT/K73 5F BD FIAT.jpg",
+    "FORD": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/FORD/K73 4F BD FORD.jpg",
+    "GM": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/GM/K73 4F BD GM.jpg",
+    "HONDA": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/HONDA/K73 4F BLACK HONDA.jpg",
+    "HYUNDAI": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/HYUNDAI/K73 4F BD HYUNDAI.jpg",
+    "JEEP": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/JEEP/K73 5F BD JEEP.jpg",
+    "KIA": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/KIA/K73 5F BD KIA.jpg",
+    "NISSAN": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/NISSAN/K73 4F BD NISSAN.jpg",
+    "RENAULT": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/RENAULT/K73 4F GD  RENAULT.jpg",
+    "TOYOTA": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/TOYOTA/K73 4F BD TOYOTA.jpg",
+    "VW": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/VW/K73 4F BD VW.jpg",
+    "GD": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/VW/K73 4F GD.jpg"
+  },
+  "K74": {
+    "BD": "/fotos/LINHA K/K74/K74 17-18 5F BD.png",
+    "GD": "/fotos/LINHA K/K74/K74 17-18 5F GD.png",
+    "FIAT": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/FIAT/K74 4F BD FIAT.jpg",
+    "FORD": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/FORD/K74 5F BD FORD.jpg",
+    "GM": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/GM/K74 4F BD GM.jpg",
+    "HONDA": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/HONDA/K74 4F BD HONDA.jpg",
+    "HYUNDAI": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/HYUNDAI/K74 4F BD HYUNDAI.jpg",
+    "FOLDER": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/K74 FOLDER.jpg",
+    "K74": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/k74.jpg",
+    "KIA": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/KIA/K74 5F BD KIA.jpg",
+    "NISSAN": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/NISSAN/K74 4F BD NISSAN.jpg",
+    "FRENTE": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/outras/K74 4F BD FRENTE.jpg",
+    "RENAULT": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/RENAULT/K74 4F BD RENAULT.jpg",
+    "TOYOTA": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/TOYOTA/K74 4F BD TOYOTA.jpg",
+    "VW": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/VW/K74 4F BD VW.jpg",
+    "BLACK": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/VW/K74 4F BLACK.jpg"
+  },
+  "K75": {
+    "BD": "/fotos/LINHA K/K75/ANTIGAS/K75 4F BD.jpg",
+    "GD": "/fotos/LINHA K/K75/ANTIGAS/K75 4F GD.jpg",
+    "HD": "/fotos/LINHA K/K75/ANTIGAS/K75 4F HD.jpg",
+    "K75": "/fotos/LINHA K/K75/ANTIGAS/K75.jpg"
+  },
+  "K76": {
+    "BLACK": "/fotos/LINHA K/K76/K76 14 BLACK.png",
+    "HG": "/fotos/LINHA K/K76/K76 14 HG.png"
+  },
+  "L1": {
+    "BD": "/fotos/LINHA L/L1/L1 14 BD.png",
+    "GD": "/fotos/LINHA L/L1/L1 14 GD.png"
+  },
+  "L3": {
+    "L3": "/fotos/LINHA L/L3/L3.jpg",
+    "(1)": "/fotos/LINHA L/L3/WhatsApp Image 2019-02-14 at 13.57.37 (1).jpeg"
+  },
+  "L4": {
+    "BD": "/fotos/LINHA L/L4/L4 22 BD.png",
+    "GD": "/fotos/LINHA L/L4/L4 22 GD.png"
+  },
+  "M10": {
+    "BD": "/fotos/LINHA M/M10/M10 14-15 5F BD.png",
+    "FBD": "/fotos/LINHA M/M10/M10 14-15 5F FBD.png"
+  },
+  "M11": {
+    "BD": "/fotos/LINHA M/M11/M11 15 4F BD.png",
+    "HG": "/fotos/LINHA M/M11/M11 15 4F HG.png",
+    "SS": "/fotos/LINHA M/M11/M11 15 5X114 SS.png",
+    "(1)": "/fotos/LINHA M/M11/WhatsApp Image 2018-10-29 at 14.57.35 (1).jpeg"
+  },
+  "M12": {
+    "B": "/fotos/LINHA M/M12/M12 17X8 B.png",
+    "BFD": "/fotos/LINHA M/M12/M12 17X8 BFD.png"
+  },
+  "M15": {
+    "90D3B28F-EBF6-4614-BF43-58D6147E5B45": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/90d3b28f-ebf6-4614-bf43-58d6147e5b45.jpg",
+    "F5C20A37-1F5F-4D7E-ADC0-781B44389F0C": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/f5c20a37-1f5f-4d7e-adc0-781b44389f0c.jpg",
+    "FORD": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 5F BD FORD.jpg",
+    "MITSUBISH": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 5F BD MITSUBISH.jpg",
+    "VW": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 5F BD VW.jpg",
+    "BD": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 5F BD.jpg",
+    "GM": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 6F BD GM.jpg",
+    "NISSAN": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 6F BD NISSAN.jpg",
+    "TOYOTA": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 6F BD TOYOTA.jpg",
+    "BFD": "/fotos/LINHA M/M15/BFD/M15 5F BFD.jpg",
+    "GBL": "/fotos/LINHA M/M15/GBL/M15 16X9 5F GBL.png",
+    "CHEVROLET": "/fotos/LINHA M/M15/GD/M15 6F GD CHEVROLET.jpg",
+    "GD": "/fotos/LINHA M/M15/GD/M15 6F GD.jpg",
+    "HD": "/fotos/LINHA M/M15/HD/M15 5F HD.jpg"
+  },
+  "M16": {
+    "B": "/fotos/LINHA M/M16/ARO 13 (NOVO)/M16 13 4X100 B.png",
+    "BD": "/fotos/LINHA M/M16/ARO 13 (NOVO)/M16 13 4X100 BD.png",
+    "GDC": "/fotos/LINHA M/M16/ARO 14 e 15 (NOVO)/M16 14-15 4F GDC.png",
+    "FIAT": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/FIAT/logo vermelha/M16 4F BD FIAT.jpg",
+    "FORD": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/FORD/M16 4F BD FORD.jpg",
+    "GB": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/FORD/M16 4F GB.jpg",
+    "GM": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/GM/M16 4F BD GM.jpg",
+    "HONDA": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/HONDA/M16 4F BD HONDA.jpg",
+    "HYUNDAI": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/HYUNDAI/M16 4F BD HYUNDAI.jpg",
+    "KR": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/KR/M16 4F BD KR.jpg",
+    "NISSAN": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/NISSAN/M16 4F BD NISSAN.jpg",
+    "TOYOTA": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/TOYOTA/M16 4F BD TOYOTA.jpg",
+    "VW": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/VW/M16 4F BACK VW.jpg"
+  },
+  "M17": {
+    "HD": "/fotos/LINHA M/M17/M17 15 4F e 5F HD.png"
+  },
+  "M18": {
+    "HG": "/fotos/LINHA M/M18/M18 15 4F HG.png"
+  },
+  "M19": {
+    "HD": "/fotos/LINHA M/M19/M19 15 4F HD.png"
+  },
+  "M2": {
+    "SS": "/fotos/LINHA M/M2/M2 15 4F SS.png",
+    "14.57.23": "/fotos/LINHA M/M2/WhatsApp Image 2018-10-29 at 14.57.23.jpeg"
+  },
+  "M20": {
+    "HD": "/fotos/LINHA M/M20/M20 15-17 4F HD.png"
+  },
+  "M21": {
+    "GF": "/fotos/LINHA M/M21/M21 16 4F GF.png",
+    "SS": "/fotos/LINHA M/M21/M21 16 4F SS.png"
+  },
+  "M22": {
+    "INSERT": "/fotos/LINHA M/M22/M22 16X9 BD COM INSERT.png"
+  },
+  "M23": {
+    "BF": "/fotos/LINHA M/M23/M23 18-20 5F BF.png",
+    "B": "/fotos/LINHA M/M23/M23 18-20 6F B.png",
+    "BD": "/fotos/LINHA M/M23/M23 18-20 6F BD.png"
+  },
+  "M25": {
+    "BD": "/fotos/LINHA M/M25/M25 15 4F BD.png",
+    "HG": "/fotos/LINHA M/M25/M25 15 4F HG.png"
+  },
+  "M26": {
+    "HD": "/fotos/LINHA M/M26/M26 15 4F HD.png"
+  },
+  "M27": {
+    "HD": "/fotos/LINHA M/M27/M27 16 HD.png"
+  },
+  "M28": {
+    "B": "/fotos/LINHA M/M28/M28 15 4F B.png",
+    "GS": "/fotos/LINHA M/M28/M28 15 4F GS.png",
+    "HG": "/fotos/LINHA M/M28/M28 15 4F HG.png",
+    "BFD": "/fotos/LINHA M/M28/M28 16 5F BFD.png"
+  },
+  "M29": {
+    "B": "/fotos/LINHA M/M29/M29 18 5F B.png",
+    "BF": "/fotos/LINHA M/M29/M29 18 5F BF.png",
+    "GFD": "/fotos/LINHA M/M29/M29 18 5F GFD.png",
+    "GOLD": "/fotos/LINHA M/M29/M29 18 5F GOLD.png",
+    "BFD": "/fotos/LINHA M/M29/M29 18 6F BFD.png",
+    "GF": "/fotos/LINHA M/M29/M29 18 6F GF.png"
+  },
+  "M30": {
+    "B": "/fotos/LINHA M/M30/ARO 17 e 18/M30 17-8 4F B.png",
+    "BD": "/fotos/LINHA M/M30/ARO 17 e 18/M30 17-8 4F BD.png",
+    "GS": "/fotos/LINHA M/M30/ARO 17 e 18/M30 17-8 4F GS.png",
+    "HG": "/fotos/LINHA M/M30/ARO 17 e 18/M30 17-8 4F HG.png",
+    "LBF": "/fotos/LINHA M/M30/ARO 19 e 20/M30 18-20 5F LBF.png"
+  },
+  "M31": {
+    "BF": "/fotos/LINHA M/M31/ARO 17/M31 17 5F BF.png",
+    "FGF": "/fotos/LINHA M/M31/ARO 17/M31 17 5F FGF.png",
+    "GBL": "/fotos/LINHA M/M31/ARO 17/M31 17 5F GBL.png",
+    "BFD": "/fotos/LINHA M/M31/ARO 20/M31 20 6F BFD.png",
+    "BLACK": "/fotos/LINHA M/M31/ARO 20/M31 20 6F BLACK.png"
+  },
+  "M32": {
+    "B": "/fotos/LINHA M/M32/ARO 15/M32 15 4F-5F B.png",
+    "GS": "/fotos/LINHA M/M32/ARO 15/M32 15 4F-5F GS.png",
+    "HG": "/fotos/LINHA M/M32/ARO 15/M32 15 4F-5F HG.png"
+  },
+  "M33": {
+    "BF": "/fotos/LINHA M/M33/ARO 18/M33 18 5F BF.png",
+    "FGF": "/fotos/LINHA M/M33/ARO 18/M33 18 5F FGF.png",
+    "GBL": "/fotos/LINHA M/M33/ARO 18/M33 18 5F GBL.png",
+    "B": "/fotos/LINHA M/M33/ARO 20 e 22/M33 20-22 6F B.png",
+    "BFD": "/fotos/LINHA M/M33/ARO 20 e 22/M33 20-22 6F BFD.png"
+  },
+  "M34": {
+    "B": "/fotos/LINHA M/M34/M34 20 B.png",
+    "GS": "/fotos/LINHA M/M34/M34 20 GS.png",
+    "HG": "/fotos/LINHA M/M34/M34 20 HG.png",
+    "BLACK": "/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - AUDI BLACK.jpeg",
+    "HG..": "/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - MERCEDES HG...jpeg",
+    "FORD": "/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 BLACK FORD.jpg",
+    "KR": "/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 BLACK KR.png"
+  },
+  "M35": {
+    "BLACK": "/fotos/LINHA M/M35/M35 18 5F BLACK.png",
+    "GOLD": "/fotos/LINHA M/M35/M35 18 6F GOLD.png"
+  },
+  "M36": {
+    "BLACK": "/fotos/LINHA M/M36/M36 19 5F BLACK.png"
+  },
+  "M37": {
+    "B": "/fotos/LINHA M/M37/M37 20 5F B.png",
+    "BF": "/fotos/LINHA M/M37/M37 20 5F BF.png",
+    "GF": "/fotos/LINHA M/M37/M37 20 5F GF.png",
+    "GOLD": "/fotos/LINHA M/M37/M37 20 6F GOLD.png",
+    "HG": "/fotos/LINHA M/M37/M37 20 6F HG.png"
+  },
+  "M47": {
+    "HD": "/fotos/LINHA M/M47/M47 15 HD.png"
+  },
+  "M5": {
+    "HG": "/fotos/LINHA M/M5/M5 15 4F HG.png"
+  },
+  "M50": {
+    "CROMADA": "/fotos/LINHA M/M50/M50 15 CROMADA.png",
+    "HD": "/fotos/LINHA M/M50/M50 15 HD.png"
+  },
+  "M6": {
+    "BD": "/fotos/LINHA M/M6/M6 15 4F BD.png",
+    "HD": "/fotos/LINHA M/M6/M6 15 4F HD.png",
+    "14.57.25": "/fotos/LINHA M/M6/WhatsApp Image 2018-10-29 at 14.57.25.jpeg",
+    "14.57.26": "/fotos/LINHA M/M6/WhatsApp Image 2018-10-29 at 14.57.26.jpeg"
+  },
+  "M7": {
+    "FORD": "/fotos/LINHA M/M7/FORA DE LINHA/FORD/M7 4F BD FORD.jpg",
+    "GM": "/fotos/LINHA M/M7/FORA DE LINHA/GM/M7 4F BD GM.jpg",
+    "HYUNDAI": "/fotos/LINHA M/M7/FORA DE LINHA/HYUNDAI/M7 4F BD HYUNDAI.jpg",
+    "KR": "/fotos/LINHA M/M7/FORA DE LINHA/KR/M7 4B BLACK KR.jpg",
+    "BD": "/fotos/LINHA M/M7/FORA DE LINHA/M7 3F BD.jpeg",
+    "BLACK": "/fotos/LINHA M/M7/FORA DE LINHA/M7 3F BLACK.jpeg",
+    "GDC": "/fotos/LINHA M/M7/FORA DE LINHA/M7 3F GDC.jpeg",
+    "HD": "/fotos/LINHA M/M7/FORA DE LINHA/M7 4F HD.jpg",
+    "TOYOTA": "/fotos/LINHA M/M7/FORA DE LINHA/TOYOTA/M7 4F BD TOYOTA.jpg",
+    "VW": "/fotos/LINHA M/M7/FORA DE LINHA/VW/M7 4F BLACK VW.jpg",
+    "B": "/fotos/LINHA M/M7/M7 14 3x100 B.png"
+  },
+  "M8": {
+    "BD": "/fotos/LINHA M/M8/M8 14 - 15 5F BD.png",
+    "FBD": "/fotos/LINHA M/M8/M8 14 - 15 5F FBD.png",
+    "POLIDA": "/fotos/LINHA M/M8/M8 14-15 POLIDA.png",
+    "14.57.29": "/fotos/LINHA M/M8/WhatsApp Image 2018-10-29 at 14.57.29.jpeg",
+    "14.57.31": "/fotos/LINHA M/M8/WhatsApp Image 2018-10-29 at 14.57.31.jpeg"
+  },
+  "R10": {
+    "BD": "/fotos/LINHA RÉPLICAS/R10/R10 15 4F BD.png",
+    "GD": "/fotos/LINHA RÉPLICAS/R10/R10 15 4F GD.png"
+  },
+  "R11": {
+    "GD": "/fotos/LINHA RÉPLICAS/R11/R11 gd.jpg"
+  },
+  "R12": {
+    "GD": "/fotos/LINHA RÉPLICAS/R12/R12 4F GD.jpg",
+    "SD": "/fotos/LINHA RÉPLICAS/R12/R12 SD.jpeg"
+  },
+  "R13": {
+    "SS": "/fotos/LINHA RÉPLICAS/R13/R13 4F SS.jpg"
+  },
+  "R14": {
+    "GD": "/fotos/LINHA RÉPLICAS/R14/R14 15 GD.png"
+  },
+  "R15": {
+    "GF": "/fotos/LINHA RÉPLICAS/R15/R15 15 4F GF.png",
+    "SS": "/fotos/LINHA RÉPLICAS/R15/R15 15 4F SS.png"
+  },
+  "R16": {
+    "GF": "/fotos/LINHA RÉPLICAS/R16/R16 15 4F GF.png",
+    "SS": "/fotos/LINHA RÉPLICAS/R16/R16 15 4F SS.png"
+  },
+  "R17": {
+    "GF": "/fotos/LINHA RÉPLICAS/R17/R17 15 4F GF.png",
+    "SS": "/fotos/LINHA RÉPLICAS/R17/R17 15 4F SS.png"
+  },
+  "R18": {
+    "GD": "/fotos/LINHA RÉPLICAS/R18/R18 14-15 GD.png"
+  },
+  "R20": {
+    "GD": "/fotos/LINHA RÉPLICAS/R20/R20 15 4X100 GD.png"
+  },
+  "R22": {
+    "SS": "/fotos/LINHA RÉPLICAS/R22/FORA DE LINHA/R22 4F SS.jpg",
+    "GF": "/fotos/LINHA RÉPLICAS/R22/FORA DE LINHA/R22 GF.jpeg",
+    "GD": "/fotos/LINHA RÉPLICAS/R22/R22 4F GD.jpg"
+  },
+  "R23": {
+    "GD": "/fotos/LINHA RÉPLICAS/R23/R23 15-17 GD.png"
+  },
+  "R24": {
+    "SS": "/fotos/LINHA RÉPLICAS/R24/R24 4F SS.jpg"
+  },
+  "R26": {
+    "GF": "/fotos/LINHA RÉPLICAS/R26/R26 15 4F GF.png",
+    "SS": "/fotos/LINHA RÉPLICAS/R26/R26 15 4F SS.png"
+  },
+  "R27": {
+    "SS": "/fotos/LINHA RÉPLICAS/R27/R27 5F SS.jpg"
+  },
+  "R29": {
+    "BD": "/fotos/LINHA RÉPLICAS/R29/R29 18 4F BD.png"
+  },
+  "R31": {
+    "GD": "/fotos/LINHA RÉPLICAS/R31/R31 6F GD.jpg",
+    "SD": "/fotos/LINHA RÉPLICAS/R31/R31 6F SD.jpg"
+  },
+  "R32": {
+    "GD": "/fotos/LINHA RÉPLICAS/R32/R32 16 GD.png",
+    "HG": "/fotos/LINHA RÉPLICAS/R32/R32 16 HG.png"
+  },
+  "R33": {
+    "HG": "/fotos/LINHA RÉPLICAS/R33/R33 5F HG.jpg"
+  },
+  "R35": {
+    "GM": "/fotos/LINHA RÉPLICAS/R35/R35 4F GD GM.jpg",
+    "GD": "/fotos/LINHA RÉPLICAS/R35/R35 4F GD.jpg",
+    "VW": "/fotos/LINHA RÉPLICAS/R35/R35 5F GD VW.jpg"
+  },
+  "R37": {
+    "GF": "/fotos/LINHA RÉPLICAS/R37/R37 16-17 6F GF.png",
+    "SS": "/fotos/LINHA RÉPLICAS/R37/R37 16-17 6F SS.png"
+  },
+  "R38": {
+    "GF": "/fotos/LINHA RÉPLICAS/R38/R38 5F GF.jpg",
+    "SS": "/fotos/LINHA RÉPLICAS/R38/R38 5F SS.jpg"
+  },
+  "R39": {
+    "BD": "/fotos/LINHA RÉPLICAS/R39/R39  13-14  4F BD.png"
+  },
+  "R41": {
+    "BD": "/fotos/LINHA RÉPLICAS/R41/R41 15 BD.png",
+    "GD": "/fotos/LINHA RÉPLICAS/R41/R41 15 GD.png",
+    "GF": "/fotos/LINHA RÉPLICAS/R41/R41 15 GF.png",
+    "SS": "/fotos/LINHA RÉPLICAS/R41/R41 15 SS.png"
+  },
+  "R42": {
+    "BD": "/fotos/LINHA RÉPLICAS/R42/R42 14-15 BD.png",
+    "SS": "/fotos/LINHA RÉPLICAS/R42/R42 14-15 SS.png"
+  },
+  "R43": {
+    "GF": "/fotos/LINHA RÉPLICAS/R43/R43 14-15 4F GF.png",
+    "SS": "/fotos/LINHA RÉPLICAS/R43/R43 14-15 4F SS.png"
+  },
+  "R45": {
+    "GD": "/fotos/LINHA RÉPLICAS/R45/R45 15 4F GD.png",
+    "BD": "/fotos/LINHA RÉPLICAS/R45/R45 15-17 4F BD.png"
+  },
+  "R46": {
+    "BD": "/fotos/LINHA RÉPLICAS/R46/R46 17 4F BD.png"
+  },
+  "R49": {
+    "BD": "/fotos/LINHA RÉPLICAS/R49/R49 6F BD.jpg",
+    "GD": "/fotos/LINHA RÉPLICAS/R49/R49 6F GD.jpg"
+  },
+  "R5": {
+    "SS": "/fotos/LINHA RÉPLICAS/R5/R5 5F SS.jpg"
+  },
+  "R50": {
+    "BD": "/fotos/LINHA RÉPLICAS/R50/R50 14 BD.png",
+    "SS": "/fotos/LINHA RÉPLICAS/R50/R50 14 SS.png"
+  },
+  "R51": {
+    "GF": "/fotos/LINHA RÉPLICAS/R51/R51 17 4F GF.png",
+    "SS": "/fotos/LINHA RÉPLICAS/R51/R51 17 4F SS.png"
+  },
+  "R52": {
+    "GF": "/fotos/LINHA RÉPLICAS/R52/R52 GF.jpeg",
+    "SS": "/fotos/LINHA RÉPLICAS/R52/r52 ss.jpg"
+  },
+  "R53": {
+    "GD": "/fotos/LINHA RÉPLICAS/R53/R53 20-22 GD.png",
+    "HG": "/fotos/LINHA RÉPLICAS/R53/R53 20-22 HG.png"
+  },
+  "R54": {
+    "GD": "/fotos/LINHA RÉPLICAS/R54/R54 17 4F GD.png",
+    "BD": "/fotos/LINHA RÉPLICAS/R54/R54 18 5X114 BD.png"
+  },
+  "R55": {
+    "VW": "/fotos/LINHA RÉPLICAS/R55/R55 4F GD VW.jpg",
+    "GD": "/fotos/LINHA RÉPLICAS/R55/R55 4F GD.jpg",
+    "FORD": "/fotos/LINHA RÉPLICAS/R55/R55 5F GD FORD.jpg",
+    "HONDA": "/fotos/LINHA RÉPLICAS/R55/R55 5F GD HONDA.jpg"
+  },
+  "R56": {
+    "GD": "/fotos/LINHA RÉPLICAS/R56/R56 17 5F GD.png"
+  },
+  "R57": {
+    "BG": "/fotos/LINHA RÉPLICAS/R57/R57 5F BG.jpg"
+  },
+  "R59": {
+    "GD": "/fotos/LINHA RÉPLICAS/R59/R59 4F GD.jpg",
+    "SS": "/fotos/LINHA RÉPLICAS/R59/R59 4F SS.jpg"
+  },
+  "R6": {
+    "SS": "/fotos/LINHA RÉPLICAS/R6/R6 15 4F SS.png"
+  },
+  "R60": {
+    "BD": "/fotos/LINHA RÉPLICAS/R60/R60 14 BD.png"
+  },
+  "R61": {
+    "GD": "/fotos/LINHA RÉPLICAS/R61/R61 4F GD.jpg"
+  },
+  "R62": {
+    "BD": "/fotos/LINHA RÉPLICAS/R62/R62 15-17 BD.png",
+    "GD": "/fotos/LINHA RÉPLICAS/R62/R62 15-17 GD.png"
+  },
+  "R63": {
+    "SS": "/fotos/LINHA RÉPLICAS/R63/R63 14-15 SS.png"
+  },
+  "R64": {
+    "B": "/fotos/LINHA RÉPLICAS/R64/R64 16 5F B.png",
+    "GD": "/fotos/LINHA RÉPLICAS/R64/R64 16 5F GD.png"
+  },
+  "R65": {
+    "GD": "/fotos/LINHA RÉPLICAS/R65/FORA DE LINHA/R65 4F GD.jpg",
+    "GF": "/fotos/LINHA RÉPLICAS/R65/FORA DE LINHA/R65 4F GF.jpg",
+    "SS": "/fotos/LINHA RÉPLICAS/R65/FORA DE LINHA/R65 4F SS.jpg"
+  },
+  "R66": {
+    "B": "/fotos/LINHA RÉPLICAS/R66/R66 15 4F B.png",
+    "HG": "/fotos/LINHA RÉPLICAS/R66/R66 15 4F HG.png"
+  },
+  "R68": {
+    "SS": "/fotos/LINHA RÉPLICAS/R68/R68 6F SS.jpg"
+  },
+  "R69": {
+    "GF": "/fotos/LINHA RÉPLICAS/R69/R69 GF.jpg",
+    "HG": "/fotos/LINHA RÉPLICAS/R69/R69 HG.jpg"
+  },
+  "R7": {
+    "GF": "/fotos/LINHA RÉPLICAS/R7/R7 15 4F GF.png",
+    "SS": "/fotos/LINHA RÉPLICAS/R7/R7 15 4F SS.png"
+  },
+  "R70": {
+    "GF": "/fotos/LINHA RÉPLICAS/R70/FORA DE LINHA/R70 4F GF.jpg",
+    "GM": "/fotos/LINHA RÉPLICAS/R70/R70 4F HG GM.jpg",
+    "HYUNDAI": "/fotos/LINHA RÉPLICAS/R70/R70 4F HG HYUNDAI.jpg",
+    "KR": "/fotos/LINHA RÉPLICAS/R70/R70 4F HG KR.jpg",
+    "TOYOTA": "/fotos/LINHA RÉPLICAS/R70/R70 4F HG TOYOTA.jpg",
+    "HG": "/fotos/LINHA RÉPLICAS/R70/R70 4F HG.jpg",
+    "VW": "/fotos/LINHA RÉPLICAS/R70/VW/R70 4F HG VW.jpg"
+  },
+  "R71": {
+    "GFD": "/fotos/LINHA RÉPLICAS/R71/FORA DE LINHA/R71 4F GFD.jpg",
+    "HG": "/fotos/LINHA RÉPLICAS/R71/FORA DE LINHA/R71 4F HG.jpg",
+    "BD": "/fotos/LINHA RÉPLICAS/R71/R71 4F BD.jpg"
+  },
+  "R72": {
+    "GD": "/fotos/LINHA RÉPLICAS/R72/R72 18 GD.png"
+  },
+  "R73": {
+    "GFD": "/fotos/LINHA RÉPLICAS/R73/R73 15 5F GFD.png",
+    "GD": "/fotos/LINHA RÉPLICAS/R73/R73 15 GD.png"
+  },
+  "R74": {
+    "GD": "/fotos/LINHA RÉPLICAS/R74/R74 13 GD.png",
+    "BD": "/fotos/LINHA RÉPLICAS/R74/R74 15 4F BD.png"
+  },
+  "R75": {
+    "BD": "/fotos/LINHA RÉPLICAS/R75/R75 15 BD.png",
+    "GD": "/fotos/LINHA RÉPLICAS/R75/R75 15 GD.png"
+  },
+  "R76": {
+    "GD": "/fotos/LINHA RÉPLICAS/R76/R76 16-18 GD.png"
+  },
+  "R77": {
+    "GD": "/fotos/LINHA RÉPLICAS/R77/R77 14-15 GD.png"
+  },
+  "R78": {
+    "GF": "/fotos/LINHA RÉPLICAS/R78/R78 14-15 GF.png",
+    "SS": "/fotos/LINHA RÉPLICAS/R78/R78 14-15 SS.png"
+  },
+  "R79": {
+    "BD": "/fotos/LINHA RÉPLICAS/R79/R79 16 BD.png",
+    "B": "/fotos/LINHA RÉPLICAS/R79/R79 16-18 B.png"
+  },
+  "R8": {
+    "GF": "/fotos/LINHA RÉPLICAS/R8/R8 4F GF.jpg",
+    "SS": "/fotos/LINHA RÉPLICAS/R8/R8 4F SS.jpg"
+  },
+  "R80": {
+    "B": "/fotos/LINHA RÉPLICAS/R80/R80 15 B.png",
+    "BD": "/fotos/LINHA RÉPLICAS/R80/R80 15 BD.png",
+    "GD": "/fotos/LINHA RÉPLICAS/R80/R80 15 GD.png"
+  },
+  "R81": {
+    "BD": "/fotos/LINHA RÉPLICAS/R81/R81 14-15 BD.png"
+  },
+  "R82": {
+    "BD": "/fotos/LINHA RÉPLICAS/R82/R82 15 4F BD.png",
+    "GDC": "/fotos/LINHA RÉPLICAS/R82/R82 15 4F GDC.png",
+    "GDE": "/fotos/LINHA RÉPLICAS/R82/R82 15 4F GDE.png"
+  },
+  "R83": {
+    "BD": "/fotos/LINHA RÉPLICAS/R83/R83 15-17 BD.png"
+  },
+  "R84": {
+    "BD": "/fotos/LINHA RÉPLICAS/R84/R84 14 5X112 BD.png",
+    "GD": "/fotos/LINHA RÉPLICAS/R84/R84 15-17 4F GD.png",
+    "POLIDA": "/fotos/LINHA RÉPLICAS/R84/R84 15-17 4F POLIDA.png",
+    "SD": "/fotos/LINHA RÉPLICAS/R84/R84 15-17 4F SD.png"
+  },
+  "R86": {
+    "BD": "/fotos/LINHA RÉPLICAS/R86/R86 4F BD.jpg"
+  },
+  "R87": {
+    "BLACK": "/fotos/LINHA RÉPLICAS/R87/R87 18-20 BLACK.png",
+    "BD": "/fotos/LINHA RÉPLICAS/R87/R87 20 BD.png"
+  },
+  "R88": {
+    "BD": "/fotos/LINHA RÉPLICAS/R88/R88 14 BD.png"
+  },
+  "R89": {
+    "BD": "/fotos/LINHA RÉPLICAS/R89/R89 16-17 BD.png",
+    "GD": "/fotos/LINHA RÉPLICAS/R89/R89 16-17 GD.png"
+  },
+  "R90": {
+    "GM": "/fotos/LINHA RÉPLICAS/R90/GM/R90 BD GM.jpg",
+    "HYUNDAI": "/fotos/LINHA RÉPLICAS/R90/HYUNDAI/R90 BD HYUNDAI.jpg",
+    "HONDA": "/fotos/LINHA RÉPLICAS/R90/R90 4F BD HONDA.jpg",
+    "BD": "/fotos/LINHA RÉPLICAS/R90/R90 4F BD.jpg",
+    "BLACK": "/fotos/LINHA RÉPLICAS/R90/R90 4F BLACK.jpg",
+    "RENAULT": "/fotos/LINHA RÉPLICAS/R90/RENAULT/R90 BD RENAULT.jpg",
+    "VW": "/fotos/LINHA RÉPLICAS/R90/VW/R90 BD VW.jpg"
+  },
+  "R91": {
+    "BD": "/fotos/LINHA RÉPLICAS/R91/R91 14 BD.png"
+  },
+  "R92": {
+    "B": "/fotos/LINHA RÉPLICAS/R92/R92 14-15-17 B.png",
+    "BD": "/fotos/LINHA RÉPLICAS/R92/R92 14-15-17 BD.png"
+  },
+  "R93": {
+    "BD": "/fotos/LINHA RÉPLICAS/R93/R93 15 4F BD.png",
+    "GD": "/fotos/LINHA RÉPLICAS/R93/R93 15 4F GD.png",
+    "B": "/fotos/LINHA RÉPLICAS/R93/R93 15 5F B.png"
+  },
+  "R94": {
+    "B": "/fotos/LINHA RÉPLICAS/R94/R94 15 4F B.png",
+    "BD": "/fotos/LINHA RÉPLICAS/R94/R94 15 4F BD.png",
+    "BDS": "/fotos/LINHA RÉPLICAS/R94/R94 15 4F BDS.png",
+    "GD": "/fotos/LINHA RÉPLICAS/R94/R94 15 4F GD.png"
+  },
+  "R96": {
+    "BD": "/fotos/LINHA RÉPLICAS/R96/R96 14 BD.png"
+  },
+  "R97": {
+    "BD": "/fotos/LINHA RÉPLICAS/R97/R97 15 BD.png",
+    "GB": "/fotos/LINHA RÉPLICAS/R97/R97 15 GB.png"
+  },
+  "R98": {
+    "98": "/fotos/LINHA RÉPLICAS/R98/FORA DE LINHA/R 98.jpg",
+    "GDC": "/fotos/LINHA RÉPLICAS/R98/FORA DE LINHA/r98 5f gdc.jpg",
+    "GDE": "/fotos/LINHA RÉPLICAS/R98/FORA DE LINHA/r98 5f gde.jpg",
+    "HG": "/fotos/LINHA RÉPLICAS/R98/FORA DE LINHA/R98 5F HG.jpg",
+    "BD": "/fotos/LINHA RÉPLICAS/R98/r98  5f bd.jpg"
+  },
+  "R99": {
+    "BD": "/fotos/LINHA RÉPLICAS/R99/R99 15 BD.png"
+  },
+  "S02": {
+    "BD": "/fotos/LINHA S/S02/S02 16-18 BD.png",
+    "GD": "/fotos/LINHA S/S02/S02 16-18 GD.png"
+  },
+  "S03": {
+    "B": "/fotos/LINHA S/S03/S03 14-15 B.png",
+    "BD": "/fotos/LINHA S/S03/S03 14-15 BD.png",
+    "GD": "/fotos/LINHA S/S03/S03 14-15 GD.png",
+    "GFD": "/fotos/LINHA S/S03/S03 15-17 GFD.png"
+  },
+  "S04": {
+    "BD": "/fotos/LINHA S/S04/S04 15 BD.png"
+  },
+  "S05": {
+    "BFD": "/fotos/LINHA S/S05/S05 16 BFD.png"
+  },
+  "S07": {
+    "B": "/fotos/LINHA S/S07/S07 18-20-22 B.png",
+    "GF": "/fotos/LINHA S/S07/S07 18-20-22 GF.png",
+    "HG": "/fotos/LINHA S/S07/S07 18-20-22 HG.png"
+  },
+  "S08": {
+    "BD": "/fotos/LINHA S/S08/S08 16 BD.png"
+  },
+  "S09": {},
+  "S1": {},
+  "S10": {
+    "GD": "/fotos/LINHA S/S10/S10 16 GD.png"
+  },
+  "S11": {
+    "BD": "/fotos/LINHA S/S11/S11 17-18-20 BD.png"
+  },
+  "S12": {
+    "BD": "/fotos/LINHA S/S12/S12 16 BD.png"
+  },
+  "S13": {
+    "B": "/fotos/LINHA S/S13/S13 14-15 B.png",
+    "BD": "/fotos/LINHA S/S13/S13 14-15 BD.png"
+  },
+  "S14": {
+    "BD": "/fotos/LINHA S/S14/S14 16-17 BD.png"
+  },
+  "S15": {
+    "B": "/fotos/LINHA S/S15/S15 15 B.png",
+    "GB": "/fotos/LINHA S/S15/S15 15 GB.png",
+    "HG": "/fotos/LINHA S/S15/S15 15 HG.png"
+  },
+  "S16": {
+    "BD": "/fotos/LINHA S/S16/S16 16 BD.png"
+  },
+  "S17": {},
+  "S18": {
+    "15": "/fotos/LINHA S/S18/Nova pasta/s18 aro 15.jpg",
+    "B": "/fotos/LINHA S/S18/S18 15-17-18 4F B.png",
+    "HG": "/fotos/LINHA S/S18/S18 15-17-18 4F HG.png",
+    "GB": "/fotos/LINHA S/S18/S18 15-17-18 5F GB.png"
+  },
+  "S19": {
+    "BD": "/fotos/LINHA S/S19/S19 15-17-18 4F BD.png",
+    "BDS": "/fotos/LINHA S/S19/S19 15-17-18 5F BDS.png"
+  },
+  "S20": {
+    "BD": "/fotos/LINHA S/S20/S20 15 BD.png",
+    "GF": "/fotos/LINHA S/S20/S20 15 GF.png"
+  },
+  "S21": {
+    "B": "/fotos/LINHA S/S21/S21 14-15-17 B.png",
+    "BD": "/fotos/LINHA S/S21/S21 14-15-17 BD.png",
+    "SS": "/fotos/LINHA S/S21/S21 15-17 SS.png"
+  },
+  "S22": {
+    "BD": "/fotos/LINHA S/S22/S22 16-17 BD.png",
+    "GB": "/fotos/LINHA S/S22/S22 16-17 GB.png",
+    "LBD": "/fotos/LINHA S/S22/S22 16-17 LBD.png"
+  },
+  "S23": {
+    "BD": "/fotos/LINHA S/S23/S23 17-18 4F BD.png",
+    "B": "/fotos/LINHA S/S23/S23 18 4F B.png"
+  },
+  "S24": {
+    "BD": "/fotos/LINHA S/S24/S24 16-17 4F BD.png",
+    "GFD": "/fotos/LINHA S/S24/S24 16-17 4F GFD.png",
+    "GD": "/fotos/LINHA S/S24/S24 16-17 5F GD.png"
+  },
+  "S25": {
+    "BD": "/fotos/LINHA S/S25/S25 16-17 BD.png",
+    "BDS": "/fotos/LINHA S/S25/S25 16-17 BDS.png"
+  },
+  "S26": {},
+  "S27": {
+    "BD": "/fotos/LINHA S/S27/S27 15 BD.png",
+    "GFD": "/fotos/LINHA S/S27/S27 15-16 GFD.png"
+  },
+  "S28": {},
+  "S29": {
+    "BD": "/fotos/LINHA S/S29/S29 16 BD.png",
+    "GFD": "/fotos/LINHA S/S29/S29 16 GFD.png"
+  },
+  "S30": {
+    "B": "/fotos/LINHA S/S30/S30 16-18 B.png",
+    "BD": "/fotos/LINHA S/S30/S30 16-18 BD.png",
+    "GD": "/fotos/LINHA S/S30/S30 16-18 GD.png"
+  },
+  "S31": {
+    "BD": "/fotos/LINHA S/S31/S31 17-18-20 BD.png"
+  },
+  "S32": {
+    "BD": "/fotos/LINHA S/S32/S32 18-20-22 BD.png",
+    "GL": "/fotos/LINHA S/S32/S32 18-20-22 GL.png"
+  },
+  "S33": {
+    "B": "/fotos/LINHA S/S33/S33 16 B.png",
+    "BD": "/fotos/LINHA S/S33/S33 16 BD.png"
+  },
+  "S34": {
+    "B": "/fotos/LINHA S/S34/S34 16-18 B.png",
+    "BD": "/fotos/LINHA S/S34/S34 16-18 BD.png",
+    "GD": "/fotos/LINHA S/S34/S34 16-18 GD.png"
+  },
+  "S35": {
+    "B": "/fotos/LINHA S/S35/S35 14-15 B.png",
+    "BD": "/fotos/LINHA S/S35/S35 14-15 BD.png"
+  },
+  "S36": {
+    "BD": "/fotos/LINHA S/S36/S36 18 BD.png"
+  },
+  "S37": {
+    "BD": "/fotos/LINHA S/S37/S37 16 BD.png"
+  },
+  "S38": {
+    "B": "/fotos/LINHA S/S38/S38 15 B.png",
+    "BD": "/fotos/LINHA S/S38/S38 15 BD.png",
+    "GD": "/fotos/LINHA S/S38/S38 15 GD.png"
+  },
+  "S39": {
+    "BDS": "/fotos/LINHA S/S39/S39 18 BDS.png",
+    "GD": "/fotos/LINHA S/S39/S39 18 GD.png",
+    "BD": "/fotos/LINHA S/S39/S39 18-20-22 BD.png"
+  },
+  "S40": {
+    "BD": "/fotos/LINHA S/S40/S40 15 BD.png"
+  },
+  "S41": {
+    "BD": "/fotos/LINHA S/S41/S41 16 BD.png",
+    "GD": "/fotos/LINHA S/S41/S41 16 GD.png"
+  },
+  "S42": {
+    "BD": "/fotos/LINHA S/S42/S42 14-15 BD.png",
+    "GD": "/fotos/LINHA S/S42/S42 14-15 GD.png"
+  },
+  "S43": {
+    "BD": "/fotos/LINHA S/S43/S43 15 BD.png"
+  },
+  "S44": {
+    "BD": "/fotos/LINHA S/S44/S44 15 4F BD.png",
+    "GD": "/fotos/LINHA S/S44/S44 15 5F GD.png"
+  },
+  "S45": {
+    "BD": "/fotos/LINHA S/S45/S45 18 4F BD.png",
+    "GD": "/fotos/LINHA S/S45/S45 18 4F GD.png"
+  },
+  "S46": {
+    "BDS": "/fotos/LINHA S/S46/S46 15-17 4F BDS.png",
+    "BD": "/fotos/LINHA S/S46/S46 15-17-18 4F BD.png"
+  },
+  "S47": {
+    "B": "/fotos/LINHA S/S47/S47 16-17 4F B.png",
+    "BD": "/fotos/LINHA S/S47/S47 16-17 4F BD.png",
+    "GD": "/fotos/LINHA S/S47/S47 17 4F GD.png"
+  },
+  "S48": {
+    "BDS": "/fotos/LINHA S/S48/S48 15 4F BDS.png",
+    "B": "/fotos/LINHA S/S48/S48 15-17 4F B.png",
+    "BD": "/fotos/LINHA S/S48/S48 15-17 4F BD.png"
+  },
+  "S49": {
+    "LBD": "/fotos/LINHA S/S49/S49 17 5F LBD.png",
+    "KR": "/fotos/LINHA S/S49/S49 17-18 4F BD KR.png",
+    "TOY": "/fotos/LINHA S/S49/S49 17-18 4F BD TOY.png",
+    "BD": "/fotos/LINHA S/S49/S49 20 5F BD.png"
+  },
+  "S50": {
+    "B": "/fotos/LINHA S/S50/S50 17-18-20 B.png",
+    "BD": "/fotos/LINHA S/S50/S50 17-18-20 BD.png",
+    "BF": "/fotos/LINHA S/S50/S50 17-18-20 BF.png"
+  },
+  "S51": {
+    "GD": "/fotos/LINHA S/S51/S51 20 5F BD GD.png",
+    "BD": "/fotos/LINHA S/S51/S51 20 5F BD.png"
+  },
+  "S52": {
+    "BD": "/fotos/LINHA S/S52/S52 14-15 BD.png",
+    "GD": "/fotos/LINHA S/S52/S52 14-15 GD.png"
+  },
+  "S53": {
+    "B": "/fotos/LINHA S/S53/S53 20 5F B.png",
+    "BD": "/fotos/LINHA S/S53/S53 20 5F BD.png"
+  },
+  "S54": {
+    "BD": "/fotos/LINHA S/S54/S54 18-20 4F BD.png",
+    "BDS": "/fotos/LINHA S/S54/S54 18-20 5F BDS.png"
+  },
+  "S55": {
+    "BD": "/fotos/LINHA S/S55/S55 15 BD.png",
+    "GFD": "/fotos/LINHA S/S55/S55 15 GFD.png"
+  },
+  "S56": {
+    "B": "/fotos/LINHA S/S56/S56 16-17 4F B.png",
+    "BD": "/fotos/LINHA S/S56/S56 16-17 4F BD.png",
+    "BDS": "/fotos/LINHA S/S56/S56 16-17 4F BDS.png"
+  },
+  "S57": {
+    "BD": "/fotos/LINHA S/S57/S57 18-20-22 BD.png",
+    "GD": "/fotos/LINHA S/S57/S57 18-20-22 GD.png"
+  },
+  "S58": {
+    "B": "/fotos/LINHA S/S58/S58 18-20-22 B.png",
+    "BD": "/fotos/LINHA S/S58/S58 18-20-22 BD.png",
+    "BDS": "/fotos/LINHA S/S58/S58 18-20-22 BDS.png"
+  },
+  "S59": {
+    "BD": "/fotos/LINHA S/S59/S59 16-17 4F BD.png",
+    "BDS": "/fotos/LINHA S/S59/S59 16-17 4F BDS.png"
+  },
+  "S6": {},
+  "S60": {
+    "BD": "/fotos/LINHA S/S60/S60 16-17 4F BD.png",
+    "BDS": "/fotos/LINHA S/S60/S60 16-17 4F BDS.png"
+  },
+  "S61": {
+    "B": "/fotos/LINHA S/S61/S61 17 5F B.png",
+    "BD": "/fotos/LINHA S/S61/S61 17 5F BD.png"
+  },
+  "S62": {
+    "B": "/fotos/LINHA S/S62/S62 17 4F B.png",
+    "BD": "/fotos/LINHA S/S62/S62 17 4F BD.png"
+  },
+  "COM LOGO": {
+    "BD": "/fotos/LINHA T/COM LOGO/T2 4F BD.JPEG"
+  },
+  "SEM LOGO": {
+    "BD": "/fotos/LINHA T/SEM LOGO/T2/T2 4F BD.jpeg"
+  }
+}

@@ -1,8 +1,10 @@
 import photoMap from '../data/photoMap.json';
 
-const finishMapping: Record<string, string> = {
+export const finishMapping: Record<string, string> = {
   'PRETO DIAMANTADO': 'BD',
   'BLACK DIAMOND': 'BD',
+  'FACE BLACK DIAMOND': 'FBD',
+  'LIP BLACK F': 'LBF',
   'PRETO': 'B',
   'BLACK': 'B',
   'PRETO FOSCO': 'BF',
@@ -58,6 +60,7 @@ const finishMapping: Record<string, string> = {
   'VERM. BORDA DIA': 'LVD',
   'VER BOR DIAM': 'LVD',
   'GOLD BLACK LIP': 'GBL',
+  'GOLD BLACK LI': 'GBL',
   'OURO': 'OURO',
   ' BD ': 'BD',
   ' SS ': 'SS',
@@ -77,7 +80,7 @@ const finishMapping: Record<string, string> = {
   ' GBL ': 'GBL',
 };
 
-const sortedFinishKeys = Object.keys(finishMapping).sort((a, b) => b.length - a.length);
+export const sortedFinishKeys = Object.keys(finishMapping).sort((a, b) => b.length - a.length);
 
 /**
  * Resolve a URL da foto de uma roda baseada na sua descrição.

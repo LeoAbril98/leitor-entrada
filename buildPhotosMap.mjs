@@ -57,10 +57,9 @@ function buildMap() {
 
                         const photoUrl = `https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/${webpPath}`;
                         
-                        // Just keep the first one encountered for each abbreviation
-                        if (!photoMap[modelName][abbr]) {
-                            photoMap[modelName][abbr] = photoUrl;
-                        }
+                        // Use the filename (without extension) as the key to allow multiple photos per model
+                        const fileKey = img.substring(0, img.lastIndexOf('.')).trim().toUpperCase();
+                        photoMap[modelName][fileKey] = photoUrl;
                     }
                 }
             }

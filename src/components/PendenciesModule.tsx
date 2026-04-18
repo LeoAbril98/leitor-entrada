@@ -1,8 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
-import { ArrowLeft, ClipboardList, Pencil, Search, Filter, Upload, Trash2, Archive, X, CloudUpload, FileSpreadsheet, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Pencil, Search, Filter, Upload, Trash2, Archive, X, CloudUpload, FileSpreadsheet, CheckCircle2, Plus, Tag, PenTool, Mic, Volume2, Play, Square } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getInventory, loadPedidosFabrica, upsertPedidoFabrica, archiveAndClearPedidos, syncPendenciasToCloud, getPendenciasInventory } from '../lib/supabase';
+import { 
+    getInventory, 
+    loadPedidosFabrica, 
+    upsertPedidoFabrica, 
+    archiveAndClearPedidos, 
+    syncPendenciasToCloud, 
+    getPendenciasInventory, 
+    getItemTags, 
+    saveItemTags,
+    saveCloudSketch,
+    deleteCloudSketch,
+    saveCloudAudio,
+    deleteCloudAudio,
+    getCloudSketch,
+    getCloudAudio,
+    getAllCloudSketches,
+    getAllCloudAudios,
+    getLastUpdate,
+    USE_LOCAL_DB
+} from '../lib/supabase';
 import { StockItem } from '../types';
 import { PendencyQuantityModal } from './PendencyQuantityModal';
 import { cn } from '../utils';
@@ -11,101 +30,109 @@ import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { getWheelPhotoUrl } from '../utils/photoUtils';
+import { SketchModal } from './SketchModal';
+import { AudioRecorderModal } from './AudioRecorderModal';
+import { AudioPlayerModal } from './AudioPlayerModal';
+import { WelcomeModal } from './WelcomeModal';
+import { OnboardingTour } from './OnboardingTour';
+import { saveSketch, getSketch, getAllSketches, deleteSketch, saveAudio, getAudio, getAllAudioKeys, deleteAudio } from '../lib/sketchStore';
 
 const finishMapping: Record<string, string> = {
-  'PRETO DIAMANTADO': 'BD',
-  'BLACK DIAMOND': 'BD',
-  'PRETO': 'B',
-  'BLACK': 'B',
-  'PRETO FOSCO': 'BF',
-  'BRONZE FOSCO': 'BF',
-  'PRETA FOSCO DIAM': 'BFD',
-  'PRATA': 'SS',
-  'PRATA DIAM': 'SS',
-  'PRATA DIAMANTAD': 'SS',
-  'SILVER STAR': 'SS',
-  'GRAFITE BRILHANT': 'GB',
-  'GRAPHITE BRILHANT': 'GB',
-  'GRAPHITE BRILHANTE': 'GB',
-  'GRAFITE FOSC': 'GF',
-  'GRAPHITE FOSCO': 'GF',
-  'GRAPHITE FOSCO F.L': 'GF',
-  'GRAPHITE DIAM': 'GD',
-  'GRAPHITE DIAMANTAD': 'GD',
-  'GRAPHITE DIAM F.L': 'GD',
-  'GRAPHITE DIAM FL': 'GD',
-  'GRAF DIAM. F.L': 'GD',
-  'GRAPHITE FOSCO DIAM': 'GFD',
-  'GRAPHITE FOS DIAM': 'GFD',
-  'GRAPHITE FOSCO DIA': 'GFD',
-  'GRAPHITE FOSCO DI': 'GFD',
-  'OURO VELHO': 'OURO',
-  'OURO VELHO F': 'OURO',
-  'OURO BORDA DIAM.': 'OURO',
-  'OURO V DIAMANTADO': 'OURO',
-  'POLIDA': 'POLIDA',
-  'BRUTA': 'BRUTA',
-  'DIAMOND': 'D',
-  'DOURADA DIAMANTADA': 'DD',
-  'HYPER DIAM': 'HD',
-  'HYPER DIA.*R.C': 'HD',
-  'HYPER DIAM R.C': 'HD',
-  'HD': 'HD',
-  'HYPER GLOSS': 'HG',
-  'HYPER GLOSS F.L': 'HG',
-  'HYPER GLOS': 'HG',
-  'HYPER GL': 'HG',
-  'GLOSS': 'GL',
-  'GLOSS SHADOW': 'GS',
-  'GL SHADOW': 'GS',
-  'GLOS SHADOW': 'GS',
-  'INOX': 'INOX',
-  'CROMADA': 'CROMADA',
-  'FGF': 'FGF',
-  'VERM BORDA DIAM': 'LVD',
-  'VERM. C/BORDA DIA': 'LVD',
-  'VERM.. C/BORDA DIAM': 'LVD',
-  'VERM BORD DIAM': 'LVD',
-  'VERM. C/ BORDA DIAM': 'LVD',
-  'VERM. BORDA DIA': 'LVD',
-  'VER BOR DIAM': 'LVD',
-  'GOLD BLACK LIP': 'GBL',
+    'PRETO DIAMANTADO': 'BD',
+    'BLACK DIAMOND': 'BD',
+    'PRETO': 'B',
+    'BLACK': 'B',
+    'PRETO FOSCO': 'BF',
+    'BRONZE FOSCO': 'BF',
+    'PRETA FOSCO DIAM': 'BFD',
+    'PRATA': 'SS',
+    'PRATA DIAM': 'SS',
+    'PRATA DIAMANTAD': 'SS',
+    'SILVER STAR': 'SS',
+    'GRAFITE BRILHANT': 'GB',
+    'GRAPHITE BRILHANT': 'GB',
+    'GRAPHITE BRILHANTE': 'GB',
+    'GRAFITE FOSC': 'GF',
+    'GRAPHITE FOSCO': 'GF',
+    'GRAPHITE FOSCO F.L': 'GF',
+    'GRAPHITE DIAM': 'GD',
+    'GRAPHITE DIAMANTAD': 'GD',
+    'GRAPHITE DIAM F.L': 'GD',
+    'GRAPHITE DIAM FL': 'GD',
+    'GRAF DIAM. F.L': 'GD',
+    'GRAPHITE FOSCO DIAM': 'GFD',
+    'GRAPHITE FOS DIAM': 'GFD',
+    'GRAPHITE FOSCO DIA': 'GFD',
+    'GRAPHITE FOSCO DI': 'GFD',
+    'OURO VELHO': 'OURO',
+    'OURO VELHO F': 'OURO',
+    'OURO BORDA DIAM.': 'OURO',
+    'OURO V DIAMANTADO': 'OURO',
+    'POLIDA': 'POLIDA',
+    'BRUTA': 'BRUTA',
+    'DIAMOND': 'D',
+    'DOURADA DIAMANTADA': 'DD',
+    'HYPER DIAM': 'HD',
+    'HYPER DIA.*R.C': 'HD',
+    'HYPER DIAM R.C': 'HD',
+    'HD': 'HD',
+    'HYPER GLOSS': 'HG',
+    'HYPER GLOSS F.L': 'HG',
+    'HYPER GLOS': 'HG',
+    'HYPER GL': 'HG',
+    'GLOSS': 'GL',
+    'GLOSS SHADOW': 'GS',
+    'GL SHADOW': 'GS',
+    'GLOS SHADOW': 'GS',
+    'INOX': 'INOX',
+    'CROMADA': 'CROMADA',
+    'FGF': 'FGF',
+    'VERM BORDA DIAM': 'LVD',
+    'VERM. C/BORDA DIA': 'LVD',
+    'VERM.. C/BORDA DIAM': 'LVD',
+    'VERM BORD DIAM': 'LVD',
+    'VERM. C/ BORDA DIAM': 'LVD',
+    'VERM. BORDA DIA': 'LVD',
+    'VER BOR DIAM': 'LVD',
+    'GOLD BLACK LIP': 'GBL',
 
-  // Mapeamentos diretos de abreviações e palavras isoladas que podem ser usadas
-  'OURO': 'OURO',
-  ' BD ': 'BD',
-  ' SS ': 'SS',
-  ' GB ': 'GB',
-  ' B ': 'B',
-  ' BF ': 'BF',
-  ' GF ': 'GF',
-  ' GD ': 'GD',
-  ' GFD ': 'GFD',
-  ' DD ': 'DD',
-  ' HD ': 'HD',
-  ' HG ': 'HG',
-  ' GL ': 'GL',
-  ' GS ': 'GS',
-  ' FGF ': 'FGF',
-  ' LVD ': 'LVD',
-  ' GBL ': 'GBL',
+    // Mapeamentos diretos de abreviações e palavras isoladas que podem ser usadas
+    'OURO': 'OURO',
+    ' BD ': 'BD',
+    ' SS ': 'SS',
+    ' GB ': 'GB',
+    ' B ': 'B',
+    ' BF ': 'BF',
+    ' GF ': 'GF',
+    ' GD ': 'GD',
+    ' GFD ': 'GFD',
+    ' DD ': 'DD',
+    ' HD ': 'HD',
+    ' HG ': 'HG',
+    ' GL ': 'GL',
+    ' GS ': 'GS',
+    ' FGF ': 'FGF',
+    ' LVD ': 'LVD',
+    ' GBL ': 'GBL',
 };
 
 // Sort mapping keys by length descending to match longest phrases first (e.g., 'PRETO DIAMANTADO' before 'PRETO')
-const sortedFinishKeys = Object.keys(finishMapping).sort((a,b) => b.length - a.length);
+const sortedFinishKeys = Object.keys(finishMapping).sort((a, b) => b.length - a.length);
 
 interface PendenciesModuleProps {
     onBackToMenu: () => void;
+    isAdmin?: boolean;
 }
 
-export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu }) => {
+export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu, isAdmin = false }) => {
     const [stock, setStock] = useState<StockItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [lastUploadDate, setLastUploadDate] = useState<string | null>(null);
+    const [importedFileName, setImportedFileName] = useState<string | null>(null);
 
     type FactoryName = 'MK' | 'MOLERI' | 'CM' | 'OLIMPO';
     const [pendencies, setPendencies] = useState<Record<string, Record<FactoryName, number>>>({});
-    
+
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalConfig, setModalConfig] = useState<{
@@ -116,7 +143,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
         pendencyQty: number;
         photoUrl?: string;
     }>({ item: null, factory: 'MK', currentQty: 0, stockQty: 0, pendencyQty: 0, photoUrl: '' });
- 
+
     // Upload Modal State
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [tempProcessedData, setTempProcessedData] = useState<StockItem[]>([]);
@@ -126,9 +153,175 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [isExportLoading, setIsExportLoading] = useState(false);
 
+    // Scroll Ref
+    const tableContainerRef = React.useRef<HTMLDivElement>(null);
+
+    // Tags State
+    const [itemTags, setItemTags] = useState<Record<string, string[]>>({});
+    const [tagMenuOpen, setTagMenuOpen] = useState<string | null>(null); // Codigo do item com menu aberto
+    const [customTagInput, setCustomTagInput] = useState("");
+    const quickTags = ['VÍDEO', 'PEDIR', 'FOTO', 'WILLIAM', 'SP'];
+
+    const handleToggleTag = async (codigo: string, tag: string) => {
+        const currentTags = itemTags[codigo] || [];
+        const newTags = currentTags.includes(tag)
+            ? currentTags.filter(t => t !== tag)
+            : [...currentTags, tag];
+
+        const newTagsMap = { ...itemTags, [codigo]: newTags };
+        setItemTags(newTagsMap);
+        await saveItemTags(newTagsMap);
+
+        if (!currentTags.includes(tag)) {
+            toast.success(`Etiqueta "${tag}" adicionada`, { icon: '🏷️', duration: 1500 });
+        }
+    };
+
+    const handleAddCustomTag = async (codigo: string) => {
+        const val = customTagInput.trim().toUpperCase();
+        if (!val) return;
+
+        await handleToggleTag(codigo, val);
+        setCustomTagInput("");
+        setTagMenuOpen(null);
+    };
+
+    const loadTags = async () => {
+        const tags = await getItemTags();
+        setItemTags(tags);
+    };
+
+    // Sketch State
+    const [sketches, setSketches] = useState<Record<string, string>>({});
+    const [sketchModalOpen, setSketchModalOpen] = useState(false);
+    const [activeSketchItem, setActiveSketchItem] = useState<{ codigo: string, title: string } | null>(null);
+
+    const loadSketches = async () => {
+        // 1. Carregar Local
+        const localData = await getAllSketches();
+        
+        // 2. Carregar Nuvem e mesclar (Nuvem manda se não houver local ou for mais novo)
+        const cloudData = await getAllCloudSketches();
+        const merged = { ...cloudData, ...localData };
+        
+        setSketches(merged);
+        
+        // Opcional: Salvar o que veio da nuvem no local para cache futuro
+        for (const [codigo, dataUrl] of Object.entries(cloudData)) {
+            if (!localData[codigo]) await saveSketch(codigo, dataUrl as string);
+        }
+    };
+
+    const handleSaveSketch = async (dataUrl: string) => {
+        if (activeSketchItem) {
+            // 1. Salvar no IndexedDB (Cache Instantâneo)
+            await saveSketch(activeSketchItem.codigo, dataUrl);
+            setSketches(prev => ({ ...prev, [activeSketchItem.codigo]: dataUrl }));
+            
+            // 2. Sincronizar com a Nuvem (Background)
+            saveCloudSketch(activeSketchItem.codigo, dataUrl).then(success => {
+                if (!success) console.warn("Falha ao sincronizar rascunho com a nuvem.");
+            });
+
+            toast.success("Desenho salvo (Sincronizado na nuvem!)", { icon: '🖋️' });
+        }
+    };
+
+    const handleDeleteSketch = async () => {
+        if (activeSketchItem) {
+            await deleteSketch(activeSketchItem.codigo);
+            await deleteCloudSketch(activeSketchItem.codigo);
+            setSketches(prev => {
+                const next = { ...prev };
+                delete next[activeSketchItem.codigo];
+                return next;
+            });
+            toast.success("Post-it removido local e nuvem!");
+        }
+    };
+
+    // Audio State
+    const [audios, setAudios] = useState<Record<string, string>>({}); // codigo -> blobUrl
+    const [audioModalOpen, setAudioModalOpen] = useState(false);
+    const [audioPlayerOpen, setAudioPlayerOpen] = useState(false);
+    const [activeAudioItem, setActiveAudioItem] = useState<{ codigo: string, title: string } | null>(null);
+
+    const loadAudios = async () => {
+        // 1. Chaves locais
+        const localKeys = await getAllAudioKeys();
+        const urls: Record<string, string> = {};
+        
+        for (const key of localKeys) {
+            const blob = await getAudio(key);
+            if (blob) urls[key] = URL.createObjectURL(blob);
+        }
+
+        // 2. Buscar da Nuvem o que não tem no local
+        const cloudAudios = await getAllCloudAudios(); // Record<codigo, base64>
+        for (const [codigo, base64] of Object.entries(cloudAudios)) {
+            if (!urls[codigo]) {
+                const blob = base64ToBlob(base64 as string);
+                await saveAudio(codigo, blob); // Salva no cache local
+                urls[codigo] = URL.createObjectURL(blob);
+            }
+        }
+
+        setAudios(urls);
+    };
+
+    const base64ToBlob = (base64: string) => {
+        const parts = base64.split(';base64,');
+        const contentType = parts[0].split(':')[1];
+        const raw = window.atob(parts[1]);
+        const rawLength = raw.length;
+        const uInt8Array = new Uint8Array(rawLength);
+        for (let i = 0; i < rawLength; ++i) {
+            uInt8Array[i] = raw.charCodeAt(i);
+        }
+        return new Blob([uInt8Array], { type: contentType });
+    };
+
+    const blobToBase64 = (blob: Blob): Promise<string> => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+        });
+    };
+
+    const handleSaveAudio = async (blob: Blob) => {
+        if (activeAudioItem) {
+            // 1. Salvar localmente
+            await saveAudio(activeAudioItem.codigo, blob);
+            const url = URL.createObjectURL(blob);
+            setAudios(prev => ({ ...prev, [activeAudioItem.codigo]: url }));
+            
+            // 2. Sincronizar com Nuvem (Base64)
+            const base64 = await blobToBase64(blob);
+            saveCloudAudio(activeAudioItem.codigo, base64).then(success => {
+                 if (!success) console.warn("Falha ao sincronizar áudio com a nuvem.");
+            });
+
+            toast.success("Áudio salvo e sincronizado!", { icon: '🎙️' });
+        }
+    };
+
+    const handleDeleteAudio = async (codigo: string) => {
+        if (window.confirm("Deseja apagar este áudio (Remoção Total)?")) {
+            await deleteAudio(codigo);
+            await deleteCloudAudio(codigo);
+            setAudios(prev => {
+                const next = { ...prev };
+                delete next[codigo];
+                return next;
+            });
+            toast.success("Áudio removido local e nuvem.");
+        }
+    };
+
     const openModal = (item: StockItem, factory: FactoryName) => {
         const currentQty = pendencies[item.codigo]?.[factory] || 0;
-        
+
         let stockQty = 0;
         let pendencyQty = 0;
 
@@ -214,46 +407,85 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Pendências');
 
-            // 1. Configurar Colunas
+            // 1. Configurar Página para Impressão
+            worksheet.pageSetup = {
+                orientation: 'landscape',
+                paperSize: 9, // A4
+                fitToPage: true,
+                fitToWidth: 1,
+                fitToHeight: 0,
+                margins: {
+                    left: 0.3,
+                    right: 0.3,
+                    top: 0.3,
+                    bottom: 0.3,
+                    header: 0.1,
+                    footer: 0.1
+                },
+                printTitlesRow: '1:2', // Repetir Título + Cabeçalho em todas as páginas
+                printArea: `B1:P${stock.length + 3}` // Excluir coluna A e incluir Título e Totais
+            };
+
+            // 2. Definir Colunas
             worksheet.columns = [
-                { header: 'CÓDIGO', key: 'codigo', width: 15 },
-                { header: 'CATÁLOGO', key: 'descricao', width: 45 },
+                { header: 'CATÁLOGO', key: 'codigo', width: 22 },
+                { header: 'DESCRIÇÃO', key: 'descricao', width: 40 },
                 { header: 'QTDE MIN', key: 'qtd_min', width: 10 },
-                { header: 'PREÇO FÁBRICA', key: 'preco', width: 18 },
-                { header: 'EST. MK', key: 'est_mk', width: 10 },
-                { header: 'PEND MK', key: 'pend_mk', width: 10 },
-                { header: 'MK', key: 'order_mk', width: 8 },
-                { header: 'EST. MOLERI', key: 'est_moleri', width: 12 },
-                { header: 'PEND MOLERI', key: 'pend_moleri', width: 12 },
-                { header: 'MOLERI', key: 'order_moleri', width: 10 },
-                { header: 'EST. CM', key: 'est_cm', width: 10 },
-                { header: 'PEND CM', key: 'pend_cm', width: 10 },
-                { header: 'CM', key: 'order_cm', width: 8 },
-                { header: 'EST. OLIMPO', key: 'est_olimpo', width: 12 },
-                { header: 'PEND OLIMPO', key: 'pend_olimpo', width: 12 },
-                { header: 'OLIMPO', key: 'order_olimpo', width: 10 }
+                { header: 'PREÇO FÁBRICA', key: 'preco', width: 15 },
+                
+                { header: 'EST. MK', key: 'est_mk', width: 9 },
+                { header: 'PEND MK', key: 'pend_mk', width: 9 },
+                { header: 'MK', key: 'order_mk', width: 9 },
+                
+                { header: 'EST. MOLERI', key: 'est_moleri', width: 9 },
+                { header: 'PEND MOLERI', key: 'pend_moleri', width: 9 },
+                { header: 'MOLERI', key: 'order_moleri', width: 9 },
+                
+                { header: 'EST. CM', key: 'est_cm', width: 9 },
+                { header: 'PEND CM', key: 'pend_cm', width: 9 },
+                { header: 'CM', key: 'order_cm', width: 9 },
+                
+                { header: 'EST. OLIMPO', key: 'est_olimpo', width: 9 },
+                { header: 'PEND OLIMPO', key: 'pend_olimpo', width: 9 },
+                { header: 'OLIMPO', key: 'order_olimpo', width: 9 },
+                { header: 'ETIQUETAS', key: 'tags', width: 25 },
+                { header: 'TEM ÁUDIO?', key: 'has_audio', width: 15 },
+                { header: 'TEM POST-IT?', key: 'has_sketch', width: 15 }
             ];
 
-            // 2. Estilizar Cabeçalho
-            const headerRow = worksheet.getRow(1);
-            headerRow.eachCell((cell) => {
+            // 3. Adicionar Título no Topo
+            worksheet.spliceRows(1, 0, []); // Insere linha em branco no topo
+            const titleRow = worksheet.getRow(1);
+            titleRow.height = 40;
+            worksheet.mergeCells('B1:P1');
+            const titleCell = worksheet.getCell('B1');
+            const today = new Date().toLocaleDateString('pt-BR').split('/').join(' ');
+            titleCell.value = `PEDIDO MK /SC/SP/RS ${today}`;
+            titleCell.font = { bold: true, italic: true, size: 14 };
+            titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+            // 4. Estilizar Cabeçalho (Agora na Linha 2)
+            const headerRow = worksheet.getRow(2);
+            headerRow.height = 35;
+            headerRow.eachCell((cell, colNumber) => {
+                let bgColor = 'FFE0E0E0'; // Cinza Padrão solicitado
+
                 cell.fill = {
                     type: 'pattern',
                     pattern: 'solid',
-                    fgColor: { argb: 'FFE0E0E0' } // Cinza claro igual à foto
+                    fgColor: { argb: bgColor }
                 };
-                cell.font = { bold: true, size: 10 };
-                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                cell.font = { bold: true, size: 11, color: { argb: 'FF000000' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
                 cell.border = {
-                    top: { style: 'thin' },
-                    left: { style: 'thin' },
-                    bottom: { style: 'thin' },
-                    right: { style: 'thin' }
+                    top: { style: 'thin', color: { argb: 'FF000000' } },
+                    left: { style: 'thin', color: { argb: 'FF000000' } },
+                    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                    right: { style: 'thin', color: { argb: 'FF000000' } }
                 };
             });
-            headerRow.height = 30; // Altura maior para o cabeçalho
 
-            // 3. Adicionar Dados
+            // 4. Adicionar Dados
             stock.forEach((item) => {
                 const itemPends = pendencies[item.codigo] || { MK: 0, MOLERI: 0, CM: 0, OLIMPO: 0 };
                 const row = worksheet.addRow({
@@ -272,38 +504,122 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                     order_cm: itemPends.CM || 0,
                     est_olimpo: item.est_olimpo || 0,
                     pend_olimpo: item.pend_olimpo || 0,
-                    order_olimpo: itemPends.OLIMPO || 0
+                    order_olimpo: itemPends.OLIMPO || 0,
+                    tags: (itemTags[item.codigo] || []).join(', '),
+                    has_audio: audios[item.codigo] ? 'SIM' : 'NÃO',
+                    has_sketch: sketches[item.codigo] ? 'SIM' : 'NÃO'
                 });
 
-                // Estilizar Linha de Dados
+                row.height = 25;
                 row.eachCell((cell, colNumber) => {
                     cell.border = {
-                        top: { style: 'thin' },
-                        left: { style: 'thin' },
-                        bottom: { style: 'thin' },
-                        right: { style: 'thin' }
+                        top: { style: 'thin', color: { argb: 'FF000000' } },
+                        left: { style: 'thin', color: { argb: 'FF000000' } },
+                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                        right: { style: 'thin', color: { argb: 'FF000000' } }
                     };
-                    
-                    // Alinhamento central para colunas após o catálogo
-                    if (colNumber > 2) {
-                        cell.alignment = { horizontal: 'center' };
+                    cell.font = { size: 11 };
+                    cell.alignment = { vertical: 'middle' };
+
+                    // Alinhamento central para códigos e números
+                    if (colNumber === 1 || colNumber >= 3) {
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
                     }
-                    
+
                     // Formatar Preço
                     if (colNumber === 4) {
-                        cell.value = item.preco || 0;
                         cell.numFmt = '"R$ " #,##0.00';
-                        cell.alignment = { horizontal: 'right' };
+                        cell.alignment = { vertical: 'middle', horizontal: 'right' };
+                    }
+
+                    // Ocultar valores ZERO APENAS nas colunas de Pedidos (7, 10, 13, 16) - as que são editadas no sistema
+                    if ([7, 10, 13, 16].includes(colNumber) && cell.value === 0) {
+                        cell.value = null;
                     }
                 });
             });
 
-            // 4. Gerar e Baixar
+            // 5. Linha de Totais
+            const lastDataRowIndex = stock.length + 2; // Título + Header + Dados
+            const totalRowIndex = lastDataRowIndex + 1;
+            
+            const totalRow = worksheet.addRow({});
+            totalRow.height = 30;
+            totalRow.getCell(1).value = 'TOTAL GERAL';
+            totalRow.getCell(1).font = { bold: true, size: 10 };
+            totalRow.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
+            worksheet.mergeCells(`A${totalRowIndex}:B${totalRowIndex}`);
+
+            // Adicionar fórmulas de soma apenas para as métricas das filiais (colunas 5 a 16)
+            for (let i = 5; i <= 16; i++) {
+                const cell = totalRow.getCell(i);
+                const colLetter = worksheet.getColumn(i).letter;
+                cell.value = { formula: `SUM(${colLetter}3:${colLetter}${lastDataRowIndex})` };
+                cell.font = { bold: true };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+                cell.border = {
+                    top: { style: 'medium', color: { argb: 'FF000000' } },
+                    left: { style: 'thin', color: { argb: 'FF000000' } },
+                    bottom: { style: 'medium', color: { argb: 'FF000000' } },
+                    right: { style: 'thin', color: { argb: 'FF000000' } }
+                };
+                if (i === 4) cell.numFmt = '"R$ " #,##0.00';
+            }
+
+            // 4. Aba Secundária: Rabiscos Visual (Galeria)
+            const sketchedItems = stock.filter(item => sketches[item.codigo]);
+            if (sketchedItems.length > 0) {
+                const wsVisual = workbook.addWorksheet('Rabiscados (Visual)');
+                wsVisual.columns = [
+                    { header: 'MODELO', key: 'modelo', width: 45 },
+                    { header: 'RABISCO / POST-IT', key: 'rabisco', width: 40 }
+                ];
+
+                // Cabeçalho da Galeria
+                const visualHeader = wsVisual.getRow(1);
+                visualHeader.font = { bold: true, size: 12 };
+                visualHeader.height = 30;
+                visualHeader.eachCell(cell => {
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDE68A' } }; // Amarelo Post-it
+                });
+
+                sketchedItems.forEach((item, index) => {
+                    const rowNumber = index + 2;
+                    const currentRow = wsVisual.addRow({
+                        modelo: `${item.codigo} - ${item.descricao}`
+                    });
+
+                    currentRow.height = 140;
+                    currentRow.getCell(1).alignment = { vertical: 'middle', wrapText: true };
+
+                    // Inserir Imagem
+                    try {
+                        const base64Data = sketches[item.codigo];
+                        const imageId = workbook.addImage({
+                            base64: base64Data,
+                            extension: 'png',
+                        });
+
+                        wsVisual.addImage(imageId, {
+                            tl: { col: 1.1, row: rowNumber - 1 + 0.1 } as any,
+                            br: { col: 1.9, row: rowNumber - 0.1 } as any,
+                            editAs: 'oneCell'
+                        });
+                    } catch (e) {
+                        console.error("Erro ao inserir imagem no Excel:", e);
+                        currentRow.getCell(2).value = "[Erro ao carregar desenho]";
+                    }
+                });
+            }
+
+            // 5. Gerar e Baixar
             const buffer = await workbook.xlsx.writeBuffer();
             const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
             const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             saveAs(blob, `Pendencias_Export_${dateStr}.xlsx`);
-            
+
             toast.success("Planilha exportada com sucesso!", { id: loadingToast });
             setIsExportModalOpen(false);
         } catch (err) {
@@ -315,6 +631,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     };
 
     const processExcelFile = (file: File) => {
+        setImportedFileName(file.name);
         const reader = new FileReader();
         const toastId = toast.loading("Lendo planilha...");
         reader.onload = (evt) => {
@@ -326,7 +643,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                 const data = XLSX.utils.sheet_to_json(ws);
 
                 const mappedData: StockItem[] = data.map((row: any) => {
-                    const normalize = (s: string) => 
+                    const normalize = (s: string) =>
                         String(s || '').normalize("NFD")
                             .replace(/[\u0300-\u036f]/g, "")
                             .replace(/[^A-Z0-9]/gi, "")
@@ -342,7 +659,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
 
                     const find = (keywords: string[]) => {
                         const normalizedKeywords = keywords.map(normalize);
-                        const foundKey = Object.keys(row).find(k => 
+                        const foundKey = Object.keys(row).find(k =>
                             normalizedKeywords.includes(normalize(k))
                         );
                         return foundKey ? row[foundKey] : undefined;
@@ -381,19 +698,20 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
 
     const handleSyncToCloud = async () => {
         if (tempProcessedData.length === 0) return;
-        
+
         setIsSyncingCloud(true);
         const syncToast = toast.loading("Sincronizando com a nuvem...");
         try {
-            await syncPendenciasToCloud(tempProcessedData);
-            
+            await syncPendenciasToCloud(tempProcessedData, importedFileName || 'Planilha Importada');
+
             // Sucesso! Atualizar estado local
             setStock(tempProcessedData);
             const now = new Date().toISOString();
             setLastUploadDate(now);
             localStorage.setItem('inventory_cache', JSON.stringify({
                 data: tempProcessedData,
-                updatedAt: now
+                updatedAt: now,
+                fileName: importedFileName
             }));
 
             toast.success("Estoque sincronizado com a nuvem v!", { id: syncToast });
@@ -413,6 +731,12 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     
+    const [showOnlyWithAudio, setShowOnlyWithAudio] = useState(false);
+    const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
+    const [isTourOpen, setIsTourOpen] = useState(false);
+    const [showOnlyWithTags, setShowOnlyWithTags] = useState(false);
+    const [showOnlyWithSketches, setShowOnlyWithSketches] = useState(false);
+
     const [filterLinha, setFilterLinha] = useState("");
     const [filterAro, setFilterAro] = useState("");
     const [filterFuracao, setFilterFuracao] = useState("");
@@ -421,13 +745,23 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
 
     const getFields = (item: StockItem) => {
         const descUpper = item.descricao.toUpperCase();
+
+        // Modelo: Geralmente o primeiro termo (ex: C10, G10)
+        // Mas para modelos compostos ou com prefixo, podemos ser mais precisos
         const model = descUpper.split(' ')[0];
+
+        // Linha: Prefixo alfabético do modelo (ex: C, G, E)
         const linha = model.match(/^[A-Z]+/i)?.[0] || "";
-        const aroMatch = descUpper.match(/(\d{2})[XxX\*]/i);
-        const aro = aroMatch ? aroMatch[1] : "";
-        const furMatch = descUpper.match(/\d[XxX\*]\d{2,3}|\d[Ff]/i);
+
+        // Aro + Tala: Captura 15X4, 15X10, 17X7.5, etc.
+        // Se não houver tala explicita (ex: apenas "ARO 15"), captura apenas o 15
+        const aroMatch = descUpper.match(/(\d{2}[XxX\*][\d\.]+)|(\b\d{2}\b)/i);
+        const aro = aroMatch ? aroMatch[0] : "";
+
+        // Furação: Ex 4X100, 5X114.3
+        const furMatch = descUpper.match(/\d[XxX\*]\d{2,3}(\.\d+)?|\d[Ff]/i);
         const furacao = furMatch ? furMatch[0] : "";
-        
+
         let acabamento = "";
         for (const key of sortedFinishKeys) {
             if (descUpper.includes(key)) {
@@ -438,11 +772,27 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
         return { linha, aro, furacao, model, acabamento, descUpper };
     };
 
+    // Filtros Hierárquicos (Cascata)
+    // Para cada filtro, calculamos as opções baseadas nos itens que passam pelos OUTROS filtros aplicados.
+
+    // Opções de Linha: Sempre baseadas no estoque total (topo da hierarquia)
     const uniqueLinhas = Array.from(new Set(stock.map(item => getFields(item).linha))).filter(Boolean).sort();
-    const uniqueAros = Array.from(new Set(stock.map(item => getFields(item).aro))).filter(Boolean).sort();
-    const uniqueFuracoes = Array.from(new Set(stock.map(item => getFields(item).furacao))).filter(Boolean).sort();
-    const uniqueModelos = Array.from(new Set(stock.map(item => getFields(item).model))).filter(Boolean).sort();
-    const uniqueAcabamentos = Array.from(new Set(stock.map(item => getFields(item).acabamento))).filter(Boolean).sort();
+
+    // Opções de Modelo: Dependem da Linha selecionada
+    const itemsForModelo = stock.filter(item => !filterLinha || getFields(item).linha === filterLinha);
+    const uniqueModelos = Array.from(new Set(itemsForModelo.map(item => getFields(item).model))).filter(Boolean).sort();
+
+    // Opções de Aro: Dependem da Linha e Modelo selecionados
+    const itemsForAro = itemsForModelo.filter(item => !filterModelo || getFields(item).model === filterModelo);
+    const uniqueAros = Array.from(new Set(itemsForAro.map(item => getFields(item).aro))).filter(Boolean).sort();
+
+    // Opções de Furação: Dependem da Linha, Modelo e Aro selecionados
+    const itemsForFuracao = itemsForAro.filter(item => !filterAro || getFields(item).aro === filterAro);
+    const uniqueFuracoes = Array.from(new Set(itemsForFuracao.map(item => getFields(item).furacao))).filter(Boolean).sort();
+
+    // Opções de Acabamento: Dependem de tudo acima
+    const itemsForAcabamento = itemsForFuracao.filter(item => !filterFuracao || getFields(item).furacao === filterFuracao);
+    const uniqueAcabamentos = Array.from(new Set(itemsForAcabamento.map(item => getFields(item).acabamento))).filter(Boolean).sort();
 
     const filteredStock = stock.filter(item => {
         if (showOnlyPending) {
@@ -456,23 +806,23 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
             const terms = searchQuery.toUpperCase().trim().split(/\s+/).filter(Boolean);
             const desc = item.descricao.toUpperCase();
             const cod = item.codigo.toUpperCase();
-            
+
             const matchesAll = terms.every(term => {
                 const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                
+
                 // Boundaries inteligentes:
                 // 1. O termo tem que começar com espaço, X, -, início da string, ou O termo exato para código.
                 // 2. Se o termo tem 2 caracteres ou mais e termina com letra, aceita partial (ex: "BLA" acha "BLACK").
                 // 3. Se termina com número, não aceitamos outro número depois (ex: "R50" não acha "R500").
                 const endsWithDigit = /\d$/.test(term);
                 const rightBoundary = endsWithDigit ? '(?![0-9])' : '';
-                
+
                 const regex = new RegExp(`(^|\\s|X|/|-)${escapedTerm}${rightBoundary}`, 'i');
-                
+
                 // Verifica a descrição OU se o código COMEÇA EXATAMENTE com o termo
                 return regex.test(desc) || cod.startsWith(term);
             });
-            
+
             if (!matchesAll) return false;
         }
 
@@ -482,6 +832,11 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
         if (filterFuracao && furacao !== filterFuracao) return false;
         if (filterModelo && model !== filterModelo) return false;
         if (filterAcabamento && acabamento !== filterAcabamento) return false;
+        // Annotation Filters
+        if (showOnlyWithAudio && !audios[item.codigo]) return false;
+        if (showOnlyWithTags && (!itemTags[item.codigo] || itemTags[item.codigo].length === 0)) return false;
+        if (showOnlyWithSketches && !sketches[item.codigo]) return false;
+
         return true;
     });
 
@@ -490,11 +845,22 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
         setCurrentPage(1);
     }, [showOnlyPending, searchQuery, filterLinha, filterAro, filterFuracao, filterModelo, filterAcabamento]);
 
+    // Reset scroll when page changes
+    useEffect(() => {
+        tableContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+    }, [currentPage]);
+
     const itemsPerPage = 100;
     const totalPages = Math.ceil(filteredStock.length / itemsPerPage) || 1;
     const paginatedStock = filteredStock.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     useEffect(() => {
+        // Verificar se é o primeiro acesso à versão 2.0 (Cloud)
+        const hasSeenWelcome = localStorage.getItem('@MK_WELCOME_CLOUD_SEEN');
+        if (!hasSeenWelcome) {
+            setIsWelcomeModalOpen(true);
+        }
+
         const fetchData = async () => {
             try {
                 // 1. Carregar Pedidos da Nuvem (Sempre a prioridade para estar sincronizado)
@@ -514,21 +880,40 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                 const inventoryData = await getPendenciasInventory();
                 if (inventoryData && inventoryData.length > 0) {
                     setStock(inventoryData as StockItem[]);
-                    // Atualizar cache local com dados da nuvem
+                    
+                    // Buscar metadados (data e nome do arquivo) da nuvem
+                    const updateData = await getLastUpdate();
+                    if (updateData) {
+                        setLastUploadDate(updateData.date);
+                        if (updateData.fileName) setImportedFileName(updateData.fileName);
+                    }
+
+                    // Atualizar cache local
                     localStorage.setItem('inventory_cache', JSON.stringify({
                         data: inventoryData,
-                        updatedAt: new Date().toISOString()
+                        updatedAt: updateData?.date || new Date().toISOString(),
+                        fileName: updateData?.fileName || importedFileName
                     }));
                 } else {
                     // 3. Se não houver nada na nuvem, tentar carregar do Cache Local (Backup)
                     const savedCache = localStorage.getItem('inventory_cache');
                     if (savedCache) {
-                        const { data, updatedAt } = JSON.parse(savedCache);
+                        const { data, updatedAt, fileName } = JSON.parse(savedCache);
                         setStock(data as StockItem[]);
                         setLastUploadDate(updatedAt || null);
+                        setImportedFileName(fileName || null);
                         toast.success('Usando inventário carregado localmente.', { duration: 2000 });
                     }
                 }
+
+                // Em modo Local DB, se não houver nome, setamos o padrão do mock
+                if (import.meta.env.VITE_USE_LOCAL_DB === 'true') {
+                    setImportedFileName(prev => prev || 'pendencias_estoque_rows.csv');
+                }
+
+                await loadTags();
+                await loadSketches();
+                await loadAudios();
             } catch (err) {
                 console.error('Erro ao inicializar', err);
                 toast.error('Erro ao carregar dados.');
@@ -555,11 +940,24 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                         </button>
                         <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 whitespace-nowrap">
                             <ClipboardList className="text-amber-500 w-5 h-5" /> Pendências
+                            {USE_LOCAL_DB ? (
+                                <span className="px-1.5 py-0.5 text-[9px] bg-emerald-500 text-white rounded-md uppercase tracking-wider font-black shadow-sm animate-pulse">Local CSV</span>
+                            ) : (
+                                <span id="tour-cloud" className="px-1.5 py-0.5 text-[10px] bg-blue-600 text-white rounded-md uppercase tracking-widest font-black shadow-lg flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 bg-blue-200 rounded-full animate-ping"></span>
+                                    Supabase Cloud
+                                </span>
+                            )}
                         </h1>
                         <div className="hidden md:block h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
-                        <div className="flex flex-col">
+                        <div id="tour-summary" className="flex flex-col">
                             <p className="hidden lg:block text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500">
                                 {isLoading ? "Carregando..." : `${filteredStock.length} / ${stock.length} Rodas`}
+                                {USE_LOCAL_DB ? (
+                                    importedFileName && <span className="ml-2 text-amber-600 dark:text-amber-400 text-[9px] lowercase italic">({importedFileName})</span>
+                                ) : (
+                                    <span className="ml-2 text-blue-500 dark:text-blue-400 text-[9px] lowercase italic">(Banco de Dados Cloud)</span>
+                                )}
                             </p>
                             {lastUploadDate && (
                                 <p className="hidden lg:block text-[9px] font-medium text-slate-400 dark:text-slate-500">
@@ -571,55 +969,60 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
 
                     {!isLoading && (
                         <div className="flex flex-wrap items-center gap-2">
-                            <div className="relative w-48 lg:w-64">
+                            <div id="tour-search" className="relative w-48 lg:w-64">
                                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5" />
-                                <input 
-                                    type="text" 
-                                    placeholder="Buscar roda..." 
+                                <input
+                                    type="text"
+                                    placeholder="Buscar roda..."
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
                                     className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-amber-500/50"
                                 />
                             </div>
-                            
-                            <button 
-                                onClick={() => setShowFilters(!showFilters)} 
+
+                            <button
+                                id="tour-filters"
+                                onClick={() => setShowFilters(!showFilters)}
                                 className={cn(
-                                    "px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-colors flex items-center gap-1.5", 
+                                    "px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-colors flex items-center gap-1.5",
                                     showFilters ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700" : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                                 )}
                             >
                                 <Filter className="w-3.5 h-3.5" /> Filtros
                             </button>
 
-                            <button 
-                                onClick={() => setShowOnlyPending(!showOnlyPending)} 
+                            <button
+                                onClick={() => setShowOnlyPending(!showOnlyPending)}
                                 className={cn(
-                                    "px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all border flex items-center gap-1.5 shadow-sm", 
-                                    showOnlyPending 
-                                        ? "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-700" 
+                                    "px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all border flex items-center gap-1.5 shadow-sm",
+                                    showOnlyPending
+                                        ? "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-700"
                                         : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
                                 )}
                             >
                                 📌 Pedidos
                             </button>
 
-                            <button 
-                                onClick={() => {
-                                    setTempProcessedData([]);
-                                    setIsUploadModalOpen(true);
-                                }}
-                                className="px-2.5 py-1.5 text-xs font-bold rounded-lg border bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer flex items-center gap-1.5 shadow-sm"
-                            >
-                                <Upload className="w-3.5 h-3.5" /> Importar
-                            </button>
+                            {isAdmin && (
+                                <button
+                                    onClick={() => {
+                                        setTempProcessedData([]);
+                                        setIsUploadModalOpen(true);
+                                    }}
+                                    className="px-2.5 py-1.5 text-xs font-bold rounded-lg border bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer flex items-center gap-1.5 shadow-sm"
+                                >
+                                    <Upload className="w-3.5 h-3.5" /> Importar
+                                </button>
+                            )}
 
-                            <button 
-                                onClick={handleExport}
-                                className="px-2.5 py-1.5 text-xs font-black rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-1.5 shadow-sm"
-                            >
-                                <Upload className="w-3.5 h-3.5 rotate-180" /> Exportar
-                            </button>
+                            {isAdmin && (
+                                <button
+                                    onClick={handleExport}
+                                    className="px-2.5 py-1.5 text-xs font-black rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-1.5 shadow-sm"
+                                >
+                                    <Upload className="w-3.5 h-3.5 rotate-180" /> Exportar
+                                </button>
+                            )}
 
                             {(filterLinha || filterAro || filterFuracao || filterModelo || filterAcabamento || searchQuery) && (
                                 <button onClick={() => { setFilterLinha(""); setFilterAro(""); setFilterFuracao(""); setFilterModelo(""); setFilterAcabamento(""); setSearchQuery(""); }} className="px-2.5 py-1.5 text-[10px] uppercase tracking-tighter font-black text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors border border-red-200 dark:border-red-900/40">
@@ -641,64 +1044,96 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                         {showFilters && (
                             <div className="flex flex-wrap items-center gap-2 py-1">
                                 <select value={filterLinha} onChange={e => setFilterLinha(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer shadow-sm">
-                                    <option value="">Todas Linhas</option>
+                                    <option value="">Linhas</option>
                                     {uniqueLinhas.map(o => <option key={o} value={o}>Linha {o}</option>)}
                                 </select>
 
-                                <select value={filterAro} onChange={e => setFilterAro(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer shadow-sm">
-                                    <option value="">Todos Aros</option>
-                                    {uniqueAros.map(o => <option key={o} value={o}>Aro {o}</option>)}
-                                </select>
-
-                                <select value={filterFuracao} onChange={e => setFilterFuracao(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer shadow-sm">
-                                    <option value="">Todas Furações</option>
-                                    {uniqueFuracoes.map(o => <option key={o} value={o}>{o}</option>)}
-                                </select>
-
                                 <select value={filterModelo} onChange={e => setFilterModelo(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer shadow-sm">
-                                    <option value="">Todos Modelos</option>
+                                    <option value="">Modelos</option>
                                     {uniqueModelos.map(o => <option key={o} value={o}>{o}</option>)}
                                 </select>
 
+                                <select value={filterAro} onChange={e => setFilterAro(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer shadow-sm">
+                                    <option value="">Aros / Talas</option>
+                                    {uniqueAros.map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
+
+                                <select value={filterFuracao} onChange={e => setFilterFuracao(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer shadow-sm">
+                                    <option value="">Furações</option>
+                                    {uniqueFuracoes.map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
+
                                 <select value={filterAcabamento} onChange={e => setFilterAcabamento(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer shadow-sm">
-                                    <option value="">Todos Acabamentos</option>
+                                    <option value="">Acabamentos</option>
                                     {uniqueAcabamentos.map(o => <option key={o} value={o}>{o}</option>)}
                                 </select>
+
+                                <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden lg:block" />
+
+                                <button 
+                                    onClick={() => setShowOnlyWithAudio(!showOnlyWithAudio)}
+                                    className={cn(
+                                        "px-3 py-1.5 text-xs font-bold rounded-lg border transition-all flex items-center gap-1.5",
+                                        showOnlyWithAudio ? "bg-rose-500 text-white border-rose-600 shadow-sm" : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50"
+                                    )}
+                                >
+                                    <Volume2 className={cn("w-3.5 h-3.5", showOnlyWithAudio ? "text-white" : "text-rose-500")} /> Com Áudio
+                                </button>
+
+                                <button 
+                                    onClick={() => setShowOnlyWithTags(!showOnlyWithTags)}
+                                    className={cn(
+                                        "px-3 py-1.5 text-xs font-bold rounded-lg border transition-all flex items-center gap-1.5",
+                                        showOnlyWithTags ? "bg-indigo-500 text-white border-indigo-600 shadow-sm" : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50"
+                                    )}
+                                >
+                                    <Tag className={cn("w-3.5 h-3.5", showOnlyWithTags ? "text-white" : "text-indigo-500")} /> Com Tags
+                                </button>
+
+                                <button 
+                                    onClick={() => setShowOnlyWithSketches(!showOnlyWithSketches)}
+                                    className={cn(
+                                        "px-3 py-1.5 text-xs font-bold rounded-lg border transition-all flex items-center gap-1.5",
+                                        showOnlyWithSketches ? "bg-amber-500 text-white border-amber-600 shadow-sm" : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50"
+                                    )}
+                                >
+                                    <PenTool className={cn("w-3.5 h-3.5", showOnlyWithSketches ? "text-white" : "text-amber-500")} /> Com Post-it
+                                </button>
                             </div>
                         )}
                     </div>
 
-                    <div className="flex-1 overflow-auto relative">
+                    <div ref={tableContainerRef} className="flex-1 overflow-auto relative">
                         <table className="w-full text-[15px] text-left whitespace-nowrap border-separate border-spacing-0">
-                            <thead className="sticky top-0 z-20 text-xs font-black uppercase bg-white dark:bg-slate-900 shadow-sm">
+                            <thead className="sticky top-[-2px] z-30 text-xs font-black uppercase bg-white dark:bg-slate-900 shadow-sm">
                                 {/* Linha 1: Cabeçalhos de Grupo */}
                                 <tr className="h-10">
-                                    <th rowSpan={2} className="sticky left-0 z-30 px-4 py-0 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-w-[100px] text-slate-400 align-middle">FOTO</th>
-                                    <th rowSpan={2} className="sticky left-[100px] z-30 px-4 py-0 border-b border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-w-[300px] lg:min-w-[400px] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] text-slate-400 align-middle">IDENTIFICAÇÃO DO PRODUTO</th>
-                                    <th rowSpan={2} className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-right min-w-[80px] text-slate-400 align-middle bg-slate-50 dark:bg-slate-800">PREÇO</th>
-                                    
-                                    <th colSpan={3} className="px-2 py-0 border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-300 tracking-[0.2em] align-middle">MK - PARANÁ</th>
-                                    <th colSpan={3} className="px-2 py-0 border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-300 tracking-[0.2em] align-middle">MOLERI</th>
-                                    <th colSpan={3} className="px-2 py-0 border-r border-slate-200 dark:border-slate-700 text-center bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-300 tracking-[0.2em] align-middle">CM</th>
-                                    <th colSpan={3} className="px-2 py-0 border-slate-200 dark:border-slate-700 text-center bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-300 tracking-[0.2em] align-middle">OLIMPO</th>
+                                    <th rowSpan={2} className="sticky top-[-2px] left-0 z-50 px-4 py-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 min-w-[100px] text-slate-400 align-middle">FOTO</th>
+                                    <th rowSpan={2} className="sticky top-[-2px] left-[100px] z-50 px-4 py-0 border-b border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 min-w-[300px] lg:min-w-[400px] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] text-slate-400 align-middle">IDENTIFICAÇÃO DO PRODUTO</th>
+                                    <th rowSpan={2} className="sticky top-[-2px] px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-right min-w-[80px] text-slate-400 align-middle bg-white dark:bg-slate-900">PREÇO</th>
+
+                                    <th colSpan={3} className="sticky top-[-2px] px-2 py-0 border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-300 tracking-[0.2em] align-middle">MK - PARANÁ</th>
+                                    <th colSpan={3} className="sticky top-[-2px] px-2 py-0 border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-300 tracking-[0.2em] align-middle">MOLERI</th>
+                                    <th colSpan={3} className="sticky top-[-2px] px-2 py-0 border-r border-slate-200 dark:border-slate-700 text-center bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-300 tracking-[0.2em] align-middle">CM</th>
+                                    <th colSpan={3} className="sticky top-[-2px] px-2 py-0 border-slate-200 dark:border-slate-700 text-center bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-300 tracking-[0.2em] align-middle">OLIMPO</th>
                                 </tr>
                                 {/* Linha 2: Cabeçalhos Individuais */}
                                 <tr className="h-8">
-                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-100 dark:bg-indigo-900">EST.</th>
-                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-100 dark:bg-indigo-900">PEND.</th>
-                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-200 dark:bg-indigo-800">PEDIDO</th>
-                                    
-                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-100 dark:bg-emerald-900">EST.</th>
-                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-100 dark:bg-emerald-900">PEND.</th>
-                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-200 dark:bg-emerald-800">PEDIDO</th>
-                                    
-                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-100 dark:bg-amber-900">EST.</th>
-                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-100 dark:bg-amber-900">PEND.</th>
-                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-200 dark:bg-amber-800">PEDIDO</th>
-                                    
-                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-rose-100 dark:bg-rose-900">EST.</th>
-                                    <th className="px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-rose-100 dark:bg-rose-900">PEND.</th>
-                                    <th className="px-2 py-0 border-b border-slate-200 dark:border-slate-700 text-center bg-rose-200 dark:bg-rose-800">PEDIDO</th>
+                                    <th className="sticky top-[38px] px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-100 dark:bg-indigo-900 z-30">EST.</th>
+                                    <th className="sticky top-[38px] px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-100 dark:bg-indigo-900 z-30">PEND.</th>
+                                    <th className="sticky top-[38px] px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-indigo-200 dark:bg-indigo-800 z-30">PEDIDO</th>
+
+                                    <th className="sticky top-[38px] px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-100 dark:bg-emerald-900 z-30">EST.</th>
+                                    <th className="sticky top-[38px] px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-100 dark:bg-emerald-900 z-30">PEND.</th>
+                                    <th className="sticky top-[38px] px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-emerald-200 dark:bg-emerald-800 z-30">PEDIDO</th>
+
+                                    <th className="sticky top-[38px] px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-100 dark:bg-amber-900 z-30">EST.</th>
+                                    <th className="sticky top-[38px] px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-100 dark:bg-amber-900 z-30">PEND.</th>
+                                    <th className="sticky top-[38px] px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-amber-200 dark:bg-amber-800 z-30">PEDIDO</th>
+
+                                    <th className="sticky top-[38px] px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-rose-100 dark:bg-rose-900 z-30">EST.</th>
+                                    <th className="sticky top-[38px] px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center bg-rose-100 dark:bg-rose-900 z-30">PEND.</th>
+                                    <th className="sticky top-[38px] px-2 py-0 border-b border-slate-200 dark:border-slate-700 text-center bg-rose-200 dark:bg-rose-800 z-30">PEDIDO</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-medium">
@@ -714,21 +1149,209 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                     return (
                                         <tr key={idx} className="hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors group">
                                             <td className={cn("sticky left-0 z-10 px-4 py-3 min-w-[100px]", bgNormal)}>
-                                                <img 
-                                                    src={photoUrl} 
-                                                    alt={`Foto ${modelCode}`} 
-                                                    className="w-16 h-16 rounded-md object-cover border border-slate-200 dark:border-slate-700 shadow-sm" 
+                                                <img
+                                                    src={photoUrl}
+                                                    alt={`Foto ${modelCode}`}
+                                                    className="w-16 h-16 rounded-md object-cover border border-slate-200 dark:border-slate-700 shadow-sm"
                                                 />
                                             </td>
-                                            <td className={cn("sticky left-[100px] z-10 px-4 py-3 text-slate-700 dark:text-slate-200 font-bold text-base min-w-[300px] lg:min-w-[400px] border-r border-slate-200 dark:border-slate-700/50 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]", bgNormal)}>{item.descricao}</td>
+                                            <td className={cn("sticky left-[100px] px-4 py-3 min-w-[300px] lg:min-w-[400px] border-r border-slate-200 dark:border-slate-700/50 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]", bgNormal, tagMenuOpen?.toString().includes(item.codigo) ? "z-50" : "z-[5]")}>
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="text-slate-700 dark:text-slate-200 font-bold text-base">
+                                                            {item.descricao}
+                                                        </span>
+
+                                                        {/* Tags List */}
+                                                        {itemTags[item.codigo]?.map(tag => (
+                                                            <button
+                                                                key={tag}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleToggleTag(item.codigo, tag);
+                                                                }}
+                                                                className="px-1.5 py-0.5 text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 rounded border border-slate-200 dark:border-slate-700 transition-all flex items-center gap-1 group/tag"
+                                                            >
+                                                                {tag}
+                                                                <X className="w-2.5 h-2.5" />
+                                                            </button>
+                                                        ))}
+
+                                                        {/* Action Hub (Triple Menu) */}
+                                                        <div className="flex items-center gap-2">
+                                                            {/* Sketch Preview */}
+                                                            {sketches[item.codigo] && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setActiveSketchItem({ codigo: item.codigo, title: item.descricao });
+                                                                        setSketchModalOpen(true);
+                                                                    }}
+                                                                    className="w-10 h-10 rounded border-2 border-amber-200 bg-amber-50 overflow-hidden shadow-sm hover:scale-110 hover:rotate-3 transition-all relative group/sketch"
+                                                                >
+                                                                    <img src={sketches[item.codigo]} alt="Rascunho" className="w-full h-full object-contain" />
+                                                                    <div className="absolute inset-0 bg-amber-500/0 group-hover/sketch:bg-amber-500/10 flex items-center justify-center">
+                                                                        <Pencil className="w-3 h-3 text-amber-600 opacity-0 group-hover/sketch:opacity-100" />
+                                                                    </div>
+                                                                </button>
+                                                            )}
+
+                                                            {/* Audio Preview (Icon to Open Player) */}
+                                                            {audios[item.codigo] && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setActiveAudioItem({ codigo: item.codigo, title: item.descricao });
+                                                                        setAudioPlayerOpen(true);
+                                                                    }}
+                                                                    className="p-2.5 rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-500 hover:bg-rose-100 hover:scale-110 transition-all border border-rose-100 dark:border-rose-800 shadow-sm"
+                                                                    title="Ouvir Nota de Voz"
+                                                                >
+                                                                    <Volume2 className="w-4 h-4" />
+                                                                </button>
+                                                            )}
+
+                                                            <div className="relative">
+                                                                <button
+                                                                    id={idx === 0 ? "tour-media" : undefined}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setTagMenuOpen(tagMenuOpen === item.codigo ? null : item.codigo);
+                                                                    }}
+                                                                    className={cn(
+                                                                        "p-2 rounded-xl transition-all border shadow-sm",
+                                                                        tagMenuOpen === item.codigo
+                                                                            ? "bg-slate-900 border-slate-900 text-white rotate-45 scale-110"
+                                                                            : "bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-700 hover:border-slate-300 hover:text-slate-900"
+                                                                    )}
+                                                                >
+                                                                    <Plus className="w-4 h-4" />
+                                                                </button>
+
+                                                                {/* Triple Choice Menu */}
+                                                                <AnimatePresence>
+                                                                    {tagMenuOpen === item.codigo && (
+                                                                        <>
+                                                                            <div
+                                                                                className="fixed inset-0 z-40"
+                                                                                onClick={() => setTagMenuOpen(null)}
+                                                                            />
+                                                                            <motion.div
+                                                                                initial={{ opacity: 0, scale: 0.5, y: idx < 3 ? -10 : 10 }}
+                                                                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                                exit={{ opacity: 0, scale: 0.5, y: idx < 3 ? -10 : 10 }}
+                                                                                className={cn(
+                                                                                    "absolute left-0 z-[100] flex flex-col gap-2",
+                                                                                    idx < 3 ? "top-full mt-3" : "bottom-full mb-3"
+                                                                                )}
+                                                                                onClick={e => e.stopPropagation()}
+                                                                            >
+                                                                                {/* Tag Action */}
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        setTagMenuOpen(`tags-${item.codigo}`);
+                                                                                    }}
+                                                                                    className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all font-bold text-sm shadow-xl whitespace-nowrap"
+                                                                                >
+                                                                                    <Tag className="w-4 h-4 text-indigo-500" /> ETIQUETAS
+                                                                                </button>
+
+                                                                                {/* Sketch Action */}
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        setActiveSketchItem({ codigo: item.codigo, title: item.descricao });
+                                                                                        setSketchModalOpen(true);
+                                                                                        setTagMenuOpen(null);
+                                                                                    }}
+                                                                                    className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all font-bold text-sm shadow-xl whitespace-nowrap"
+                                                                                >
+                                                                                    <PenTool className="w-4 h-4 text-amber-500" /> RABISCAR
+                                                                                </button>
+
+                                                                                {/* Audio Action */}
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        setActiveAudioItem({ codigo: item.codigo, title: item.descricao });
+                                                                                        setAudioModalOpen(true);
+                                                                                        setTagMenuOpen(null);
+                                                                                    }}
+                                                                                    className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all font-bold text-sm shadow-xl whitespace-nowrap"
+                                                                                >
+                                                                                    <Mic className="w-4 h-4 text-rose-500" /> GRAVAR ÁUDIO
+                                                                                </button>
+                                                                            </motion.div>
+                                                                        </>
+                                                                    )}
+
+                                                                    {/* Sub-menu for Tags specifically */}
+                                                                    {tagMenuOpen === `tags-${item.codigo}` && (
+                                                                        <>
+                                                                            <div
+                                                                                className="fixed inset-0 z-40"
+                                                                                onClick={() => setTagMenuOpen(null)}
+                                                                            />
+                                                                            <motion.div
+                                                                                initial={{ opacity: 0, scale: 0.95, y: idx < 3 ? -10 : 10 }}
+                                                                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                                exit={{ opacity: 0, scale: 0.95, y: idx < 3 ? -10 : 10 }}
+                                                                                className={cn(
+                                                                                    "absolute left-0 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-3 min-w-[200px]",
+                                                                                    idx < 3 ? "top-full mt-3" : "bottom-full mb-3"
+                                                                                )}
+                                                                                onClick={e => e.stopPropagation()}
+                                                                            >
+                                                                                <div className="text-[10px] font-bold text-slate-400 px-1 py-1 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700 mb-2 flex items-center gap-1.5 line-clamp-1">
+                                                                                    <Tag className="w-3 h-3 text-indigo-500" /> Selecionar Tag
+                                                                                </div>
+                                                                                <div className="grid grid-cols-1 gap-1">
+                                                                                    {['VÍDEO', 'PEDIR', 'FOTO', 'WILLIAM', 'SP'].map(tag => (
+                                                                                        <button
+                                                                                            key={tag}
+                                                                                            onClick={() => handleToggleTag(item.codigo, tag)}
+                                                                                            className={cn(
+                                                                                                "w-full text-left px-3 py-2 rounded-xl text-sm font-bold transition-colors",
+                                                                                                itemTags[item.codigo]?.includes(tag)
+                                                                                                    ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
+                                                                                                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                                                                            )}
+                                                                                        >
+                                                                                            {tag}
+                                                                                        </button>
+                                                                                    ))}
+                                                                                </div>
+                                                                                <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700 flex gap-1">
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        placeholder="Nova..."
+                                                                                        className="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 rounded-xl border-none focus:ring-1 focus:ring-indigo-500"
+                                                                                        onKeyDown={(e) => {
+                                                                                            if (e.key === 'Enter') {
+                                                                                                const val = e.currentTarget.value.trim().toUpperCase();
+                                                                                                if (val) {
+                                                                                                    handleToggleTag(item.codigo, val);
+                                                                                                    e.currentTarget.value = '';
+                                                                                                }
+                                                                                            }
+                                                                                        }}
+                                                                                    />
+                                                                                </div>
+                                                                            </motion.div>
+                                                                        </>
+                                                                    )}
+                                                                </AnimatePresence>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
                                             <td className={cn("px-2 py-3 text-right text-slate-500", bgNormal)}>
                                                 {item.preco ? item.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}
                                             </td>
-                                            
+
                                             {/* MK */}
                                             <td className={cn("px-2 py-3 text-center font-bold text-slate-500 text-base", "bg-indigo-50/20 dark:bg-indigo-900/5")}>{item.est_mk || 0}</td>
                                             <td className={cn("px-2 py-3 text-center text-slate-400 text-base", "bg-indigo-50/20 dark:bg-indigo-900/5")}>{item.pend_mk || 0}</td>
-                                            <td 
+                                            <td
                                                 className={cn("px-2 py-3 text-center cursor-pointer hover:bg-indigo-100/50 dark:hover:bg-indigo-800/20 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", "bg-indigo-100/30 dark:bg-indigo-800/10")}
                                                 onClick={() => openModal(item, 'MK')}
                                             >
@@ -741,7 +1364,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                             {/* MOLERI */}
                                             <td className={cn("px-2 py-3 text-center font-bold text-slate-500 text-base", "bg-emerald-50/20 dark:bg-emerald-900/5")}>{item.est_moleri || 0}</td>
                                             <td className={cn("px-2 py-3 text-center text-slate-400 text-base", "bg-emerald-50/20 dark:bg-emerald-900/5")}>{item.pend_moleri || 0}</td>
-                                            <td 
+                                            <td
                                                 className={cn("px-2 py-3 text-center cursor-pointer hover:bg-emerald-100/50 dark:hover:bg-emerald-800/20 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", "bg-emerald-100/30 dark:bg-emerald-800/10")}
                                                 onClick={() => openModal(item, 'MOLERI')}
                                             >
@@ -754,7 +1377,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                             {/* CM */}
                                             <td className={cn("px-2 py-3 text-center font-bold text-slate-500 text-base", "bg-amber-50/20 dark:bg-amber-900/5")}>{item.est_cm || 0}</td>
                                             <td className={cn("px-2 py-3 text-center text-slate-400 text-base", "bg-amber-50/20 dark:bg-amber-900/5")}>{item.pend_cm || 0}</td>
-                                            <td 
+                                            <td
                                                 className={cn("px-2 py-3 text-center cursor-pointer hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", "bg-amber-100/30 dark:bg-amber-900/10")}
                                                 onClick={() => openModal(item, 'CM')}
                                             >
@@ -767,7 +1390,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                             {/* OLIMPO */}
                                             <td className={cn("px-2 py-3 text-center font-bold text-slate-500 text-base", "bg-rose-50/20 dark:bg-rose-900/5")}>{item.est_olimpo || 0}</td>
                                             <td className={cn("px-2 py-3 text-center text-slate-400 text-base", "bg-rose-50/20 dark:bg-rose-900/5")}>{item.pend_olimpo || 0}</td>
-                                            <td 
+                                            <td
                                                 className={cn("px-2 py-3 text-center cursor-pointer hover:bg-rose-100/50 dark:hover:bg-rose-900/30 transition-colors border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400 group", "bg-rose-100/30 dark:bg-rose-900/10")}
                                                 onClick={() => openModal(item, 'OLIMPO')}
                                             >
@@ -848,16 +1471,18 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                     </div>
 
                                     {/* Botão Zerar/Arquivar - Estilo Bloco */}
-                                    <div className="flex flex-col gap-1 pl-6">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">AÇÕES</span>
-                                        <button 
-                                            onClick={handleClearAll}
-                                            className="flex items-center gap-2 h-[42px] px-3 bg-slate-100 dark:bg-slate-800 hover:bg-red-500 dark:hover:bg-red-900/50 hover:text-white dark:hover:text-red-100 text-slate-500 rounded-xl transition-all border border-slate-200 dark:border-slate-700 hover:border-red-500 group shadow-sm active:scale-95"
-                                        >
-                                            <Archive className="w-4 h-4" />
-                                            <span className="text-[10px] font-black uppercase whitespace-nowrap">Zerar Semana</span>
-                                        </button>
-                                    </div>
+                                    {isAdmin && (
+                                        <div className="flex flex-col gap-1 pl-6">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">AÇÕES</span>
+                                            <button
+                                                onClick={handleClearAll}
+                                                className="flex items-center gap-2 h-[42px] px-3 bg-slate-100 dark:bg-slate-800 hover:bg-red-500 dark:hover:bg-red-900/50 hover:text-white dark:hover:text-red-100 text-slate-500 rounded-xl transition-all border border-slate-200 dark:border-slate-700 hover:border-red-500 group shadow-sm active:scale-95"
+                                            >
+                                                <Archive className="w-4 h-4" />
+                                                <span className="text-[10px] font-black uppercase whitespace-nowrap">Zerar Semana</span>
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -903,6 +1528,30 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                 onConfirm={handleConfirmQty}
             />
 
+            <SketchModal
+                isOpen={sketchModalOpen}
+                onClose={() => setSketchModalOpen(false)}
+                onSave={handleSaveSketch}
+                onDelete={handleDeleteSketch}
+                initialData={activeSketchItem ? sketches[activeSketchItem.codigo] : null}
+                title={activeSketchItem?.title || ""}
+            />
+
+            <AudioRecorderModal
+                isOpen={audioModalOpen}
+                onClose={() => setAudioModalOpen(false)}
+                onSave={handleSaveAudio}
+                title={activeAudioItem?.title || ""}
+            />
+
+            <AudioPlayerModal
+                isOpen={audioPlayerOpen}
+                onClose={() => setAudioPlayerOpen(false)}
+                onDelete={() => activeAudioItem && handleDeleteAudio(activeAudioItem.codigo)}
+                audioUrl={activeAudioItem ? audios[activeAudioItem.codigo] : null}
+                title={activeAudioItem?.title || ""}
+            />
+
             {/* Modal de Importação e Sincronização Cloud */}
             {/* Modal de Exportação */}
             <AnimatePresence>
@@ -926,7 +1575,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                     <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-2xl">
                                         <FileSpreadsheet className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => setIsExportModalOpen(false)}
                                         disabled={isExportLoading}
                                         className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors disabled:opacity-50"
@@ -946,8 +1595,8 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                         disabled={isExportLoading}
                                         className={cn(
                                             "w-full py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 shadow-lg shadow-emerald-500/20",
-                                            isExportLoading 
-                                                ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed" 
+                                            isExportLoading
+                                                ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
                                                 : "bg-emerald-600 hover:bg-emerald-700 text-white active:scale-[0.98]"
                                         )}
                                     >
@@ -963,7 +1612,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                             </>
                                         )}
                                     </button>
-                                    
+
                                     <button
                                         onClick={() => setIsExportModalOpen(false)}
                                         disabled={isExportLoading}
@@ -973,7 +1622,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                     </button>
                                 </div>
                             </div>
-                            
+
                             {/* Footer decorativo */}
                             <div className="bg-slate-50 dark:bg-slate-950/50 px-6 py-4 flex items-center justify-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -998,7 +1647,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                     <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
                                         <CloudUpload className="text-amber-500 w-6 h-6" /> Importar
                                     </h2>
-                                    <button 
+                                    <button
                                         onClick={() => setIsUploadModalOpen(false)}
                                         className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400"
                                     >
@@ -1014,9 +1663,9 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                                 <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Clique para carregar planilha</p>
                                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">.XLSX ou .XLS</p>
                                             </div>
-                                            <input 
-                                                type="file" 
-                                                className="hidden" 
+                                            <input
+                                                type="file"
+                                                className="hidden"
                                                 accept=".xlsx, .xlsm, .xls"
                                                 onChange={(e) => {
                                                     const file = e.target.files?.[0];
@@ -1059,7 +1708,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                     )}
 
                                     {tempProcessedData.length > 0 && !isSyncingCloud && (
-                                        <button 
+                                        <button
                                             onClick={() => setTempProcessedData([])}
                                             className="w-full text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors uppercase tracking-widest"
                                         >
@@ -1072,6 +1721,19 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                     </div>
                 )}
             </AnimatePresence>
+            <WelcomeModal 
+                isOpen={isWelcomeModalOpen} 
+                onClose={() => {
+                    setIsWelcomeModalOpen(false);
+                    localStorage.setItem('@MK_WELCOME_CLOUD_SEEN', 'true');
+                    setTimeout(() => setIsTourOpen(true), 500); // Inicia o tour logo após
+                }} 
+            />
+
+            <OnboardingTour 
+                isOpen={isTourOpen} 
+                onClose={() => setIsTourOpen(false)} 
+            />
         </div>
     );
 };

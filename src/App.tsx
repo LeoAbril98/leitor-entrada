@@ -3,29 +3,35 @@ import { HomeMenu } from './components/HomeMenu';
 import { CountingModule } from './components/CountingModule';
 import { LocatorModule } from './components/LocatorModule';
 import { PendenciesModule } from './components/PendenciesModule';
+import { AdminLogin } from './components/AdminLogin';
+import { AdminDashboard } from './components/AdminDashboard';
+import { AdminManagementPanel } from './components/AdminManagementPanel';
 
-type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies';
+import { HistoryModule } from './components/HistoryModule';
+
+type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history';
 
 export default function App() {
-  const [mode, setMode] = useState<AppMode>(() => {
-    // Tenta persistir qual módulo o usuário estava, 
-    // ou se tinha contagem salva, vai direto para a contagem
-    const savedReadings = localStorage.getItem('@MK_SAVED_READINGS');
-    if (savedReadings && savedReadings !== '[]') {
-      return 'counting';
+  const [mode, setMode] = useState<AppMode>('menu');
+
+  // Detect administrative route
+  React.useEffect(() => {
+    if (window.location.pathname === '/admin') {
+      setMode('admin-login');
     }
-    const savedMode = localStorage.getItem('@MK_APP_MODE') as AppMode;
-    return savedMode || 'menu';
-  });
+  }, []);
+
+  // Reset scroll on view change
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [mode]);
 
   const handleSelectMode = (newMode: AppMode) => {
     setMode(newMode);
-    localStorage.setItem('@MK_APP_MODE', newMode);
   };
 
   const handleBackToMenu = () => {
     setMode('menu');
-    localStorage.setItem('@MK_APP_MODE', 'menu');
   };
 
   if (mode === 'menu') {
@@ -38,6 +44,42 @@ export default function App() {
 
   if (mode === 'pendencies') {
     return <PendenciesModule onBackToMenu={handleBackToMenu} />;
+  }
+
+  if (mode === 'admin-login') {
+    return (
+      <AdminLogin 
+        onLogin={() => setMode('admin-dashboard')} 
+        onBack={handleBackToMenu} 
+      />
+    );
+  }
+
+  if (mode === 'admin-dashboard') {
+    return (
+      <AdminDashboard 
+        onSelectModule={(mod) => mod === 'pendencies' ? setMode('admin-management') : null}
+        onLogout={handleBackToMenu}
+      />
+    );
+  }
+
+  if (mode === 'admin-management') {
+    return (
+      <AdminManagementPanel 
+        onBack={() => setMode('admin-dashboard')}
+        onViewTable={() => setMode('admin-panel')}
+        onViewHistory={() => setMode('admin-history')}
+      />
+    );
+  }
+
+  if (mode === 'admin-history') {
+    return <HistoryModule onBack={() => setMode('admin-management')} />;
+  }
+
+  if (mode === 'admin-panel') {
+    return <PendenciesModule onBackToMenu={() => setMode('admin-management')} isAdmin={true} />;
   }
 
   // mode === 'counting'

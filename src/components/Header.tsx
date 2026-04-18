@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, RotateCcw, Trash2, Download, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Trash2, Download, Moon, Sun, RefreshCcw } from 'lucide-react';
 import { Origin } from '../types';
+import { cn } from '../utils';
 
 interface HeaderProps {
     origin: Origin | null;
@@ -14,6 +15,8 @@ interface HeaderProps {
     totalVolumes: number;
     lastReading: string;
     onBackToMenu: () => void;
+    onSync?: () => void;
+    isSyncing?: boolean;
 }
 
 export function Header({
@@ -27,7 +30,9 @@ export function Header({
     uniqueCount,
     totalVolumes,
     lastReading,
-    onBackToMenu
+    onBackToMenu,
+    onSync,
+    isSyncing
 }: HeaderProps) {
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -113,6 +118,18 @@ export function Header({
                             >
                                 <Download className="w-6 h-6" />
                             </button>
+                            {onSync && (
+                                <button
+                                    onClick={onSync}
+                                    className={cn(
+                                        "p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all",
+                                        isSyncing && "animate-spin"
+                                    )}
+                                    title="Sincronizar com a Nuvem"
+                                >
+                                    <RefreshCcw className="w-6 h-6" />
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

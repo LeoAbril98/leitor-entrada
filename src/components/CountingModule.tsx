@@ -6,7 +6,7 @@ import { Toaster, toast } from 'react-hot-toast';
 import { Barcode } from 'lucide-react';
 import { cn } from '../utils';
 
-import { getInventory } from '../lib/supabase';
+import { getInventory, saveCloudReading, getCloudReadings, clearCloudReadings, USE_LOCAL_DB } from '../lib/supabase';
 
 import { Origin, Reading, GroupedReading, StockItem } from '../types';
 import { MOCK_STOCK } from '../constants';
@@ -43,6 +43,7 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
   // Export Modal State
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportStatus, setExportStatus] = useState<ExportStatus>('idle');
+  const [isSyncing, setIsSyncing] = useState(false);
   const [generatedFiles, setGeneratedFiles] = useState<{ files: { blob: Blob | File; name: string; type: 'excel' | 'image' }[]; fileName: string }>({ files: [], fileName: '' });
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -128,7 +129,38 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
       toast.error('Selecione uma origem para começar');
       return;
     }
+
+    // Se estiver em modo Cloud, tentar buscar o que já foi bipado por outros
+    if (!USE_LOCAL_DB) {
+      handleSyncFromCloud();
+    }
+
     setView('counting');
+  };
+
+  const handleSyncFromCloud = async () => {
+    setIsSyncing(true);
+    const cloudReadings = await getCloudReadings();
+    if (cloudReadings.length > 0) {
+      const formattedReadings: Reading[] = [];
+      // Organizar para manter a ordem cronológica aproximadamente
+      cloudReadings.forEach(cr => {
+        for (let i = 0; i < cr.quantidade; i++) {
+          formattedReadings.push({
+            id: `cloud-${cr.codigo}-${i}-${Math.random()}`,
+            codigo: cr.codigo,
+            timestamp: Date.now() - (i * 1000)
+          });
+        }
+      });
+      // Sincronizar (Merge) as leituras locais com as da nuvem se necessário, 
+      // ou apenas substituir para ser a "fonte de verdade"
+      setReadings(formattedReadings);
+      toast.success(`${formattedReadings.length} bipes sincronizados!`);
+    } else if (!USE_LOCAL_DB) {
+        toast.error("Nenhuma leitura encontrada na nuvem.");
+    }
+    setIsSyncing(false);
   };
 
   const handleAddReading = (e?: React.FormEvent) => {
@@ -144,6 +176,11 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
 
     setReadings(prev => [newReading, ...prev]);
     setInputValue('');
+
+    // Sincronizar com a nuvem se não estiver em modo local
+    if (!USE_LOCAL_DB) {
+      saveCloudReading(code, 1);
+    }
 
     // Feedback
     const found = currentStock.some(item => item.codigo === code);
@@ -176,6 +213,11 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
 
     setReadings(prev => [...newReadings, ...prev]);
 
+    // Sincronizar com a nuvem
+    if (!USE_LOCAL_DB) {
+      saveCloudReading(codigo, quantity);
+    }
+
     if (successSound.current) {
       successSound.current.currentTime = 0;
       successSound.current.play().catch(() => { });
@@ -193,6 +235,9 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
     if (readings.length === 0) return;
     if (window.confirm('Tem certeza que deseja apagar toda a contagem?')) {
       setReadings([]);
+      if (!USE_LOCAL_DB) {
+        clearCloudReadings();
+      }
       toast.success('Contagem limpa');
     }
   };
@@ -541,6 +586,8 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
         onClear={clearAllReadings}
         onExport={handleExportClick}
         onBackToMenu={onBackToMenu}
+        onSync={!USE_LOCAL_DB ? handleSyncFromCloud : undefined}
+        isSyncing={isSyncing}
         readingsCount={readings.length}
         uniqueCount={totalUnique}
         totalVolumes={totalVolumes}

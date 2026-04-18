@@ -1,1137 +1,1629 @@
 {
   "C10": {
-    "BD": "/fotos/LINHA C/C10/C10 15X10  4F BD.png",
-    "POLIDA": "/fotos/LINHA C/C10/C10 15X4 4F POLIDA.png"
+    "C10 15X10  4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C10/C10 15X10  4F BD.webp",
+    "C10 15X10  5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C10/C10 15X10  5F BD.webp",
+    "C10 15X4 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C10/C10 15X4 4F BD.webp",
+    "C10 15X4 4F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C10/C10 15X4 4F POLIDA.webp",
+    "C10 15X4 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C10/C10 15X4 5F BD.webp",
+    "C10 15X4 5F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C10/C10 15X4 5F POLIDA.webp",
+    "C10 15X7-8  4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C10/C10 15X7-8  4F BD.webp",
+    "C10 15X7-8  4F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C10/C10 15X7-8  4F POLIDA.webp",
+    "C10 15X7-8  5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C10/C10 15X7-8  5F BD.webp",
+    "C10 15X7-8  5F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C10/C10 15X7-8  5F POLIDA.webp",
+    "C10 17X7 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C10/C10 17X7 4F BD.webp",
+    "C10 17X7 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C10/C10 17X7 5F BD.webp"
   },
   "C14": {
-    "BD": "/fotos/LINHA C/C14/C14 15X4 4F BD.png"
+    "C14 15X4 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C14/C14 15X4 4F BD.webp",
+    "C14 15X4 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C14/C14 15X4 5F BD.webp",
+    "C14 15X7-8 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C14/C14 15X7-8 4F BD.webp",
+    "C14 15X7-8 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C14/C14 15X7-8 5F BD.webp"
   },
   "C17": {
-    "BD": "/fotos/LINHA C/C17/C17 15X4 4F BD.png",
-    "HD": "/fotos/LINHA C/C17/C17 15X4 4F HD.png"
+    "C17 15X4 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C17/C17 15X4 4F BD.webp",
+    "C17 15X4 4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C17/C17 15X4 4F HD.webp",
+    "C17 15X4 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C17/C17 15X4 5F HD.webp",
+    "C17 15X7-8  4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C17/C17 15X7-8  4F BD.webp",
+    "C17 15X7-8  4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C17/C17 15X7-8  4F HD.webp",
+    "C17 15X7-8  5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C17/C17 15X7-8  5F BD.webp",
+    "C17 15X7-8  5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C17/C17 15X7-8  5F HD.webp",
+    "C17 17X7 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C17/C17 17X7 4F BD.webp",
+    "C17 17X7 4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C17/C17 17X7 4F HD.webp"
   },
   "C65": {
-    "B": "/fotos/LINHA C/C65/C65 15X4 4F B.png"
+    "C65 15X4 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C65/C65 15X4 4F B.webp",
+    "C65 15X4 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C65/C65 15X4 5F B.webp",
+    "C65 15X7-8 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C65/C65 15X7-8 4F B.webp",
+    "C65 15X7-8 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C65/C65 15X7-8 5F B.webp",
+    "C65 17X7 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C65/C65 17X7 4F B.webp",
+    "C65 17X7 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C65/C65 17X7 5F B.webp"
   },
   "C9": {
-    "HD": "/fotos/LINHA C/C9/C9 15X4 4F HD.png",
-    "POLIDA": "/fotos/LINHA C/C9/C9 15X4 4F POLIDA.png"
+    "C9 15X4 4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C9/C9 15X4 4F HD.webp",
+    "C9 15X4 4F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C9/C9 15X4 4F POLIDA.webp",
+    "C9 15X4 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C9/C9 15X4 5F HD.webp",
+    "C9 15X4 5F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C9/C9 15X4 5F POLIDA.webp",
+    "C9 15X7-8  4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C9/C9 15X7-8  4F HD.webp",
+    "C9 15X7-8  4F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C9/C9 15X7-8  4F POLIDA.webp",
+    "C9 15X7-8  5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C9/C9 15X7-8  5F HD.webp",
+    "C9 15X7-8  5F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C9/C9 15X7-8  5F POLIDA.webp",
+    "C9 17X7 4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C9/C9 17X7 4F HD.webp"
   },
   "E47": {
-    "BD": "/fotos/LINHA E/E47/E47 17 4X130 BD.png"
+    "E47 17 4X130 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E47/E47 17 4X130 BD.webp"
   },
   "E55": {
-    "GD": "/fotos/LINHA E/E55/E55 15X10 5F GD.png",
-    "HD": "/fotos/LINHA E/E55/E55 15X10 5F HD.png",
-    "POLIDA": "/fotos/LINHA E/E55/E55 15X10 5F POLIDA.png",
-    "BD": "/fotos/LINHA E/E55/E55 15X7 5F BD.png"
+    "E55 15X10 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E55/E55 15X10 5F GD.webp",
+    "E55 15X10 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E55/E55 15X10 5F HD.webp",
+    "E55 15X10 5F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E55/E55 15X10 5F POLIDA.webp",
+    "E55 15X7 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E55/E55 15X7 5F BD.webp",
+    "E55 15X7 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E55/E55 15X7 5F GD.webp",
+    "E55 15X7 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E55/E55 15X7 5F HD.webp",
+    "E55 15X7 5F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E55/E55 15X7 5F POLIDA.webp",
+    "E55 15X8 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E55/E55 15X8 5F GD.webp",
+    "E55 15X8 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E55/E55 15X8 5F HD.webp"
   },
   "E56": {
-    "BD": "/fotos/LINHA E/E56/E56 15X10 BD.png",
-    "D": "/fotos/LINHA E/E56/E56 15X10 D.png",
-    "LVD": "/fotos/LINHA E/E56/E56 15X10 LVD.png"
+    "E56 15X10 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 15X10 BD.webp",
+    "E56 15X10 D": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 15X10 D.webp",
+    "E56 15X10 LVD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 15X10 LVD.webp",
+    "E56 15X7-8 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 15X7-8 BD.webp",
+    "E56 15X7-8 D": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 15X7-8 D.webp",
+    "E56 15X7-8 LVD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 15X7-8 LVD.webp",
+    "E56 17-18 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 17-18 BD.webp",
+    "E56 17-18 D": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 17-18 D.webp",
+    "E56 17-18 LVD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 17-18 LVD.webp",
+    "E56 20X10 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 20X10 BD.webp",
+    "E56 20X10 D": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 20X10 D.webp",
+    "E56 20X10 LVD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 20X10 LVD.webp",
+    "E56 20X8 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 20X8 BD.webp",
+    "E56 20X8 D": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 20X8 D.webp",
+    "E56 20X8 LVD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E56/E56 20X8 LVD.webp"
   },
   "E58": {
-    "GD": "/fotos/LINHA E/E58/E58 17X7 5F GD.png",
-    "HD": "/fotos/LINHA E/E58/E58 17X7 5F HD.png",
-    "GFD": "/fotos/LINHA E/E58/E58 18 5F GFD.png",
-    "POLIDA": "/fotos/LINHA E/E58/E58 18 5F POLIDA.png",
-    "BD": "/fotos/LINHA E/E58/E58 20 5F BD.png"
+    "E58 17X7 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E58/E58 17X7 5F GD.webp",
+    "E58 17X7 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E58/E58 17X7 5F HD.webp",
+    "E58 18 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E58/E58 18 5F GD.webp",
+    "E58 18 5F GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E58/E58 18 5F GFD.webp",
+    "E58 18 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E58/E58 18 5F HD.webp",
+    "E58 18 5F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E58/E58 18 5F POLIDA.webp",
+    "E58 20 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E58/E58 20 5F BD.webp",
+    "E58 20 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E58/E58 20 5F GD.webp",
+    "E58 20 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E58/E58 20 5F HD.webp",
+    "E58 20 5F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E58/E58 20 5F POLIDA.webp"
   },
   "E63": {
-    "HD": "/fotos/LINHA E/E63/E63 15X7 5X114 HD.png",
-    "POLIDA": "/fotos/LINHA E/E63/E63 15X7 5X114 POLIDA.png",
-    "GD": "/fotos/LINHA E/E63/E63 15X7 5X139 GD.png"
+    "E63 15X7 5X114 HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E63/E63 15X7 5X114 HD.webp",
+    "E63 15X7 5X114 POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E63/E63 15X7 5X114 POLIDA.webp",
+    "E63 15X7 5X139 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E63/E63 15X7 5X139 GD.webp",
+    "E63 15X7 5X139 HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E63/E63 15X7 5X139 HD.webp",
+    "E63 15X8 5X114 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E63/E63 15X8 5X114 GD.webp",
+    "E63 15X8 5X114 HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E63/E63 15X8 5X114 HD.webp",
+    "E63 15X8 5X139 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E63/E63 15X8 5X139 GD.webp",
+    "E63 15X8 5X139 HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E63/E63 15X8 5X139 HD.webp"
   },
   "E64": {
-    "GD": "/fotos/LINHA E/E64/E64 17X7 5F GD.png",
-    "HD": "/fotos/LINHA E/E64/E64 17X7 5F HD.png"
+    "E64 17X7 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E64/E64 17X7 5F GD.webp",
+    "E64 17X7 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E64/E64 17X7 5F HD.webp"
   },
   "E75": {
-    "BD": "/fotos/LINHA E/E75/E75 BD.jpg",
-    "HD": "/fotos/LINHA E/E75/E75 HD.jpg",
-    "MANHATTAN": "/fotos/LINHA E/E75/TABELA ESTOQUE/E75 BD MANHATTAN.jpg"
+    "E75 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E75/E75 BD.webp",
+    "E75 HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E75/E75 HD.webp",
+    "E75 BD MANHATTAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E75/TABELA ESTOQUE/E75 BD MANHATTAN.webp",
+    "E75 HD MANHATTAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E75/TABELA ESTOQUE/E75 HD MANHATTAN.webp"
   },
   "E87": {
-    "BD": "/fotos/LINHA E/E87/E87 20X10 5F BD.png",
-    "GD": "/fotos/LINHA E/E87/E87 20X10 5F GD.png"
+    "E87 20X10 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E87/E87 20X10 5F BD.webp",
+    "E87 20X10 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E87/E87 20X10 5F GD.webp",
+    "E87 20X10 6F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E87/E87 20X10 6F BD.webp",
+    "E87 20X10 6F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E87/E87 20X10 6F GD.webp",
+    "E87 20X8 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E87/E87 20X8 5F BD.webp",
+    "E87 20X8 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E87/E87 20X8 5F GD.webp",
+    "E87 20X8 6F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E87/E87 20X8 6F BD.webp",
+    "E87 20X8 6F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E87/E87 20X8 6F GD.webp"
   },
   "E90": {
-    "BD": "/fotos/LINHA E/E90/E90 17 5F BD.png"
+    "E90 17 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA E/E90/E90 17 5F BD.webp"
   },
   "F1": {
-    "B": "/fotos/LINHA F/F1/F1 17X7 4F B.png",
-    "HG": "/fotos/LINHA F/F1/F1 17X7 4F HG.png"
+    "F1 17X7 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA F/F1/F1 17X7 4F B.webp",
+    "F1 17X7 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA F/F1/F1 17X7 4F HG.webp",
+    "F1 17X7 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA F/F1/F1 17X7 5F B.webp",
+    "F1 17X7 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA F/F1/F1 17X7 5F HG.webp"
   },
   "F2": {
-    "B": "/fotos/LINHA F/F2/F2 20 5F B.png",
-    "BD": "/fotos/LINHA F/F2/F2 20 5F BD.png",
-    "HG": "/fotos/LINHA F/F2/F2 20 5F HG.png"
+    "F2 20 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA F/F2/F2 20 5F B.webp",
+    "F2 20 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA F/F2/F2 20 5F BD.webp",
+    "F2 20 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA F/F2/F2 20 5F HG.webp"
   },
   "F3": {
-    "HG": "/fotos/LINHA F/F3/F3 17  4F HG.png"
+    "F3 17  4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA F/F3/F3 17  4F HG.webp"
   },
   "F4": {
-    "HG": "/fotos/LINHA F/F4/F4 15 4F HG.png"
+    "F4 15 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA F/F4/F4 15 4F HG.webp"
   },
   "F5": {
-    "BD": "/fotos/LINHA F/F5/F5 20 5F BD.png",
-    "GS": "/fotos/LINHA F/F5/F5 20 5F GS.png",
-    "HG": "/fotos/LINHA F/F5/F5 20 5F HG.png"
+    "F5 20 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA F/F5/F5 20 5F BD.webp",
+    "F5 20 5F GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA F/F5/F5 20 5F GS.webp",
+    "F5 20 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA F/F5/F5 20 5F HG.webp"
   },
   "G07": {
-    "SS": "/fotos/LINHA G/G07/G7 17 4F SS.png"
+    "G7 17 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G07/G7 17 4F SS.webp",
+    "G7 17 5F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G07/G7 17 5F SS.webp"
   },
   "G10": {
-    "BD": "/fotos/LINHA G/G10/G10 15 4F BD.png"
+    "G10 15 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G10/G10 15 4F BD.webp"
   },
   "G109": {
-    "(2)": "/fotos/LINHA G/G109/MKR (2).png",
-    "(3)": "/fotos/LINHA G/G109/MKR (3).png"
+    "MKR (2)": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G109/MKR 2.webp",
+    "MKR (3)": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G109/MKR 3.webp"
   },
   "G11": {
-    "BD": "/fotos/LINHA G/G11/G11 19 5F BD.png"
+    "G11 19 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G11/G11 19 5F BD.webp"
   },
   "G125": {
-    "ESTEPE": "/fotos/LINHA G/G125/G125 ESTEPE.png"
+    "G125 ESTEPE": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G125/G125 ESTEPE.webp"
   },
   "G130": {
-    "BD": "/fotos/LINHA G/G130/G130 BD.png"
+    "G130 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G130/G130 BD.webp"
   },
   "G140": {
-    "B": "/fotos/LINHA G/G140/G140 17 4F B.png",
-    "GB": "/fotos/LINHA G/G140/G140 17 4F GB.png",
-    "OURO": "/fotos/LINHA G/G140/G140 17 4F OURO.png",
-    "SS": "/fotos/LINHA G/G140/G140 17 4F SS.png"
+    "G140 17 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G140/G140 17 4F B.webp",
+    "G140 17 4F GB": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G140/G140 17 4F GB.webp",
+    "G140 17 4F OURO": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G140/G140 17 4F OURO.webp",
+    "G140 17 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G140/G140 17 4F SS.webp",
+    "G140 17 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G140/G140 17 5F B.webp",
+    "G140 17 5F GB": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G140/G140 17 5F GB.webp",
+    "G140 17 5F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G140/G140 17 5F SS.webp"
   },
   "G15": {
-    "BD": "/fotos/LINHA G/G15/G15 5X112 BD.png"
+    "G15 5X112 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G15/G15 5X112 BD.webp",
+    "G15 5X205 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G15/G15 5X205 BD.webp"
   },
   "G16": {
-    "BD": "/fotos/LINHA G/G16/G16 16 6X139 BD.png"
+    "G16 16 6X139 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G16/G16 16 6X139 BD.webp"
   },
   "G1739": {
-    "BD": "/fotos/LINHA G/G1739/G1739 18 6F BD.png"
+    "G1739 18 6F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G1739/G1739 18 6F BD.webp"
   },
   "G1741": {
-    "GF": "/fotos/LINHA G/G1741/G1741 17 4F GF.png",
-    "SS": "/fotos/LINHA G/G1741/G1741 17 4F SS.png"
+    "G1741 17 4F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G1741/G1741 17 4F GF.webp",
+    "G1741 17 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G1741/G1741 17 4F SS.webp"
   },
   "G18": {
-    "SS": "/fotos/LINHA G/G18/G18 18 6X139 SS.png"
+    "G18 18 6X139 SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G18/G18 18 6X139 SS.webp"
   },
   "G180": {
-    "MKR": "/fotos/LINHA G/G180/MKR.png"
+    "MKR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G180/MKR.webp"
   },
   "G1810": {
-    "OURO": "/fotos/LINHA G/G1810/G1810 17-18 4F OURO.png",
-    "SS": "/fotos/LINHA G/G1810/G1810 17-18 4F SS.png"
+    "G1810 17-18 4F OURO": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G1810/G1810 17-18 4F OURO.webp",
+    "G1810 17-18 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G1810/G1810 17-18 4F SS.webp"
   },
   "G19": {
-    "INOX": "/fotos/LINHA G/G19/G19 5F INOX.png"
+    "G19 5F INOX": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G19/G19 5F INOX.webp"
   },
   "G2010": {
-    "(1)": "/fotos/LINHA G/G2010/MKR (1).png",
-    "MKR": "/fotos/LINHA G/G2010/MKR.png"
+    "MKR (1)": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G2010/MKR 1.webp",
+    "MKR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G2010/MKR.webp"
   },
   "G3": {
-    "HG": "/fotos/LINHA G/G3/G3 14 4F HG.png"
+    "G3 14 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G3/G3 14 4F HG.webp"
   },
   "G37": {
-    "B": "/fotos/LINHA G/G37/G37 17 4F B.png",
-    "GB": "/fotos/LINHA G/G37/G37 17 4F GB.png",
-    "OURO": "/fotos/LINHA G/G37/G37 17 4F OURO.png",
-    "SS": "/fotos/LINHA G/G37/G37 17 4F SS.png",
-    "MKR": "/fotos/LINHA G/G37/MKR.png"
+    "G37 17 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G37/G37 17 4F B.webp",
+    "G37 17 4F GB": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G37/G37 17 4F GB.webp",
+    "G37 17 4F OURO": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G37/G37 17 4F OURO.webp",
+    "G37 17 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G37/G37 17 4F SS.webp",
+    "G37 17 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G37/G37 17 5F B.webp",
+    "G37 17 5F GB": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G37/G37 17 5F GB.webp",
+    "G37 17 5F OURO": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G37/G37 17 5F OURO.webp",
+    "MKR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G37/MKR.webp"
   },
   "G6": {
-    "SS": "/fotos/LINHA G/G6/G6 18 4F SS.png"
+    "G6 18 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G6/G6 18 4F SS.webp"
   },
   "G66": {
-    "BD": "/fotos/LINHA G/G66/G66 15 5X205 BD.png"
+    "G66 15 5X205 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G66/G66 15 5X205 BD.webp"
   },
   "G87": {
-    "POLIDA": "/fotos/LINHA G/G87/G87 15 5F POLIDA.png",
-    "SD": "/fotos/LINHA G/G87/G87 15 5F SD.png"
+    "G87 15 5F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G87/G87 15 5F POLIDA.webp",
+    "G87 15 5F SD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G87/G87 15 5F SD.webp"
   },
   "K15": {
-    "FRENTE": "/fotos/LINHA K/K15/K15 BLACK FRENTE.jpg",
-    "BLACK": "/fotos/LINHA K/K15/K15 BLACK.jpg",
-    "GL": "/fotos/LINHA K/K15/K15 GL.jpg"
+    "K15 BLACK FRENTE": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K15/K15 BLACK FRENTE.webp",
+    "K15 BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K15/K15 BLACK.webp",
+    "K15 GL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K15/K15 GL.webp"
   },
   "K16": {
-    "FORD": "/fotos/LINHA K/K16/K16 GL FORD.jpg",
-    "GM": "/fotos/LINHA K/K16/K16 GL GM.jpg",
-    "VW": "/fotos/LINHA K/K16/K16 GL VW.jpg",
-    "GL": "/fotos/LINHA K/K16/K16 GL.jpg"
+    "K16 GL FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K16/K16 GL FORD.webp",
+    "K16 GL GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K16/K16 GL GM.webp",
+    "K16 GL VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K16/K16 GL VW.webp",
+    "K16 GL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K16/K16 GL.webp"
   },
   "K18": {
-    "BD": "/fotos/LINHA K/K18/K18 4F BD.jpg",
-    "BG": "/fotos/LINHA K/K18/K18 4F BG.jpg"
+    "K18 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K18/K18 4F BD.webp",
+    "K18 4F BG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K18/K18 4F BG.webp"
   },
   "K27": {
-    "BD": "/fotos/LINHA K/K27/K27 14-15 BD.png",
-    "GD": "/fotos/LINHA K/K27/K27 14-15 GD.png",
-    "FORD": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/FORD/K27 BD FORD.jpg",
-    "GM": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/GM/K27 BD GM.jpg",
-    "HONDA": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/HONDA/K27 BD HONDA.jpg",
-    "HYUNDAI": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/HYUNDAI/K27 BD HYUNDAI.jpg",
-    "NISSAN": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/NISSAN/K27 BD NISSAN.jpg",
-    "TOYOTA": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/TOYOTA/K27 BD TOYOTA.jpg",
-    "VW": "/fotos/LINHA K/K27/OUTROS EMBLEMAS/VW/K27 BD VW.jpg"
+    "K27 14-15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K27/K27 14-15 BD.webp",
+    "K27 14-15 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K27/K27 14-15 GD.webp",
+    "K27 BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K27/OUTROS EMBLEMAS/FORD/K27 BD FORD.webp",
+    "K27 GD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K27/OUTROS EMBLEMAS/FORD/K27 GD FORD.webp",
+    "K27 BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K27/OUTROS EMBLEMAS/GM/K27 BD GM.webp",
+    "K27 BD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K27/OUTROS EMBLEMAS/HONDA/K27 BD HONDA.webp",
+    "K27 BD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K27/OUTROS EMBLEMAS/HYUNDAI/K27 BD HYUNDAI.webp",
+    "K27 BD NISSAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K27/OUTROS EMBLEMAS/NISSAN/K27 BD NISSAN.webp",
+    "K27 BD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K27/OUTROS EMBLEMAS/TOYOTA/K27 BD TOYOTA.webp",
+    "K27 BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K27/OUTROS EMBLEMAS/VW/K27 BD VW.webp",
+    "K27 GD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K27/OUTROS EMBLEMAS/VW/K27 GD VW.webp"
   },
   "K28": {
-    "BD": "/fotos/LINHA K/K28/K28 4F BD.jpg",
-    "GD": "/fotos/LINHA K/K28/k28 gd.jpg"
+    "K28 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K28/K28 4F BD.webp",
+    "K28 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K28/k28 gd.webp"
   },
   "K34": {
-    "BD": "/fotos/LINHA K/K34/K34 14-15  4F  BD.png"
+    "K34 14-15  4F  BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K34/K34 14-15  4F  BD.webp"
   },
   "K38": {
-    "(2)": "/fotos/LINHA K/K38/K38 BD Ford (2).jpeg",
-    "FORD": "/fotos/LINHA K/K38/K38 BD FORD.jpeg",
-    "BD": "/fotos/LINHA K/K38/K38 BD.jpeg"
+    "K38 BD FORD (2)": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K38/K38 BD Ford 2.webp",
+    "K38 BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K38/K38 BD FORD.webp",
+    "K38 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K38/K38 BD.webp"
   },
   "K40": {
-    "FORD": "/fotos/LINHA K/K40/K40 4F FORD.jpg",
-    "GL": "/fotos/LINHA K/K40/K40 4F GL.jpg"
+    "K40 4F FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K40/K40 4F FORD.webp",
+    "K40 4F GL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K40/K40 4F GL.webp",
+    "K40 5F GL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K40/K40 5F GL.webp"
   },
   "K42": {
-    "HG": "/fotos/LINHA K/K42/K42 4F HG.jpg"
+    "K42 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K42/K42 4F HG.webp"
   },
   "K45": {
-    "BD": "/fotos/LINHA K/K45/K45 BD.jpg",
-    "BG": "/fotos/LINHA K/K45/K45 bg.jpeg",
-    "SD": "/fotos/LINHA K/K45/K45 SD.jpg"
+    "K45 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K45/K45 BD.webp",
+    "K45 BG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K45/K45 bg.webp",
+    "K45 SD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K45/K45 SD.webp"
   },
   "K46": {
-    "HG": "/fotos/LINHA K/K46/K46 4F HG.jpg"
+    "K46 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K46/K46 4F HG.webp"
   },
   "K47": {
-    "HG": "/fotos/LINHA K/K47/k47 20 5x100 hg.jpg",
-    "BF": "/fotos/LINHA K/K47/K47 BF.JPG"
+    "K47 20 5X100 HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K47/k47 20 5x100 hg.webp",
+    "K47 BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K47/K47 BF.webp"
   },
   "K51": {
-    "BDGM": "/fotos/LINHA K/K51/GM/K51 4F BDGM.jpg",
-    "GM": "/fotos/LINHA K/K51/GM/K51 4F GD GM.jpg",
-    "HYUNDAI": "/fotos/LINHA K/K51/HYUNDAI/K51 4F BD HYUNDAI.jpg",
-    "BD": "/fotos/LINHA K/K51/K51 4F BD.jpg",
-    "GD": "/fotos/LINHA K/K51/K51 4F GD.jpg",
-    "HG": "/fotos/LINHA K/K51/K51 4F HG.jpg",
-    "TOYOTA": "/fotos/LINHA K/K51/TOYOTA/K51 4F BD TOYOTA.jpg",
-    "VW": "/fotos/LINHA K/K51/VW/K51 4F BD VW.jpg"
+    "K51 4F BDGM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/GM/K51 4F BDGM.webp",
+    "K51 4F GD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/GM/K51 4F GD GM.webp",
+    "K51 4F HG GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/GM/K51 4F HG GM.webp",
+    "K51 4F BD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/HYUNDAI/K51 4F BD HYUNDAI.webp",
+    "K51 4F GD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/HYUNDAI/K51 4F GD HYUNDAI.webp",
+    "K51 4F HG HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/HYUNDAI/K51 4F HG HYUNDAI.webp",
+    "K51 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/K51 4F BD.webp",
+    "K51 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/K51 4F GD.webp",
+    "K51 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/K51 4F HG.webp",
+    "K51 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/K51 5F BD.webp",
+    "K51 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/K51 5F GD.webp",
+    "K51 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/K51 5F HG.webp",
+    "K51 4F BD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/TOYOTA/K51 4F BD TOYOTA.webp",
+    "K51 4F GD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/TOYOTA/K51 4F GD TOYOTA.webp",
+    "K51 4F HG TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/TOYOTA/K51 4F HG TOYOTA.webp",
+    "K51 4F BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/VW/K51 4F BD VW.webp",
+    "K51 4F GD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/VW/K51 4F GD VW.webp",
+    "K51 4F HG VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/VW/K51 4F HG VW.webp",
+    "K51 5F BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/VW/K51 5F BD VW.webp",
+    "K51 5F GD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/VW/K51 5F GD VW.webp",
+    "K51 5F HG VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K51/VW/K51 5F HG VW.webp"
   },
   "K54": {
-    "HG": "/fotos/LINHA K/K54/K54 15 HG.png"
+    "K54 15 HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K54/K54 15 HG.webp"
   },
   "K56": {
-    "BD": "/fotos/LINHA K/K56/FORA DE LINHA/K56 BD.jpg",
-    "DD": "/fotos/LINHA K/K56/FORA DE LINHA/K56 DD.jpg",
-    "GD": "/fotos/LINHA K/K56/K56 17 GD.png",
-    "HD": "/fotos/LINHA K/K56/K56 17 HD.png"
+    "K56 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K56/FORA DE LINHA/K56 BD.webp",
+    "K56 DD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K56/FORA DE LINHA/K56 DD.webp",
+    "K56 17 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K56/K56 17 GD.webp",
+    "K56 17 HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K56/K56 17 HD.webp"
   },
   "K57": {
-    "FRENTE": "/fotos/LINHA K/K57/FORA DE LINHA/K54 BD FRENTE.jpg",
-    "DD": "/fotos/LINHA K/K57/FORA DE LINHA/K57 4F DD.jpg",
-    "BD": "/fotos/LINHA K/K57/FORA DE LINHA/K57 BD.jpg",
-    "BLACK": "/fotos/LINHA K/K57/K57 15 BLACK.png",
-    "GD": "/fotos/LINHA K/K57/K57 15 GD.png",
-    "HD": "/fotos/LINHA K/K57/K57 15 HD.png"
+    "K54 BD FRENTE": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K57/FORA DE LINHA/K54 BD FRENTE.webp",
+    "K57 4F DD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K57/FORA DE LINHA/K57 4F DD.webp",
+    "K57 5F DD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K57/FORA DE LINHA/K57 5F DD.webp",
+    "K57 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K57/FORA DE LINHA/K57 BD.webp",
+    "K57 15 BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K57/K57 15 BLACK.webp",
+    "K57 15 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K57/K57 15 GD.webp",
+    "K57 15 HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K57/K57 15 HD.webp"
   },
   "K58": {
-    "B": "/fotos/LINHA K/K58/K58 17 5F B.png"
+    "K58 17 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K58/K58 17 5F B.webp"
   },
   "K59": {
-    "HD": "/fotos/LINHA K/K59/K59 4F HD.jpg",
-    "FORD": "/fotos/LINHA K/K59/K59 FORD.jpg",
-    "GM": "/fotos/LINHA K/K59/K59 MULTI GOLD GM.jpg",
-    "VW": "/fotos/LINHA K/K59/K59 MULTI GOLD VW.jpg",
-    "GOLD": "/fotos/LINHA K/K59/K59 MULTI GOLD.jpg"
+    "K59 4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K59/K59 4F HD.webp",
+    "K59 FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K59/K59 FORD.webp",
+    "K59 MULTI GOLD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K59/K59 MULTI GOLD GM.webp",
+    "K59 MULTI GOLD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K59/K59 MULTI GOLD VW.webp",
+    "K59 MULTI GOLD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K59/K59 MULTI GOLD.webp"
   },
   "K60": {
-    "FORD": "/fotos/LINHA K/K60/FORA DE LINHA/FORD/K60 4F BD FORD.jpg",
-    "GM": "/fotos/LINHA K/K60/FORA DE LINHA/GM/K60 4F BD GM.jpg",
-    "HG": "/fotos/LINHA K/K60/FORA DE LINHA/k60 4f hg.jpg",
-    "GFD": "/fotos/LINHA K/K60/FORA DE LINHA/K60 5F GFD.jpg",
-    "TOYOTA": "/fotos/LINHA K/K60/FORA DE LINHA/TOYOTA/K60 5F TOYOTA.jpg",
-    "VW": "/fotos/LINHA K/K60/FORA DE LINHA/VW/K60 4F BD VW.jpg",
-    "BD": "/fotos/LINHA K/K60/K60 15 BD.png",
-    "BLACK": "/fotos/LINHA K/K60/K60 15 BLACK.png"
+    "K60 4F BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K60/FORA DE LINHA/FORD/K60 4F BD FORD.webp",
+    "K60 HG FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K60/FORA DE LINHA/FORD/K60 HG FORD.webp",
+    "K60 4F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K60/FORA DE LINHA/GM/K60 4F BD GM.webp",
+    "K60 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K60/FORA DE LINHA/k60 4f hg.webp",
+    "K60 5F GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K60/FORA DE LINHA/K60 5F GFD.webp",
+    "K60 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K60/FORA DE LINHA/K60 5F HG.webp",
+    "K60 5F TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K60/FORA DE LINHA/TOYOTA/K60 5F TOYOTA.webp",
+    "K60 4F BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K60/FORA DE LINHA/VW/K60 4F BD VW.webp",
+    "K60 5F VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K60/FORA DE LINHA/VW/K60 5F VW.webp",
+    "K60 15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K60/K60 15 BD.webp",
+    "K60 15 BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K60/K60 15 BLACK.webp"
   },
   "K61": {
-    "FRENTE": "/fotos/LINHA K/K61/K61 4F BG FRENTE.jpg",
-    "BG": "/fotos/LINHA K/K61/K61 4F BG.jpg",
-    "BD": "/fotos/LINHA K/K61/K61 BD.jpeg"
+    "K61 4F BG FRENTE": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K61/K61 4F BG FRENTE.webp",
+    "K61 4F BG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K61/K61 4F BG.webp",
+    "K61 5F BG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K61/K61 5F BG.webp",
+    "K61 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K61/K61 BD.webp",
+    "K61 BG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K61/K61 BG.webp"
   },
   "K62": {
-    "HD": "/fotos/LINHA K/K62/K62 5F HD.jpg"
+    "K62 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K62/K62 5F HD.webp"
   },
   "K63": {
-    "B": "/fotos/LINHA K/K63/K63 15-17 4F B.png",
-    "BD": "/fotos/LINHA K/K63/K63 15-17 4F BD.png",
-    "GD": "/fotos/LINHA K/K63/K63 15-17 4F GD.png",
-    "GFD": "/fotos/LINHA K/K63/K63 15-17 GFD.png",
-    "HG": "/fotos/LINHA K/K63/K63 15-17 HG.png",
-    "FORD": "/fotos/LINHA K/K63/OUTROS EMBLEMAS/FORD/K63 4F BD FORD.jpg",
-    "GM": "/fotos/LINHA K/K63/OUTROS EMBLEMAS/GM/K63 4F BLACK GM.jpg",
-    "HONDA": "/fotos/LINHA K/K63/OUTROS EMBLEMAS/HONDA/K63 5F BD HONDA.jpg",
-    "HYUNDAI": "/fotos/LINHA K/K63/OUTROS EMBLEMAS/HYUNDAI/K63 5F BD HYUNDAI.jpg",
-    "VW": "/fotos/LINHA K/K63/OUTROS EMBLEMAS/VW/K63 4F BG VW.jpg"
+    "K63 15-17 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/K63 15-17 4F B.webp",
+    "K63 15-17 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/K63 15-17 4F BD.webp",
+    "K63 15-17 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/K63 15-17 4F GD.webp",
+    "K63 15-17 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/K63 15-17 5F BD.webp",
+    "K63 15-17 GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/K63 15-17 GFD.webp",
+    "K63 15-17 HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/K63 15-17 HG.webp",
+    "K63 4F BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/FORD/K63 4F BD FORD.webp",
+    "K63 4F BLACK FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/FORD/K63 4F BLACK FORD.webp",
+    "K63 5F BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/FORD/K63 5F BD FORD.webp",
+    "K63 5F BG FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/FORD/K63 5F BG FORD.webp",
+    "K63 5F GFD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/FORD/K63 5F GFD FORD.webp",
+    "K63 4F BLACK GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/GM/K63 4F BLACK GM.webp",
+    "K63 5F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/GM/K63 5F BD GM.webp",
+    "K63 5F BG GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/GM/K63 5F BG GM.webp",
+    "K63 5F GFD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/GM/K63 5F GFD GM.webp",
+    "K63 5F BD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/HONDA/K63 5F BD HONDA.webp",
+    "K63 5F BG HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/HONDA/K63 5F BG HONDA.webp",
+    "K63 5F GFD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/HONDA/K63 5F GFD HONDA.webp",
+    "K63 5F BD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/HYUNDAI/K63 5F BD HYUNDAI.webp",
+    "K63 5F BG HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/HYUNDAI/K63 5F BG HYUNDAI.webp",
+    "K63 5F GFD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/HYUNDAI/K63 5F GFD HYUNDAI.webp",
+    "K63 4F BG VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/VW/K63 4F BG VW.webp",
+    "K63 4F BLACK VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/VW/K63 4F BLACK VW.webp",
+    "K63 5F BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/VW/K63 5F BD VW.webp",
+    "K63 5F BG VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/VW/K63 5F BG VW.webp",
+    "K63 5F GFD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/OUTROS EMBLEMAS/VW/K63 5F GFD VW.webp"
   },
   "K64": {
-    "BD": "/fotos/LINHA K/K64/K64 14-15 BD.png"
+    "K64 14-15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K64/K64 14-15 BD.webp"
   },
   "K65": {
-    "BD": "/fotos/LINHA K/K65/K65 4F BD.jpg",
-    "GD": "/fotos/LINHA K/K65/K65 4F GD.jpg",
-    "HD": "/fotos/LINHA K/K65/K65 4F HD.jpg"
+    "K65 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K65/K65 4F BD.webp",
+    "K65 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K65/K65 4F GD.webp",
+    "K65 4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K65/K65 4F HD.webp",
+    "K65 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K65/K65 5F BD.webp",
+    "K65 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K65/K65 5F GD.webp",
+    "K65 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K65/k65 5f hd.webp"
   },
   "K66": {
-    "HD": "/fotos/LINHA K/K66/FORA DE LINHA/k66 5f hd.jpg",
-    "FRENTE": "/fotos/LINHA K/K66/FORA DE LINHA/K66 BLACK FRENTE.jpg",
-    "GD": "/fotos/LINHA K/K66/FORA DE LINHA/K66 GD.jpg",
-    "HG": "/fotos/LINHA K/K66/K66 4F HG.jpg",
-    "BLACK": "/fotos/LINHA K/K66/K66 BLACK.jpg"
+    "K66 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K66/FORA DE LINHA/k66 5f hd.webp",
+    "K66 BLACK FRENTE": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K66/FORA DE LINHA/K66 BLACK FRENTE.webp",
+    "K66 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K66/FORA DE LINHA/K66 GD.webp",
+    "K66 HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K66/FORA DE LINHA/K66 HD.webp",
+    "K66 HG FRENTE": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K66/FORA DE LINHA/K66 HG FRENTE.webp",
+    "K66 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K66/K66 4F HG.webp",
+    "K66 BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K66/K66 BLACK.webp"
   },
   "K67": {
-    "BD": "/fotos/LINHA K/K67/K67 17-18-20  4F BD.png",
-    "B": "/fotos/LINHA K/K67/K67 17-18-20 5F B.png"
+    "K67 17-18-20  4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K67/K67 17-18-20  4F BD.webp",
+    "K67 17-18-20  5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K67/K67 17-18-20  5F BD.webp",
+    "K67 17-18-20 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K67/K67 17-18-20 5F B.webp"
   },
   "K68": {
-    "BD": "/fotos/LINHA K/K68/K68 5F BD.jpg",
-    "GD": "/fotos/LINHA K/K68/k68 gd.jpg",
-    "HD": "/fotos/LINHA K/K68/k68 hd.jpg"
+    "K68 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K68/K68 5F BD.webp",
+    "K68 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K68/k68 gd.webp",
+    "K68 HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K68/k68 hd.webp"
   },
   "K69": {
-    "GM": "/fotos/LINHA K/K69/K69 4F BD GM.jpg",
-    "VW": "/fotos/LINHA K/K69/K69 4F BD VW.jpg",
-    "BD": "/fotos/LINHA K/K69/K69 4F BD.jpg",
-    "GD": "/fotos/LINHA K/K69/K69 4F GD.jpg",
-    "HD": "/fotos/LINHA K/K69/K69 5F HD.jpg",
-    "FORD": "/fotos/LINHA K/K69/K69 BD FORD.jpeg"
+    "K69 4F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K69/K69 4F BD GM.webp",
+    "K69 4F BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K69/K69 4F BD VW.webp",
+    "K69 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K69/K69 4F BD.webp",
+    "K69 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K69/K69 4F GD.webp",
+    "K69 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K69/K69 5F BD.webp",
+    "K69 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K69/K69 5F GD.webp",
+    "K69 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K69/K69 5F HD.webp",
+    "K69 BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K69/K69 BD FORD.webp"
   },
   "K70": {
-    "70": "/fotos/LINHA K/K70/FORA DE LINHA/K 70.jpg",
-    "BMW": "/fotos/LINHA K/K70/BMW/K70 5F BD BMW.jpg",
-    "GD": "/fotos/LINHA K/K70/FORA DE LINHA/K70 GD.jpeg",
-    "FORD": "/fotos/LINHA K/K70/FORD/K70 5F HG FORD.jpg",
-    "GM": "/fotos/LINHA K/K70/GM/K70 5F BD GM.jpg",
-    "KR": "/fotos/LINHA K/K70/K70 5F BD KR.jpg",
-    "VW": "/fotos/LINHA K/K70/VW/K70 5F HG VW.jpg"
+    "K70 5F BD BMW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K70/BMW/K70 5F BD BMW.webp",
+    "K70 5F HG BMW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K70/BMW/K70 5F HG BMW.webp",
+    "K 70": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K70/FORA DE LINHA/K 70.webp",
+    "K70 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K70/FORA DE LINHA/K70 GD.webp",
+    "K70 5F HG FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K70/FORD/K70 5F HG FORD.webp",
+    "K70 5F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K70/GM/K70 5F BD GM.webp",
+    "K70 5F HG GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K70/GM/K70 5F HG GM.webp",
+    "K70 5F BD KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K70/K70 5F BD KR.webp",
+    "K70 5F HG KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K70/K70 5F HG KR.webp",
+    "K70 5F HG VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K70/VW/K70 5F HG VW.webp"
   },
   "K71": {
-    "1": "/fotos/LINHA K/K71/K71 18 5F BD 1.png",
-    "BFD": "/fotos/LINHA K/K71/FORA DE LINHA/BFD.jpeg",
-    "BD": "/fotos/LINHA K/K71/FORA DE LINHA/FIAT/K71 14-15 4X98 BD.png",
-    "HG": "/fotos/LINHA K/K71/FORA DE LINHA/K71 4F HG.jpeg"
+    "BFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K71/FORA DE LINHA/BFD.webp",
+    "K71 14-15 4X98 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K71/FORA DE LINHA/FIAT/K71 14-15 4X98 BD.webp",
+    "K71 14-15 4X108 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K71/FORA DE LINHA/FORD/K71 14-15 4X108 BD.webp",
+    "K71 4F BFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K71/FORA DE LINHA/K71 4F BFD.webp",
+    "K71 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K71/FORA DE LINHA/K71 4F HG.webp",
+    "K71 14-15 4X100 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K71/FORA DE LINHA/VW/K71 14-15 4X100 BD.webp",
+    "K71 14-15 5X100 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K71/FORA DE LINHA/VW/K71 14-15 5X100 BD.webp",
+    "K71 18 4X100 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K71/FORA DE LINHA/VW/K71 18 4X100 BD.webp",
+    "K71 18 5F VW BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K71/FORA DE LINHA/VW/K71 18 5F VW BD.webp",
+    "K71 14-15 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K71/K71 14-15 4F BD.webp",
+    "K71 14-15 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K71/K71 14-15 5F BD.webp",
+    "K71 18 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K71/K71 18 4F BD.webp",
+    "K71 18 5F BD 1": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K71/K71 18 5F BD 1.webp"
   },
   "K72": {
-    "BD": "/fotos/LINHA K/K72/K72 15-17 4F BD.png",
-    "FORD": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/FORD/K72 4F BD FORD.jpg",
-    "FRENTE": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/frente/K72 BD FRENTE.jpg",
-    "GM": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/GM/K72 4F BD GM.jpg",
-    "HONDA": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/HONDA/K72 4F BD HONDA.jpg",
-    "HYUNDAI": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/HYUNDAI/K72 4F BD HYUNDAI.jpg",
-    "KR": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/KR/K72 BD KR.jpg",
-    "RENAULT": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/RENAULT/K72 4F BD RENAULT.jpg",
-    "TOYOTA": "/fotos/LINHA K/K72/OUTROS EMBLEMAS/TOYOTA/K72 4F BD TOYOTA.jpg"
+    "K72 15-17 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/K72 15-17 4F BD.webp",
+    "K72 15-17 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/K72 15-17 5F BD.webp",
+    "K72 4F BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/FORD/K72 4F BD FORD.webp",
+    "K72 5F BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/FORD/K72 5F BD FORD.webp",
+    "K72 BD FRENTE": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/frente/K72 BD FRENTE.webp",
+    "K72 GD FRENTE": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/frente/K72 GD FRENTE.webp",
+    "K72 4F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/GM/K72 4F BD GM.webp",
+    "K72 4F GD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/GM/K72 4F GD GM.webp",
+    "K72 5F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/GM/K72 5F BD GM.webp",
+    "K72 4F BD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/HONDA/K72 4F BD HONDA.webp",
+    "K72 4F GD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/HONDA/K72 4F GD HONDA.webp",
+    "K72 5F BD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/HONDA/K72 5F BD HONDA.webp",
+    "K72 4F BD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/HYUNDAI/K72 4F BD HYUNDAI.webp",
+    "K72 4F GD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/HYUNDAI/K72 4F GD HYUNDAI.webp",
+    "K72 5F BD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/HYUNDAI/K72 5F BD HYUNDAI.webp",
+    "K72 15-17 4X100 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/K72 15-17 4X100 BD.webp",
+    "K72 15-17 5X100 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/K72 15-17 5X100 BD.webp",
+    "K72 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/KR/K72 5F BD.webp",
+    "K72 BD KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/KR/K72 BD KR.webp",
+    "K72 GD KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/KR/K72 GD KR.webp",
+    "K72 4F BD RENAULT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/RENAULT/K72 4F BD RENAULT.webp",
+    "K72 4F GD RENAULT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/RENAULT/K72 4F GD RENAULT.webp",
+    "K72 5F BD RENAULT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/RENAULT/K72 5F BD RENAULT.webp",
+    "K72 4F BD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/TOYOTA/K72 4F BD TOYOTA.webp",
+    "K72 4F GD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/TOYOTA/K72 4F GD TOYOTA.webp",
+    "K72 5F BD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K72/OUTROS EMBLEMAS/TOYOTA/K72 5F BD TOYOTA.webp"
   },
   "K73": {
-    "17": "/fotos/LINHA K/K73/FOLDERS/K73 17.jpg",
-    "18": "/fotos/LINHA K/K73/FOLDERS/k73 18.jpg",
-    "K73": "/fotos/LINHA K/K73/FOLDERS/K73.jpg",
-    "B": "/fotos/LINHA K/K73/K73 17-18 4F B.png",
-    "BD": "/fotos/LINHA K/K73/K73 17-18 4F BD.png",
-    "FIAT": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/FIAT/K73 5F BD FIAT.jpg",
-    "FORD": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/FORD/K73 4F BD FORD.jpg",
-    "GM": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/GM/K73 4F BD GM.jpg",
-    "HONDA": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/HONDA/K73 4F BLACK HONDA.jpg",
-    "HYUNDAI": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/HYUNDAI/K73 4F BD HYUNDAI.jpg",
-    "JEEP": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/JEEP/K73 5F BD JEEP.jpg",
-    "KIA": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/KIA/K73 5F BD KIA.jpg",
-    "NISSAN": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/NISSAN/K73 4F BD NISSAN.jpg",
-    "RENAULT": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/RENAULT/K73 4F GD  RENAULT.jpg",
-    "TOYOTA": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/TOYOTA/K73 4F BD TOYOTA.jpg",
-    "VW": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/VW/K73 4F BD VW.jpg",
-    "GD": "/fotos/LINHA K/K73/OUTROS EMBLEMAS/VW/K73 4F GD.jpg"
+    "K73 17": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/FOLDERS/K73 17.webp",
+    "K73 18": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/FOLDERS/k73 18.webp",
+    "K73": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/FOLDERS/K73.webp",
+    "K73 17-18 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/K73 17-18 4F B.webp",
+    "K73 17-18 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/K73 17-18 4F BD.webp",
+    "K73 17-18 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/K73 17-18 5F B.webp",
+    "K73 17-18 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/K73 17-18 5F BD.webp",
+    "K73 5F BD FIAT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/FIAT/K73 5F BD FIAT.webp",
+    "K73 5F BLACK FIAT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/FIAT/K73 5F BLACK FIAT.webp",
+    "K73 4F BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/FORD/K73 4F BD FORD.webp",
+    "K73 5F BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/FORD/K73 5F BD FORD.webp",
+    "K73 5F BLACK FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/FORD/K73 5F BLACK FORD.webp",
+    "K73 5F GD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/FORD/K73 5F GD FORD.webp",
+    "K73 4F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/GM/K73 4F BD GM.webp",
+    "K73 4F BLACK GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/GM/K73 4F BLACK GM.webp",
+    "K73 4F GD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/GM/K73 4F GD GM.webp",
+    "K73 5F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/GM/K73 5F BD GM.webp",
+    "K73 5F BLACK GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/GM/K73 5F BLACK GM.webp",
+    "K73 5F GD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/GM/K73 5F GD GM.webp",
+    "K73 4F BLACK HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/HONDA/K73 4F BLACK HONDA.webp",
+    "K73 4F GD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/HONDA/K73 4F GD HONDA.webp",
+    "K73 5F BD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/HONDA/K73 5F BD HONDA.webp",
+    "K73 5F BLACK HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/HONDA/K73 5F BLACK HONDA.webp",
+    "K73 5F GD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/HONDA/K73 5F GD HONDA.webp",
+    "K73 4F BD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/HYUNDAI/K73 4F BD HYUNDAI.webp",
+    "K73 4F BLACK HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/HYUNDAI/K73 4F BLACK HYUNDAI.webp",
+    "K73 4F GD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/HYUNDAI/K73 4F GD HYUNDAI.webp",
+    "K73 5F BD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/HYUNDAI/K73 5F BD HYUNDAI.webp",
+    "K73 5F GD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/HYUNDAI/K73 5F GD HYUNDAI.webp",
+    "K73 5F BD JEEP": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/JEEP/K73 5F BD JEEP.webp",
+    "K73 5F BLACK JEEP": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/JEEP/K73 5F BLACK JEEP.webp",
+    "K73 5F BD KIA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/KIA/K73 5F BD KIA.webp",
+    "K73 5F GD KIA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/KIA/K73 5F GD KIA.webp",
+    "K73 4F BD NISSAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/NISSAN/K73 4F BD NISSAN.webp",
+    "K73 4F BLACK NISSAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/NISSAN/K73 4F BLACK NISSAN.webp",
+    "K73 5F BD NISSAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/NISSAN/K73 5F BD NISSAN.webp",
+    "K73 4F GD  RENAULT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/RENAULT/K73 4F GD  RENAULT.webp",
+    "K73 5F BD RENAULT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/RENAULT/K73 5F BD RENAULT.webp",
+    "K73 5F GD RENAULT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/RENAULT/K73 5F GD RENAULT.webp",
+    "K73 4F BD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/TOYOTA/K73 4F BD TOYOTA.webp",
+    "K73 4F BLACK TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/TOYOTA/K73 4F BLACK TOYOTA.webp",
+    "K73 4F GD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/TOYOTA/K73 4F GD TOYOTA.webp",
+    "K73 5F BD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/TOYOTA/K73 5F BD TOYOTA.webp",
+    "K73 5F GD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/TOYOTA/K73 5F GD TOYOTA.webp",
+    "K73 4F BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/VW/K73 4F BD VW.webp",
+    "K73 4F BLACK VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/VW/K73 4F BLACK VW.webp",
+    "K73 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/VW/K73 4F GD.webp",
+    "K73 5F BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/VW/K73 5F BD VW.webp",
+    "K73 5F BLACK VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/VW/K73 5F BLACK VW.webp",
+    "K73 5F GD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K73/OUTROS EMBLEMAS/VW/K73 5F GD VW.webp"
   },
   "K74": {
-    "BD": "/fotos/LINHA K/K74/K74 17-18 5F BD.png",
-    "GD": "/fotos/LINHA K/K74/K74 17-18 5F GD.png",
-    "FIAT": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/FIAT/K74 4F BD FIAT.jpg",
-    "FORD": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/FORD/K74 5F BD FORD.jpg",
-    "GM": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/GM/K74 4F BD GM.jpg",
-    "HONDA": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/HONDA/K74 4F BD HONDA.jpg",
-    "HYUNDAI": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/HYUNDAI/K74 4F BD HYUNDAI.jpg",
-    "FOLDER": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/K74 FOLDER.jpg",
-    "K74": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/k74.jpg",
-    "KIA": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/KIA/K74 5F BD KIA.jpg",
-    "NISSAN": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/NISSAN/K74 4F BD NISSAN.jpg",
-    "FRENTE": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/outras/K74 4F BD FRENTE.jpg",
-    "RENAULT": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/RENAULT/K74 4F BD RENAULT.jpg",
-    "TOYOTA": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/TOYOTA/K74 4F BD TOYOTA.jpg",
-    "VW": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/VW/K74 4F BD VW.jpg",
-    "BLACK": "/fotos/LINHA K/K74/OUTROS EMBLEMAS/VW/K74 4F BLACK.jpg"
+    "K74 17-18 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/K74 17-18 5F BD.webp",
+    "K74 17-18 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/K74 17-18 5F GD.webp",
+    "K74 4F BD FIAT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/FIAT/K74 4F BD FIAT.webp",
+    "K74 5F BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/FORD/K74 5F BD FORD.webp",
+    "K74 4F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/GM/K74 4F BD GM.webp",
+    "K74 5F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/GM/K74 5F BD GM.webp",
+    "K74 4F BD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/HONDA/K74 4F BD HONDA.webp",
+    "K74 4F BLACK HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/HONDA/K74 4F BLACK HONDA.webp",
+    "K74 5F BD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/HONDA/K74 5F BD HONDA.webp",
+    "K74 4F BD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/HYUNDAI/K74 4F BD HYUNDAI.webp",
+    "K74 5F BD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/HYUNDAI/K74 5F BD HYUNDAI.webp",
+    "K74 FOLDER": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/K74 FOLDER.webp",
+    "K74": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/k74.webp",
+    "K74 5F BD KIA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/KIA/K74 5F BD KIA.webp",
+    "K74 4F BD NISSAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/NISSAN/K74 4F BD NISSAN.webp",
+    "K74 5F BD  NISSAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/NISSAN/K74 5F BD  NISSAN.webp",
+    "K74 4F BD FRENTE": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/outras/K74 4F BD FRENTE.webp",
+    "K74 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/outras/K74 4F BD.webp",
+    "K74 5F BD FRENTE": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/outras/K74 5F BD FRENTE.webp",
+    "K74 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/outras/K74 5F BD.webp",
+    "K74 4F BD RENAULT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/RENAULT/K74 4F BD RENAULT.webp",
+    "K74 5F BD RENAULT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/RENAULT/K74 5F BD RENAULT.webp",
+    "K74 4F BD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/TOYOTA/K74 4F BD TOYOTA.webp",
+    "K74 5F BD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/TOYOTA/K74 5F BD TOYOTA.webp",
+    "K74 4F BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/VW/K74 4F BD VW.webp",
+    "K74 4F BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/VW/K74 4F BLACK.webp",
+    "K74 4F GD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/VW/K74 4F GD VW.webp",
+    "K74 5F BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/VW/K74 5F BD VW.webp",
+    "K74 5F BLACK VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/VW/K74 5F BLACK VW.webp",
+    "K74 5F GD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K74/OUTROS EMBLEMAS/VW/K74 5F GD VW.webp"
   },
   "K75": {
-    "BD": "/fotos/LINHA K/K75/ANTIGAS/K75 4F BD.jpg",
-    "GD": "/fotos/LINHA K/K75/ANTIGAS/K75 4F GD.jpg",
-    "HD": "/fotos/LINHA K/K75/ANTIGAS/K75 4F HD.jpg",
-    "K75": "/fotos/LINHA K/K75/ANTIGAS/K75.jpg"
+    "K75 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K75/ANTIGAS/K75 4F BD.webp",
+    "K75 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K75/ANTIGAS/K75 4F GD.webp",
+    "K75 4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K75/ANTIGAS/K75 4F HD.webp",
+    "K75 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K75/ANTIGAS/K75 BD.webp",
+    "K75 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K75/ANTIGAS/K75 GD.webp",
+    "K75 HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K75/ANTIGAS/K75 HD.webp",
+    "K75": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K75/ANTIGAS/K75.webp",
+    "K75 18 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K75/K75 18 5F BD.webp",
+    "K75 18 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K75/K75 18 5F GD.webp",
+    "K75 18 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K75/K75 18 5F HD.webp"
   },
   "K76": {
-    "BLACK": "/fotos/LINHA K/K76/K76 14 BLACK.png",
-    "HG": "/fotos/LINHA K/K76/K76 14 HG.png"
+    "K76 14 BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K76/K76 14 BLACK.webp",
+    "K76 14 HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K76/K76 14 HG.webp"
   },
   "L1": {
-    "BD": "/fotos/LINHA L/L1/L1 14 BD.png",
-    "GD": "/fotos/LINHA L/L1/L1 14 GD.png"
+    "L1 14 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA L/L1/L1 14 BD.webp",
+    "L1 14 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA L/L1/L1 14 GD.webp"
   },
   "L3": {
-    "L3": "/fotos/LINHA L/L3/L3.jpg",
-    "(1)": "/fotos/LINHA L/L3/WhatsApp Image 2019-02-14 at 13.57.37 (1).jpeg"
+    "L3": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA L/L3/L3.webp",
+    "WHATSAPP IMAGE 2019-02-14 AT 13.57.37 (1)": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA L/L3/WhatsApp Image 2019-02-14 at 13.57.37 1.webp"
   },
   "L4": {
-    "BD": "/fotos/LINHA L/L4/L4 22 BD.png",
-    "GD": "/fotos/LINHA L/L4/L4 22 GD.png"
+    "L4 22 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA L/L4/L4 22 BD.webp",
+    "L4 22 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA L/L4/L4 22 GD.webp"
+  },
+  "LTS": {
+    "4F BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA LTS/LTS/4F BLACK.webp",
+    "4F OURO": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA LTS/LTS/4F OURO.webp",
+    "4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA LTS/LTS/4F SS.webp",
+    "5F BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA LTS/LTS/5F BLACK.webp",
+    "5F OURO": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA LTS/LTS/5F OURO.webp",
+    "5F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA LTS/LTS/5F SS.webp"
   },
   "M10": {
-    "BD": "/fotos/LINHA M/M10/M10 14-15 5F BD.png",
-    "FBD": "/fotos/LINHA M/M10/M10 14-15 5F FBD.png"
+    "M10 14-15 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M10/M10 14-15 5F BD.webp",
+    "M10 14-15 5F FBD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M10/M10 14-15 5F FBD.webp"
   },
   "M11": {
-    "BD": "/fotos/LINHA M/M11/M11 15 4F BD.png",
-    "HG": "/fotos/LINHA M/M11/M11 15 4F HG.png",
-    "SS": "/fotos/LINHA M/M11/M11 15 5X114 SS.png",
-    "(1)": "/fotos/LINHA M/M11/WhatsApp Image 2018-10-29 at 14.57.35 (1).jpeg"
+    "M11 15 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M11/M11 15 4F BD.webp",
+    "M11 15 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M11/M11 15 4F HG.webp",
+    "M11 15 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M11/M11 15 5F BD.webp",
+    "M11 15 5X114 SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M11/M11 15 5X114 SS.webp",
+    "WHATSAPP IMAGE 2018-10-29 AT 14.57.35 (1)": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M11/WhatsApp Image 2018-10-29 at 14.57.35 1.webp"
   },
   "M12": {
-    "B": "/fotos/LINHA M/M12/M12 17X8 B.png",
-    "BFD": "/fotos/LINHA M/M12/M12 17X8 BFD.png"
+    "M12 17X8 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M12/M12 17X8 B.webp",
+    "M12 17X8 BFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M12/M12 17X8 BFD.webp"
   },
   "M15": {
-    "90D3B28F-EBF6-4614-BF43-58D6147E5B45": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/90d3b28f-ebf6-4614-bf43-58d6147e5b45.jpg",
-    "F5C20A37-1F5F-4D7E-ADC0-781B44389F0C": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/f5c20a37-1f5f-4d7e-adc0-781b44389f0c.jpg",
-    "FORD": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 5F BD FORD.jpg",
-    "MITSUBISH": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 5F BD MITSUBISH.jpg",
-    "VW": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 5F BD VW.jpg",
-    "BD": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 5F BD.jpg",
-    "GM": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 6F BD GM.jpg",
-    "NISSAN": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 6F BD NISSAN.jpg",
-    "TOYOTA": "/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 6F BD TOYOTA.jpg",
-    "BFD": "/fotos/LINHA M/M15/BFD/M15 5F BFD.jpg",
-    "GBL": "/fotos/LINHA M/M15/GBL/M15 16X9 5F GBL.png",
-    "CHEVROLET": "/fotos/LINHA M/M15/GD/M15 6F GD CHEVROLET.jpg",
-    "GD": "/fotos/LINHA M/M15/GD/M15 6F GD.jpg",
-    "HD": "/fotos/LINHA M/M15/HD/M15 5F HD.jpg"
+    "90D3B28F-EBF6-4614-BF43-58D6147E5B45": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/90d3b28f-ebf6-4614-bf43-58d6147e5b45.webp",
+    "F5C20A37-1F5F-4D7E-ADC0-781B44389F0C": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/f5c20a37-1f5f-4d7e-adc0-781b44389f0c.webp",
+    "M15 5F BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 5F BD FORD.webp",
+    "M15 5F BD MITSUBISH": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 5F BD MITSUBISH.webp",
+    "M15 5F BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 5F BD VW.webp",
+    "M15 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 5F BD.webp",
+    "M15 6F BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 6F BD FORD.webp",
+    "M15 6F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 6F BD GM.webp",
+    "M15 6F BD MITSUBISH": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 6F BD MITSUBISH.webp",
+    "M15 6F BD NISSAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 6F BD NISSAN.webp",
+    "M15 6F BD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 6F BD TOYOTA.webp",
+    "M15 6F BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 6F BD VW.webp",
+    "M15 6F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/COM LOGOS DIFERENTES/M15 6F BD.webp",
+    "M15 16X9 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/M15 16X9 5F BD.webp",
+    "M15 16X9 6F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BD/M15 16X9 6F BD.webp",
+    "M15 5F BFD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BFD/M15 5F BFD FORD.webp",
+    "M15 5F BFD MITSUBISH": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BFD/M15 5F BFD MITSUBISH.webp",
+    "M15 5F BFD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BFD/M15 5F BFD VW.webp",
+    "M15 5F BFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BFD/M15 5F BFD.webp",
+    "M15 6F BFD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BFD/M15 6F BFD FORD.webp",
+    "M15 6F BFD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BFD/M15 6F BFD GM.webp",
+    "M15 6F BFD MITSUBISH": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BFD/M15 6F BFD MITSUBISH.webp",
+    "M15 6F BFD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BFD/M15 6F BFD TOYOTA.webp",
+    "M15 6F BFD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BFD/M15 6F BFD VW.webp",
+    "M15 6F BFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/BFD/M15 6F BFD.webp",
+    "M15 16X9 5F GBL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/M15 16X9 5F GBL.webp",
+    "M15 16X9 6F GBL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/M15 16X9 6F GBL.webp",
+    "M15 6F GD CHEVROLET": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/GD/M15 6F GD CHEVROLET.webp",
+    "M15 6F GD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/GD/M15 6F GD FORD.webp",
+    "M15 6F GD NISSAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/GD/M15 6F GD NISSAN.webp",
+    "M15 6F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/GD/M15 6F GD.webp",
+    "M15 5F HD CHEVROLET": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/HD/M15 5F HD CHEVROLET.webp",
+    "M15 5F HD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/HD/M15 5F HD FORD.webp",
+    "M15 5F HD NISSAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/HD/M15 5F HD NISSAN.webp",
+    "M15 5F HD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/HD/M15 5F HD VW.webp",
+    "M15 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M15/HD/M15 5F HD.webp"
   },
   "M16": {
-    "B": "/fotos/LINHA M/M16/ARO 13 (NOVO)/M16 13 4X100 B.png",
-    "BD": "/fotos/LINHA M/M16/ARO 13 (NOVO)/M16 13 4X100 BD.png",
-    "GDC": "/fotos/LINHA M/M16/ARO 14 e 15 (NOVO)/M16 14-15 4F GDC.png",
-    "FIAT": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/FIAT/logo vermelha/M16 4F BD FIAT.jpg",
-    "FORD": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/FORD/M16 4F BD FORD.jpg",
-    "GB": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/FORD/M16 4F GB.jpg",
-    "GM": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/GM/M16 4F BD GM.jpg",
-    "HONDA": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/HONDA/M16 4F BD HONDA.jpg",
-    "HYUNDAI": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/HYUNDAI/M16 4F BD HYUNDAI.jpg",
-    "KR": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/KR/M16 4F BD KR.jpg",
-    "NISSAN": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/NISSAN/M16 4F BD NISSAN.jpg",
-    "TOYOTA": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/TOYOTA/M16 4F BD TOYOTA.jpg",
-    "VW": "/fotos/LINHA M/M16/OUTROS EMBLEMAS/VW/M16 4F BACK VW.jpg"
+    "M16 13 4X100 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 13 NOVO/M16 13 4X100 B.webp",
+    "M16 13 4X100 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 13 NOVO/M16 13 4X100 BD.webp",
+    "M16 13 4X108 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 13 NOVO/M16 13 4X108 B.webp",
+    "M16 13 4X108 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 13 NOVO/M16 13 4X108 BD.webp",
+    "M16 13 4X98 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 13 NOVO/M16 13 4X98 B.webp",
+    "M16 13 4X98 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 13 NOVO/M16 13 4X98 BD.webp",
+    "M16 14-15 4F GDC": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 14 e 15 NOVO/M16 14-15 4F GDC.webp",
+    "M16 14-15 4X100 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 14 e 15 NOVO/M16 14-15 4X100 B.webp",
+    "M16 14-15 4X100 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 14 e 15 NOVO/M16 14-15 4X100 BD.webp",
+    "M16 14-15 4X108 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 14 e 15 NOVO/M16 14-15 4X108 B.webp",
+    "M16 14-15 4X108 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 14 e 15 NOVO/M16 14-15 4X108 BD.webp",
+    "M16 14-15 4X114 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 14 e 15 NOVO/M16 14-15 4X114 B.webp",
+    "M16 14-15 4X114 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 14 e 15 NOVO/M16 14-15 4X114 BD.webp",
+    "M16 14-15 4X48 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 14 e 15 NOVO/M16 14-15 4X48 B.webp",
+    "M16 14-15 4X98 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/ARO 14 e 15 NOVO/M16 14-15 4X98 BD.webp",
+    "M16 16-17 4X100 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/M16 16-17 4X100 B.webp",
+    "M16 16-17 4X100 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/M16 16-17 4X100 BD.webp",
+    "M16 16-17 4X108 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/M16 16-17 4X108 B.webp",
+    "M16 16-17 4X108 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/M16 16-17 4X108 BD.webp",
+    "M16 16-17 4X114 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/M16 16-17 4X114 B.webp",
+    "M16 16-17 4X114 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/M16 16-17 4X114 BD.webp",
+    "M16 16-17 5X108 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/M16 16-17 5X108 B.webp",
+    "M16 16-17 5X108 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/M16 16-17 5X108 BD.webp",
+    "M16 16-17 5X114 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/M16 16-17 5X114 B.webp",
+    "M16 16-17 5X114 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/M16 16-17 5X114 BD.webp",
+    "M16 4F BD FIAT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/FIAT/M16 4F BD FIAT.webp",
+    "M16 4F BLACK FIAT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/FIAT/M16 4F BLACK FIAT.webp",
+    "M16 4F GDC FIAT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/FIAT/M16 4F GDC FIAT.webp",
+    "M16 4F BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/FORD/M16 4F BD FORD.webp",
+    "M16 4F BLACK FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/FORD/M16 4F BLACK FORD.webp",
+    "M16 4F GB": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/FORD/M16 4F GB.webp",
+    "M16 4F GDC FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/FORD/M16 4F GDC FORD.webp",
+    "M16 4F HD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/FORD/M16 4F HD FORD.webp",
+    "M16 5F BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/FORD/M16 5F BD FORD.webp",
+    "M16 5F BLACK FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/FORD/M16 5F BLACK FORD.webp",
+    "M16 4F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/GM/M16 4F BD GM.webp",
+    "M16 4F BLACK GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/GM/M16 4F BLACK GM.webp",
+    "M16 4F GDC GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/GM/M16 4F GDC GM.webp",
+    "M16 4F HD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/GM/M16 4F HD GM.webp",
+    "M16 5F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/GM/M16 5F BD GM.webp",
+    "M16 4F BD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/HONDA/M16 4F BD HONDA.webp",
+    "M16 4F GDC HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/HONDA/M16 4F GDC HONDA.webp",
+    "M16 4F HD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/HONDA/M16 4F HD HONDA.webp",
+    "M16 5F BD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/HONDA/M16 5F BD HONDA.webp",
+    "M16 5F BLACK HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/HONDA/M16 5F BLACK HONDA.webp",
+    "M16 4F BD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/HYUNDAI/M16 4F BD HYUNDAI.webp",
+    "M16 4F BLACK HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/HYUNDAI/M16 4F BLACK HYUNDAI.webp",
+    "M16 4F GDC HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/HYUNDAI/M16 4F GDC HYUNDAI.webp",
+    "M16 4F HD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/HYUNDAI/M16 4F HD HYUNDAI.webp",
+    "M16 4F BD KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/KR/M16 4F BD KR.webp",
+    "M16 4F BLACK KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/KR/M16 4F BLACK KR.webp",
+    "M16 4F GDC KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/KR/M16 4F GDC KR.webp",
+    "M16 4F HG KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/KR/M16 4F HG KR.webp",
+    "M16 4F BD NISSAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/NISSAN/M16 4F BD NISSAN.webp",
+    "M16 4F BLACK NISSAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/NISSAN/M16 4F BLACK NISSAN.webp",
+    "M16 4F GDC NISSAN": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/NISSAN/M16 4F GDC NISSAN.webp",
+    "M16 4F BD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/TOYOTA/M16 4F BD TOYOTA.webp",
+    "M16 4F BLACK TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/TOYOTA/M16 4F BLACK TOYOTA.webp",
+    "M16 4F GDC TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/TOYOTA/M16 4F GDC TOYOTA.webp",
+    "M16 4F HD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/TOYOTA/M16 4F HD TOYOTA.webp",
+    "M16 4F BACK VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/VW/M16 4F BACK VW.webp",
+    "M16 4F BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/VW/M16 4F BD VW.webp",
+    "M16 4F GDC VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/VW/M16 4F GDC VW.webp",
+    "M16 4F HD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/VW/M16 4F HD VW.webp",
+    "M16 5F BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/VW/M16 5F BD VW.webp",
+    "M16 5F BLACK VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M16/OUTROS EMBLEMAS/VW/M16 5F BLACK VW.webp"
   },
   "M17": {
-    "HD": "/fotos/LINHA M/M17/M17 15 4F e 5F HD.png"
+    "M17 15 4F E 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M17/M17 15 4F e 5F HD.webp",
+    "M17 17 4F E 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M17/M17 17 4F e 5F HD.webp"
   },
   "M18": {
-    "HG": "/fotos/LINHA M/M18/M18 15 4F HG.png"
+    "M18 15 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M18/M18 15 4F HG.webp"
   },
   "M19": {
-    "HD": "/fotos/LINHA M/M19/M19 15 4F HD.png"
+    "M19 15 4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M19/M19 15 4F HD.webp"
   },
   "M2": {
-    "SS": "/fotos/LINHA M/M2/M2 15 4F SS.png",
-    "14.57.23": "/fotos/LINHA M/M2/WhatsApp Image 2018-10-29 at 14.57.23.jpeg"
+    "M2 15 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M2/M2 15 4F SS.webp",
+    "WHATSAPP IMAGE 2018-10-29 AT 14.57.23": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M2/WhatsApp Image 2018-10-29 at 14.57.23.webp"
   },
   "M20": {
-    "HD": "/fotos/LINHA M/M20/M20 15-17 4F HD.png"
+    "M20 15-17 4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M20/M20 15-17 4F HD.webp",
+    "M20 15-17 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M20/M20 15-17 5F HD.webp"
   },
   "M21": {
-    "GF": "/fotos/LINHA M/M21/M21 16 4F GF.png",
-    "SS": "/fotos/LINHA M/M21/M21 16 4F SS.png"
+    "M21 16 4F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M21/M21 16 4F GF.webp",
+    "M21 16 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M21/M21 16 4F SS.webp"
   },
   "M22": {
-    "INSERT": "/fotos/LINHA M/M22/M22 16X9 BD COM INSERT.png"
+    "M22 16X9 BD COM INSERT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M22/M22 16X9 BD COM INSERT.webp",
+    "M22 16X9 BD S INSERT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M22/M22 16X9 BD S INSERT.webp",
+    "M22 18 BD COM INSERT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M22/M22 18 BD COM INSERT.webp",
+    "M22 18 BD SEM INSERT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M22/M22 18 BD SEM INSERT.webp",
+    "M22 18 BFD COM INSERT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M22/M22 18 BFD COM INSERT.webp",
+    "M22 18 BFD SEM INSERT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M22/M22 18 BFD SEM INSERT.webp"
   },
   "M23": {
-    "BF": "/fotos/LINHA M/M23/M23 18-20 5F BF.png",
-    "B": "/fotos/LINHA M/M23/M23 18-20 6F B.png",
-    "BD": "/fotos/LINHA M/M23/M23 18-20 6F BD.png"
+    "M23 18-20 5F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M23/M23 18-20 5F BF.webp",
+    "M23 18-20 6F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M23/M23 18-20 6F B.webp",
+    "M23 18-20 6F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M23/M23 18-20 6F BD.webp",
+    "M23 18-20 6F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M23/M23 18-20 6F BF.webp"
   },
   "M25": {
-    "BD": "/fotos/LINHA M/M25/M25 15 4F BD.png",
-    "HG": "/fotos/LINHA M/M25/M25 15 4F HG.png"
+    "M25 15 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M25/M25 15 4F BD.webp",
+    "M25 15 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M25/M25 15 4F HG.webp",
+    "M25 15 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M25/M25 15 5F BD.webp",
+    "M25 15 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M25/M25 15 5F HG.webp",
+    "M25 18 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M25/M25 18 4F BD.webp",
+    "M25 18 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M25/M25 18 4F HG.webp",
+    "M25 18 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M25/M25 18 5F BD.webp",
+    "M25 18 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M25/M25 18 5F HG.webp"
   },
   "M26": {
-    "HD": "/fotos/LINHA M/M26/M26 15 4F HD.png"
+    "M26 15 4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M26/M26 15 4F HD.webp"
   },
   "M27": {
-    "HD": "/fotos/LINHA M/M27/M27 16 HD.png"
+    "M27 16 HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M27/M27 16 HD.webp"
   },
   "M28": {
-    "B": "/fotos/LINHA M/M28/M28 15 4F B.png",
-    "GS": "/fotos/LINHA M/M28/M28 15 4F GS.png",
-    "HG": "/fotos/LINHA M/M28/M28 15 4F HG.png",
-    "BFD": "/fotos/LINHA M/M28/M28 16 5F BFD.png"
+    "M28 15 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M28/M28 15 4F B.webp",
+    "M28 15 4F GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M28/M28 15 4F GS.webp",
+    "M28 15 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M28/M28 15 4F HG.webp",
+    "M28 15 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M28/M28 15 5F B.webp",
+    "M28 15 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M28/M28 15 5F HG.webp",
+    "M28 16 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M28/M28 16 4F B.webp",
+    "M28 16 4F GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M28/M28 16 4F GS.webp",
+    "M28 16 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M28/M28 16 4F HG.webp",
+    "M28 16 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M28/M28 16 5F B.webp",
+    "M28 16 5F BFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M28/M28 16 5F BFD.webp",
+    "M28 16 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M28/M28 16 5F HG.webp"
   },
   "M29": {
-    "B": "/fotos/LINHA M/M29/M29 18 5F B.png",
-    "BF": "/fotos/LINHA M/M29/M29 18 5F BF.png",
-    "GFD": "/fotos/LINHA M/M29/M29 18 5F GFD.png",
-    "GOLD": "/fotos/LINHA M/M29/M29 18 5F GOLD.png",
-    "BFD": "/fotos/LINHA M/M29/M29 18 6F BFD.png",
-    "GF": "/fotos/LINHA M/M29/M29 18 6F GF.png"
+    "M29 18 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M29/M29 18 5F B.webp",
+    "M29 18 5F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M29/M29 18 5F BF.webp",
+    "M29 18 5F GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M29/M29 18 5F GFD.webp",
+    "M29 18 5F GOLD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M29/M29 18 5F GOLD.webp",
+    "M29 18 6F  GOLD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M29/M29 18 6F  GOLD.webp",
+    "M29 18 6F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M29/M29 18 6F B.webp",
+    "M29 18 6F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M29/M29 18 6F BF.webp",
+    "M29 18 6F BFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M29/M29 18 6F BFD.webp",
+    "M29 18 6F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M29/M29 18 6F GF.webp",
+    "M29 18 6F GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M29/M29 18 6F GFD.webp"
   },
   "M30": {
-    "B": "/fotos/LINHA M/M30/ARO 17 e 18/M30 17-8 4F B.png",
-    "BD": "/fotos/LINHA M/M30/ARO 17 e 18/M30 17-8 4F BD.png",
-    "GS": "/fotos/LINHA M/M30/ARO 17 e 18/M30 17-8 4F GS.png",
-    "HG": "/fotos/LINHA M/M30/ARO 17 e 18/M30 17-8 4F HG.png",
-    "LBF": "/fotos/LINHA M/M30/ARO 19 e 20/M30 18-20 5F LBF.png"
+    "M30 17-8 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M30/M30 17-8 4F B.webp",
+    "M30 17-8 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M30/M30 17-8 4F BD.webp",
+    "M30 17-8 4F GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M30/M30 17-8 4F GS.webp",
+    "M30 17-8 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M30/M30 17-8 4F HG.webp",
+    "M30 17-8 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M30/M30 17-8 5F B.webp",
+    "M30 17-8 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M30/M30 17-8 5F BD.webp",
+    "M30 17-8 5F GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M30/M30 17-8 5F GS.webp",
+    "M30 17-8 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M30/M30 17-8 5F HG.webp",
+    "M30 18-20 5F LBF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M30/M30 18-20 5F LBF.webp",
+    "M30 19-20 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M30/M30 19-20 5F B.webp",
+    "M30 19-20 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M30/M30 19-20 5F BD.webp",
+    "M30 19-20 5F GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M30/M30 19-20 5F GS.webp",
+    "M30 19-20 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M30/M30 19-20 5F HG.webp"
   },
   "M31": {
-    "BF": "/fotos/LINHA M/M31/ARO 17/M31 17 5F BF.png",
-    "FGF": "/fotos/LINHA M/M31/ARO 17/M31 17 5F FGF.png",
-    "GBL": "/fotos/LINHA M/M31/ARO 17/M31 17 5F GBL.png",
-    "BFD": "/fotos/LINHA M/M31/ARO 20/M31 20 6F BFD.png",
-    "BLACK": "/fotos/LINHA M/M31/ARO 20/M31 20 6F BLACK.png"
+    "M31 17 5F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M31/ARO 17/M31 17 5F BF.webp",
+    "M31 17 5F FGF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M31/ARO 17/M31 17 5F FGF.webp",
+    "M31 17 5F GBL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M31/ARO 17/M31 17 5F GBL.webp",
+    "M31 17 6F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M31/ARO 17/M31 17 6F BF.webp",
+    "M31 17 6F FGF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M31/ARO 17/M31 17 6F FGF.webp",
+    "M31 17 6F GBL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M31/ARO 17/M31 17 6F GBL.webp",
+    "M31 20 5F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M31/M31 20 5F BF.webp",
+    "M31 20 5F FGF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M31/M31 20 5F FGF.webp",
+    "M31 20 6F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M31/M31 20 6F BF.webp",
+    "M31 20 6F BFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M31/M31 20 6F BFD.webp",
+    "M31 20 6F BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M31/M31 20 6F BLACK.webp",
+    "M31 20 6F FGF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M31/M31 20 6F FGF.webp",
+    "M31 20 6F GBL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M31/M31 20 6F GBL.webp"
   },
   "M32": {
-    "B": "/fotos/LINHA M/M32/ARO 15/M32 15 4F-5F B.png",
-    "GS": "/fotos/LINHA M/M32/ARO 15/M32 15 4F-5F GS.png",
-    "HG": "/fotos/LINHA M/M32/ARO 15/M32 15 4F-5F HG.png"
+    "M32 15 4F-5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M32/ARO 15/M32 15 4F-5F B.webp",
+    "M32 15 4F-5F GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M32/ARO 15/M32 15 4F-5F GS.webp",
+    "M32 15 4F-5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M32/ARO 15/M32 15 4F-5F HG.webp",
+    "M32 17 4F-5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M32/M32 17 4F-5F B.webp",
+    "M32 17 4F-5F GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M32/M32 17 4F-5F GS.webp",
+    "M32 17 4F-5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M32/M32 17 4F-5F HG.webp"
   },
   "M33": {
-    "BF": "/fotos/LINHA M/M33/ARO 18/M33 18 5F BF.png",
-    "FGF": "/fotos/LINHA M/M33/ARO 18/M33 18 5F FGF.png",
-    "GBL": "/fotos/LINHA M/M33/ARO 18/M33 18 5F GBL.png",
-    "B": "/fotos/LINHA M/M33/ARO 20 e 22/M33 20-22 6F B.png",
-    "BFD": "/fotos/LINHA M/M33/ARO 20 e 22/M33 20-22 6F BFD.png"
+    "M33 18 5F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/ARO 18/M33 18 5F BF.webp",
+    "M33 18 5F FGF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/ARO 18/M33 18 5F FGF.webp",
+    "M33 18 5F GBL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/ARO 18/M33 18 5F GBL.webp",
+    "M33 18 6F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/ARO 18/M33 18 6F BF.webp",
+    "M33 18 6F FGF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/ARO 18/M33 18 6F FGF.webp",
+    "M33 18 6F GBL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/ARO 18/M33 18 6F GBL.webp",
+    "M33 20-22 5F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/M33 20-22 5F BF.webp",
+    "M33 20-22 5F FGF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/M33 20-22 5F FGF.webp",
+    "M33 20-22 5F GBL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/M33 20-22 5F GBL.webp",
+    "M33 20-22 6F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/M33 20-22 6F B.webp",
+    "M33 20-22 6F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/M33 20-22 6F BF.webp",
+    "M33 20-22 6F BFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/M33 20-22 6F BFD.webp",
+    "M33 20-22 6F FGF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/M33 20-22 6F FGF.webp",
+    "M33 20-22 6F GBL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M33/M33 20-22 6F GBL.webp"
   },
   "M34": {
-    "B": "/fotos/LINHA M/M34/M34 20 B.png",
-    "GS": "/fotos/LINHA M/M34/M34 20 GS.png",
-    "HG": "/fotos/LINHA M/M34/M34 20 HG.png",
-    "BLACK": "/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - AUDI BLACK.jpeg",
-    "HG..": "/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - MERCEDES HG...jpeg",
-    "FORD": "/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 BLACK FORD.jpg",
-    "KR": "/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 BLACK KR.png"
+    "M34 20 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/M34 20 B.webp",
+    "M34 20 GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/M34 20 GS.webp",
+    "M34 20 HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/M34 20 HG.webp",
+    "M34 - AUDI BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - AUDI BLACK.webp",
+    "M34 - AUDI GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - AUDI GS.webp",
+    "M34 - AUDI HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - AUDI HG.webp",
+    "M34 - BBS BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - BBS BLACK.webp",
+    "M34 - BBS GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - BBS GS.webp",
+    "M34 - BBS HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - BBS HG.webp",
+    "M34 - BMW BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - BMW BLACK.webp",
+    "M34 - BMW GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - BMW GS.webp",
+    "M34 - BMW HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - BMW HG.webp",
+    "M34 - BYD BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - BYD BLACK.webp",
+    "M34 - BYD GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - BYD GS.webp",
+    "M34 - BYD HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - BYD HG.webp",
+    "M34 - FIAT BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - FIAT BLACK.webp",
+    "M34 - FIAT GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - FIAT GS.webp",
+    "M34 - FIAT HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - FIAT HG.webp",
+    "M34 - GM BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - GM BLACK.webp",
+    "M34 - GM GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - GM GS.webp",
+    "M34 - GM HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - GM HG.webp",
+    "M34 - HAVAL BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - HAVAL BLACK.webp",
+    "M34 - HAVAL GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - HAVAL GS.webp",
+    "M34 - HAVAL HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - HAVAL HG.webp",
+    "M34 - HONDA BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - HONDA BLACK.webp",
+    "M34 - HONDA GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - HONDA GS.webp",
+    "M34 - HONDA HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - HONDA HG.webp",
+    "M34 - JEEP BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - JEEP BLACK.webp",
+    "M34 - JEEP GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - JEEP GS.webp",
+    "M34 - JEEP HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - JEEP HG.webp",
+    "M34 - MERCEDES BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - MERCEDES BLACK.webp",
+    "M34 - MERCEDES GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - MERCEDES GS.webp",
+    "M34 - MERCEDES HG..": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - MERCEDES HG...webp",
+    "M34 - NISSAN BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - NISSAN BLACK.webp",
+    "M34 - NISSAN GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - NISSAN GS.webp",
+    "M34 - NISSAN HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - NISSAN HG.webp",
+    "M34 - OZ RACING BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - OZ RACING BLACK.webp",
+    "M34 - OZ RACING GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - OZ RACING GS.webp",
+    "M34 - OZ RACING HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - OZ RACING HG.webp",
+    "M34 - PORSCHE BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - PORSCHE BLACK.webp",
+    "M34 - PORSCHE GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - PORSCHE GS.webp",
+    "M34 - PORSCHE HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - PORSCHE HG.webp",
+    "M34 - RAM BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - RAM BLACK.webp",
+    "M34 - RAM GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - RAM GS.webp",
+    "M34 - RAM HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - RAM HG.webp",
+    "M34 - TOYOTA BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - TOYOTA BLACK.webp",
+    "M34 - TOYOTA GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - TOYOTA GS.webp",
+    "M34 - TOYOTA HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - TOYOTA HG.webp",
+    "M34 - VOLVO BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - VOLVO BLACK.webp",
+    "M34 - VOLVO GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - VOLVO GS.webp",
+    "M34 - VOLVO HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - VOLVO HG.webp",
+    "M34 - VW BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - VW BLACK.webp",
+    "M34 - VW GS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - VW GS.webp",
+    "M34 - VW HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 - VW HG.webp",
+    "M34 BLACK FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 BLACK FORD.webp",
+    "M34 BLACK KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 BLACK KR.webp",
+    "M34 GS FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 GS FORD.webp",
+    "M34 GS KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 GS KR.webp",
+    "M34 HG FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 HG FORD.webp",
+    "M34 HG KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M34/OUTROS EMBLEMAS/M34 HG KR.webp"
   },
   "M35": {
-    "BLACK": "/fotos/LINHA M/M35/M35 18 5F BLACK.png",
-    "GOLD": "/fotos/LINHA M/M35/M35 18 6F GOLD.png"
+    "M35 18 5F BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M35/M35 18 5F BLACK.webp",
+    "M35 18 6F BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M35/M35 18 6F BLACK.webp",
+    "M35 18 6F GOLD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M35/M35 18 6F GOLD.webp"
   },
   "M36": {
-    "BLACK": "/fotos/LINHA M/M36/M36 19 5F BLACK.png"
+    "M36 19 5F BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M36/M36 19 5F BLACK.webp"
   },
   "M37": {
-    "B": "/fotos/LINHA M/M37/M37 20 5F B.png",
-    "BF": "/fotos/LINHA M/M37/M37 20 5F BF.png",
-    "GF": "/fotos/LINHA M/M37/M37 20 5F GF.png",
-    "GOLD": "/fotos/LINHA M/M37/M37 20 6F GOLD.png",
-    "HG": "/fotos/LINHA M/M37/M37 20 6F HG.png"
+    "M37 20 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M37/M37 20 5F B.webp",
+    "M37 20 5F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M37/M37 20 5F BF.webp",
+    "M37 20 5F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M37/M37 20 5F GF.webp",
+    "M37 20 6F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M37/M37 20 6F B.webp",
+    "M37 20 6F BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M37/M37 20 6F BF.webp",
+    "M37 20 6F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M37/M37 20 6F GF.webp",
+    "M37 20 6F GOLD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M37/M37 20 6F GOLD.webp",
+    "M37 20 6F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M37/M37 20 6F HG.webp"
   },
   "M47": {
-    "HD": "/fotos/LINHA M/M47/M47 15 HD.png"
+    "M47 15 HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M47/M47 15 HD.webp"
   },
   "M5": {
-    "HG": "/fotos/LINHA M/M5/M5 15 4F HG.png"
+    "M5 15 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M5/M5 15 4F HG.webp",
+    "M5 17 4F - 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M5/M5 17 4F - 5F HG.webp"
   },
   "M50": {
-    "CROMADA": "/fotos/LINHA M/M50/M50 15 CROMADA.png",
-    "HD": "/fotos/LINHA M/M50/M50 15 HD.png"
+    "M50 15 CROMADA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M50/M50 15 CROMADA.webp",
+    "M50 15 HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M50/M50 15 HD.webp"
   },
   "M6": {
-    "BD": "/fotos/LINHA M/M6/M6 15 4F BD.png",
-    "HD": "/fotos/LINHA M/M6/M6 15 4F HD.png",
-    "14.57.25": "/fotos/LINHA M/M6/WhatsApp Image 2018-10-29 at 14.57.25.jpeg",
-    "14.57.26": "/fotos/LINHA M/M6/WhatsApp Image 2018-10-29 at 14.57.26.jpeg"
+    "M6 15 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M6/M6 15 4F BD.webp",
+    "M6 15 4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M6/M6 15 4F HD.webp",
+    "M6 15 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M6/M6 15 5F HD.webp",
+    "M6 17 4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M6/M6 17 4F HD.webp",
+    "M6 17 5F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M6/M6 17 5F HD.webp",
+    "WHATSAPP IMAGE 2018-10-29 AT 14.57.25": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M6/WhatsApp Image 2018-10-29 at 14.57.25.webp",
+    "WHATSAPP IMAGE 2018-10-29 AT 14.57.26": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M6/WhatsApp Image 2018-10-29 at 14.57.26.webp"
   },
   "M7": {
-    "FORD": "/fotos/LINHA M/M7/FORA DE LINHA/FORD/M7 4F BD FORD.jpg",
-    "GM": "/fotos/LINHA M/M7/FORA DE LINHA/GM/M7 4F BD GM.jpg",
-    "HYUNDAI": "/fotos/LINHA M/M7/FORA DE LINHA/HYUNDAI/M7 4F BD HYUNDAI.jpg",
-    "KR": "/fotos/LINHA M/M7/FORA DE LINHA/KR/M7 4B BLACK KR.jpg",
-    "BD": "/fotos/LINHA M/M7/FORA DE LINHA/M7 3F BD.jpeg",
-    "BLACK": "/fotos/LINHA M/M7/FORA DE LINHA/M7 3F BLACK.jpeg",
-    "GDC": "/fotos/LINHA M/M7/FORA DE LINHA/M7 3F GDC.jpeg",
-    "HD": "/fotos/LINHA M/M7/FORA DE LINHA/M7 4F HD.jpg",
-    "TOYOTA": "/fotos/LINHA M/M7/FORA DE LINHA/TOYOTA/M7 4F BD TOYOTA.jpg",
-    "VW": "/fotos/LINHA M/M7/FORA DE LINHA/VW/M7 4F BLACK VW.jpg",
-    "B": "/fotos/LINHA M/M7/M7 14 3x100 B.png"
+    "M7 4F BD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/FORD/M7 4F BD FORD.webp",
+    "M7 B FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/FORD/M7 B FORD.webp",
+    "M7 GB FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/FORD/M7 GB FORD.webp",
+    "M7 HD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/FORD/M7 HD FORD.webp",
+    "M7 4F BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/GM/M7 4F BD GM.webp",
+    "M7 4F BLACK GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/GM/M7 4F BLACK GM.webp",
+    "M7 4F GDC GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/GM/M7 4F GDC GM.webp",
+    "M7 4F BD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/HYUNDAI/M7 4F BD HYUNDAI.webp",
+    "M7 4B BLACK KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/KR/M7 4B BLACK KR.webp",
+    "M7 4F BD KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/KR/M7 4F BD KR.webp",
+    "M7 3F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/M7 3F BD.webp",
+    "M7 3F BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/M7 3F BLACK.webp",
+    "M7 3F GDC": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/M7 3F GDC.webp",
+    "M7 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/VW/M7 4F BD.webp",
+    "M7 4F BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/M7 4F BLACK.webp",
+    "M7 4F GDC": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/M7 4F GDC.webp",
+    "M7 4F HD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/M7 4F HD.webp",
+    "M7 4F BD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/TOYOTA/M7 4F BD TOYOTA.webp",
+    "M7 4F HD TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/TOYOTA/M7 4F HD TOYOTA.webp",
+    "M7 BLACK TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/TOYOTA/M7 BLACK TOYOTA.webp",
+    "M7 4F BLACK VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/VW/M7 4F BLACK VW.webp",
+    "M7 4F GDC VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/FORA DE LINHA/VW/M7 4F GDC VW.webp",
+    "M7 14 3X100 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/M7 14 3x100 B.webp",
+    "M7 14 3X100 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M7/M7 14 3x100 BD.webp"
   },
   "M8": {
-    "BD": "/fotos/LINHA M/M8/M8 14 - 15 5F BD.png",
-    "FBD": "/fotos/LINHA M/M8/M8 14 - 15 5F FBD.png",
-    "POLIDA": "/fotos/LINHA M/M8/M8 14-15 POLIDA.png",
-    "14.57.29": "/fotos/LINHA M/M8/WhatsApp Image 2018-10-29 at 14.57.29.jpeg",
-    "14.57.31": "/fotos/LINHA M/M8/WhatsApp Image 2018-10-29 at 14.57.31.jpeg"
+    "M8 14 - 15 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M8/M8 14 - 15 5F BD.webp",
+    "M8 14 - 15 5F FBD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M8/M8 14 - 15 5F FBD.webp",
+    "M8 14-15 POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M8/M8 14-15 POLIDA.webp",
+    "WHATSAPP IMAGE 2018-10-29 AT 14.57.29": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M8/WhatsApp Image 2018-10-29 at 14.57.29.webp",
+    "WHATSAPP IMAGE 2018-10-29 AT 14.57.31": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA M/M8/WhatsApp Image 2018-10-29 at 14.57.31.webp"
   },
   "R10": {
-    "BD": "/fotos/LINHA RÉPLICAS/R10/R10 15 4F BD.png",
-    "GD": "/fotos/LINHA RÉPLICAS/R10/R10 15 4F GD.png"
+    "R10 15 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R10/R10 15 4F BD.webp",
+    "R10 15 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R10/R10 15 4F GD.webp"
   },
   "R11": {
-    "GD": "/fotos/LINHA RÉPLICAS/R11/R11 gd.jpg"
+    "R11 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R11/R11 gd.webp"
   },
   "R12": {
-    "GD": "/fotos/LINHA RÉPLICAS/R12/R12 4F GD.jpg",
-    "SD": "/fotos/LINHA RÉPLICAS/R12/R12 SD.jpeg"
+    "R12 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R12/R12 4F GD.webp",
+    "R12 SD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R12/R12 SD.webp"
   },
   "R13": {
-    "SS": "/fotos/LINHA RÉPLICAS/R13/R13 4F SS.jpg"
+    "R13 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R13/R13 4F SS.webp"
   },
   "R14": {
-    "GD": "/fotos/LINHA RÉPLICAS/R14/R14 15 GD.png"
+    "R14 15 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R14/R14 15 GD.webp"
   },
   "R15": {
-    "GF": "/fotos/LINHA RÉPLICAS/R15/R15 15 4F GF.png",
-    "SS": "/fotos/LINHA RÉPLICAS/R15/R15 15 4F SS.png"
+    "R15 15 4F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R15/R15 15 4F GF.webp",
+    "R15 15 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R15/R15 15 4F SS.webp"
   },
   "R16": {
-    "GF": "/fotos/LINHA RÉPLICAS/R16/R16 15 4F GF.png",
-    "SS": "/fotos/LINHA RÉPLICAS/R16/R16 15 4F SS.png"
+    "R16 15 4F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R16/R16 15 4F GF.webp",
+    "R16 15 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R16/R16 15 4F SS.webp"
   },
   "R17": {
-    "GF": "/fotos/LINHA RÉPLICAS/R17/R17 15 4F GF.png",
-    "SS": "/fotos/LINHA RÉPLICAS/R17/R17 15 4F SS.png"
+    "R17 15 4F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R17/R17 15 4F GF.webp",
+    "R17 15 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R17/R17 15 4F SS.webp"
   },
   "R18": {
-    "GD": "/fotos/LINHA RÉPLICAS/R18/R18 14-15 GD.png"
+    "R18 14-15 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R18/R18 14-15 GD.webp"
   },
   "R20": {
-    "GD": "/fotos/LINHA RÉPLICAS/R20/R20 15 4X100 GD.png"
+    "R20 15 4X100 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R20/R20 15 4X100 GD.webp",
+    "R20 15 4X98 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R20/R20 15 4X98 GD.webp"
   },
   "R22": {
-    "SS": "/fotos/LINHA RÉPLICAS/R22/FORA DE LINHA/R22 4F SS.jpg",
-    "GF": "/fotos/LINHA RÉPLICAS/R22/FORA DE LINHA/R22 GF.jpeg",
-    "GD": "/fotos/LINHA RÉPLICAS/R22/R22 4F GD.jpg"
+    "R22 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R22/FORA DE LINHA/R22 4F SS.webp",
+    "R22 GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R22/FORA DE LINHA/R22 GF.webp",
+    "R22 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R22/R22 4F GD.webp",
+    "R22 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R22/R22 5F GD.webp"
   },
   "R23": {
-    "GD": "/fotos/LINHA RÉPLICAS/R23/R23 15-17 GD.png"
+    "R23 15-17 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R23/R23 15-17 GD.webp"
   },
   "R24": {
-    "SS": "/fotos/LINHA RÉPLICAS/R24/R24 4F SS.jpg"
+    "R24 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R24/R24 4F SS.webp"
   },
   "R26": {
-    "GF": "/fotos/LINHA RÉPLICAS/R26/R26 15 4F GF.png",
-    "SS": "/fotos/LINHA RÉPLICAS/R26/R26 15 4F SS.png"
+    "R26 15 4F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R26/R26 15 4F GF.webp",
+    "R26 15 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R26/R26 15 4F SS.webp"
   },
   "R27": {
-    "SS": "/fotos/LINHA RÉPLICAS/R27/R27 5F SS.jpg"
+    "R27 5F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R27/R27 5F SS.webp"
   },
   "R29": {
-    "BD": "/fotos/LINHA RÉPLICAS/R29/R29 18 4F BD.png"
+    "R29 18 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R29/R29 18 4F BD.webp",
+    "R29 18 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R29/R29 18 5F BD.webp"
   },
   "R31": {
-    "GD": "/fotos/LINHA RÉPLICAS/R31/R31 6F GD.jpg",
-    "SD": "/fotos/LINHA RÉPLICAS/R31/R31 6F SD.jpg"
+    "R31 6F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R31/R31 6F GD.webp",
+    "R31 6F SD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R31/R31 6F SD.webp"
   },
   "R32": {
-    "GD": "/fotos/LINHA RÉPLICAS/R32/R32 16 GD.png",
-    "HG": "/fotos/LINHA RÉPLICAS/R32/R32 16 HG.png"
+    "R32 16 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R32/R32 16 GD.webp",
+    "R32 16 HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R32/R32 16 HG.webp"
   },
   "R33": {
-    "HG": "/fotos/LINHA RÉPLICAS/R33/R33 5F HG.jpg"
+    "R33 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R33/R33 5F HG.webp"
   },
   "R35": {
-    "GM": "/fotos/LINHA RÉPLICAS/R35/R35 4F GD GM.jpg",
-    "GD": "/fotos/LINHA RÉPLICAS/R35/R35 4F GD.jpg",
-    "VW": "/fotos/LINHA RÉPLICAS/R35/R35 5F GD VW.jpg"
+    "R35 4F GD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R35/R35 4F GD GM.webp",
+    "R35 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R35/R35 4F GD.webp",
+    "R35 5F GD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R35/R35 5F GD VW.webp",
+    "R35 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R35/R35 5F GD.webp"
   },
   "R37": {
-    "GF": "/fotos/LINHA RÉPLICAS/R37/R37 16-17 6F GF.png",
-    "SS": "/fotos/LINHA RÉPLICAS/R37/R37 16-17 6F SS.png"
+    "R37 16-17 6F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R37/R37 16-17 6F GF.webp",
+    "R37 16-17 6F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R37/R37 16-17 6F SS.webp"
   },
   "R38": {
-    "GF": "/fotos/LINHA RÉPLICAS/R38/R38 5F GF.jpg",
-    "SS": "/fotos/LINHA RÉPLICAS/R38/R38 5F SS.jpg"
+    "R38 5F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R38/R38 5F GF.webp",
+    "R38 5F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R38/R38 5F SS.webp"
   },
   "R39": {
-    "BD": "/fotos/LINHA RÉPLICAS/R39/R39  13-14  4F BD.png"
+    "R39  13-14  4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R39/R39  13-14  4F BD.webp"
   },
   "R41": {
-    "BD": "/fotos/LINHA RÉPLICAS/R41/R41 15 BD.png",
-    "GD": "/fotos/LINHA RÉPLICAS/R41/R41 15 GD.png",
-    "GF": "/fotos/LINHA RÉPLICAS/R41/R41 15 GF.png",
-    "SS": "/fotos/LINHA RÉPLICAS/R41/R41 15 SS.png"
+    "R41 15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R41/R41 15 BD.webp",
+    "R41 15 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R41/R41 15 GD.webp",
+    "R41 15 GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R41/R41 15 GF.webp",
+    "R41 15 SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R41/R41 15 SS.webp"
   },
   "R42": {
-    "BD": "/fotos/LINHA RÉPLICAS/R42/R42 14-15 BD.png",
-    "SS": "/fotos/LINHA RÉPLICAS/R42/R42 14-15 SS.png"
+    "R42 14-15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R42/R42 14-15 BD.webp",
+    "R42 14-15 SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R42/R42 14-15 SS.webp"
   },
   "R43": {
-    "GF": "/fotos/LINHA RÉPLICAS/R43/R43 14-15 4F GF.png",
-    "SS": "/fotos/LINHA RÉPLICAS/R43/R43 14-15 4F SS.png"
+    "R43 14-15 4F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R43/R43 14-15 4F GF.webp",
+    "R43 14-15 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R43/R43 14-15 4F SS.webp"
   },
   "R45": {
-    "GD": "/fotos/LINHA RÉPLICAS/R45/R45 15 4F GD.png",
-    "BD": "/fotos/LINHA RÉPLICAS/R45/R45 15-17 4F BD.png"
+    "R45 15 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R45/R45 15 4F GD.webp",
+    "R45 15-17 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R45/R45 15-17 4F BD.webp",
+    "R45 17 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R45/R45 17 4F GD.webp",
+    "R45 17 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R45/R45 17 5F GD.webp"
   },
   "R46": {
-    "BD": "/fotos/LINHA RÉPLICAS/R46/R46 17 4F BD.png"
+    "R46 17 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R46/R46 17 4F BD.webp",
+    "R46 17 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R46/R46 17 5F BD.webp"
   },
   "R49": {
-    "BD": "/fotos/LINHA RÉPLICAS/R49/R49 6F BD.jpg",
-    "GD": "/fotos/LINHA RÉPLICAS/R49/R49 6F GD.jpg"
+    "R49 6F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R49/R49 6F BD.webp",
+    "R49 6F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R49/R49 6F GD.webp"
   },
   "R5": {
-    "SS": "/fotos/LINHA RÉPLICAS/R5/R5 5F SS.jpg"
+    "R5 5F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R5/R5 5F SS.webp"
   },
   "R50": {
-    "BD": "/fotos/LINHA RÉPLICAS/R50/R50 14 BD.png",
-    "SS": "/fotos/LINHA RÉPLICAS/R50/R50 14 SS.png"
+    "R50 14 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R50/R50 14 BD.webp",
+    "R50 14 SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R50/R50 14 SS.webp"
   },
   "R51": {
-    "GF": "/fotos/LINHA RÉPLICAS/R51/R51 17 4F GF.png",
-    "SS": "/fotos/LINHA RÉPLICAS/R51/R51 17 4F SS.png"
+    "R51 17 4F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R51/R51 17 4F GF.webp",
+    "R51 17 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R51/R51 17 4F SS.webp"
   },
   "R52": {
-    "GF": "/fotos/LINHA RÉPLICAS/R52/R52 GF.jpeg",
-    "SS": "/fotos/LINHA RÉPLICAS/R52/r52 ss.jpg"
+    "R52 GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R52/R52 GF.webp",
+    "R52 SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R52/r52 ss.webp"
   },
   "R53": {
-    "GD": "/fotos/LINHA RÉPLICAS/R53/R53 20-22 GD.png",
-    "HG": "/fotos/LINHA RÉPLICAS/R53/R53 20-22 HG.png"
+    "R53 20-22 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R53/R53 20-22 GD.webp",
+    "R53 20-22 HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R53/R53 20-22 HG.webp"
   },
   "R54": {
-    "GD": "/fotos/LINHA RÉPLICAS/R54/R54 17 4F GD.png",
-    "BD": "/fotos/LINHA RÉPLICAS/R54/R54 18 5X114 BD.png"
+    "R54 17 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R54/R54 17 4F GD.webp",
+    "R54 18 5X114 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R54/R54 18 5X114 BD.webp",
+    "R54 18 5X114 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R54/R54 18 5X114 GD.webp",
+    "R54 18 5X120 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R54/R54 18 5X120 BD.webp"
   },
   "R55": {
-    "VW": "/fotos/LINHA RÉPLICAS/R55/R55 4F GD VW.jpg",
-    "GD": "/fotos/LINHA RÉPLICAS/R55/R55 4F GD.jpg",
-    "FORD": "/fotos/LINHA RÉPLICAS/R55/R55 5F GD FORD.jpg",
-    "HONDA": "/fotos/LINHA RÉPLICAS/R55/R55 5F GD HONDA.jpg"
+    "R55 4F GD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R55/R55 4F GD VW.webp",
+    "R55 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R55/R55 4F GD.webp",
+    "R55 5F GD FORD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R55/R55 5F GD FORD.webp",
+    "R55 5F GD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R55/R55 5F GD HONDA.webp",
+    "R55 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R55/R55 5F GD.webp"
   },
   "R56": {
-    "GD": "/fotos/LINHA RÉPLICAS/R56/R56 17 5F GD.png"
+    "R56 17 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R56/R56 17 5F GD.webp"
   },
   "R57": {
-    "BG": "/fotos/LINHA RÉPLICAS/R57/R57 5F BG.jpg"
+    "R57 5F BG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R57/R57 5F BG.webp"
   },
   "R59": {
-    "GD": "/fotos/LINHA RÉPLICAS/R59/R59 4F GD.jpg",
-    "SS": "/fotos/LINHA RÉPLICAS/R59/R59 4F SS.jpg"
+    "R59 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R59/R59 4F GD.webp",
+    "R59 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R59/R59 4F SS.webp"
   },
   "R6": {
-    "SS": "/fotos/LINHA RÉPLICAS/R6/R6 15 4F SS.png"
+    "R6 15 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R6/R6 15 4F SS.webp",
+    "R6 17 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R6/R6 17 4F SS.webp"
   },
   "R60": {
-    "BD": "/fotos/LINHA RÉPLICAS/R60/R60 14 BD.png"
+    "R60 14 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R60/R60 14 BD.webp"
   },
   "R61": {
-    "GD": "/fotos/LINHA RÉPLICAS/R61/R61 4F GD.jpg"
+    "R61 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R61/R61 4F GD.webp"
   },
   "R62": {
-    "BD": "/fotos/LINHA RÉPLICAS/R62/R62 15-17 BD.png",
-    "GD": "/fotos/LINHA RÉPLICAS/R62/R62 15-17 GD.png"
+    "R62 15-17 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R62/R62 15-17 BD.webp",
+    "R62 15-17 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R62/R62 15-17 GD.webp"
   },
   "R63": {
-    "SS": "/fotos/LINHA RÉPLICAS/R63/R63 14-15 SS.png"
+    "R63 14-15 SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R63/R63 14-15 SS.webp"
   },
   "R64": {
-    "B": "/fotos/LINHA RÉPLICAS/R64/R64 16 5F B.png",
-    "GD": "/fotos/LINHA RÉPLICAS/R64/R64 16 5F GD.png"
+    "R64 16 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R64/R64 16 5F B.webp",
+    "R64 16 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R64/R64 16 5F GD.webp"
   },
   "R65": {
-    "GD": "/fotos/LINHA RÉPLICAS/R65/FORA DE LINHA/R65 4F GD.jpg",
-    "GF": "/fotos/LINHA RÉPLICAS/R65/FORA DE LINHA/R65 4F GF.jpg",
-    "SS": "/fotos/LINHA RÉPLICAS/R65/FORA DE LINHA/R65 4F SS.jpg"
+    "R65 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R65/FORA DE LINHA/R65 4F GD.webp",
+    "R65 4F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R65/FORA DE LINHA/R65 4F GF.webp",
+    "R65 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R65/FORA DE LINHA/R65 4F SS.webp",
+    "R65 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R65/FORA DE LINHA/R65 5F GD.webp",
+    "R65 5F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R65/FORA DE LINHA/R65 5F GF.webp",
+    "R65 5F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R65/FORA DE LINHA/R65 5F SS.webp",
+    "R65 15 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R65/R65 15 4F GD.webp"
   },
   "R66": {
-    "B": "/fotos/LINHA RÉPLICAS/R66/R66 15 4F B.png",
-    "HG": "/fotos/LINHA RÉPLICAS/R66/R66 15 4F HG.png"
+    "R66 15 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R66/R66 15 4F B.webp",
+    "R66 15 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R66/R66 15 4F HG.webp"
   },
   "R68": {
-    "SS": "/fotos/LINHA RÉPLICAS/R68/R68 6F SS.jpg"
+    "R68 6F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R68/R68 6F SS.webp"
   },
   "R69": {
-    "GF": "/fotos/LINHA RÉPLICAS/R69/R69 GF.jpg",
-    "HG": "/fotos/LINHA RÉPLICAS/R69/R69 HG.jpg"
+    "R69 GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R69/R69 GF.webp",
+    "R69 HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R69/R69 HG.webp"
   },
   "R7": {
-    "GF": "/fotos/LINHA RÉPLICAS/R7/R7 15 4F GF.png",
-    "SS": "/fotos/LINHA RÉPLICAS/R7/R7 15 4F SS.png"
+    "R7 15 4F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R7/R7 15 4F GF.webp",
+    "R7 15 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R7/R7 15 4F SS.webp"
   },
   "R70": {
-    "GF": "/fotos/LINHA RÉPLICAS/R70/FORA DE LINHA/R70 4F GF.jpg",
-    "GM": "/fotos/LINHA RÉPLICAS/R70/R70 4F HG GM.jpg",
-    "HYUNDAI": "/fotos/LINHA RÉPLICAS/R70/R70 4F HG HYUNDAI.jpg",
-    "KR": "/fotos/LINHA RÉPLICAS/R70/R70 4F HG KR.jpg",
-    "TOYOTA": "/fotos/LINHA RÉPLICAS/R70/R70 4F HG TOYOTA.jpg",
-    "HG": "/fotos/LINHA RÉPLICAS/R70/R70 4F HG.jpg",
-    "VW": "/fotos/LINHA RÉPLICAS/R70/VW/R70 4F HG VW.jpg"
+    "R70 4F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R70/FORA DE LINHA/R70 4F GF.webp",
+    "R70 4F HG GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R70/R70 4F HG GM.webp",
+    "R70 4F HG HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R70/R70 4F HG HYUNDAI.webp",
+    "R70 4F HG KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R70/R70 4F HG KR.webp",
+    "R70 4F HG TOYOTA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R70/R70 4F HG TOYOTA.webp",
+    "R70 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R70/R70 4F HG.webp",
+    "R70 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R70/R70 5F HG.webp",
+    "R70 4F HG VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R70/VW/R70 4F HG VW.webp",
+    "R70 5F HG VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R70/VW/R70 5F HG VW.webp"
   },
   "R71": {
-    "GFD": "/fotos/LINHA RÉPLICAS/R71/FORA DE LINHA/R71 4F GFD.jpg",
-    "HG": "/fotos/LINHA RÉPLICAS/R71/FORA DE LINHA/R71 4F HG.jpg",
-    "BD": "/fotos/LINHA RÉPLICAS/R71/R71 4F BD.jpg"
+    "R71 4F GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R71/FORA DE LINHA/R71 4F GFD.webp",
+    "R71 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R71/FORA DE LINHA/R71 4F HG.webp",
+    "R71 5F GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R71/FORA DE LINHA/R71 5F GFD.webp",
+    "R71 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R71/FORA DE LINHA/R71 5F HG.webp",
+    "R71 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R71/R71 4F BD.webp",
+    "R71 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R71/R71 5F BD.webp"
   },
   "R72": {
-    "GD": "/fotos/LINHA RÉPLICAS/R72/R72 18 GD.png"
+    "R72 18 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R72/R72 18 GD.webp"
   },
   "R73": {
-    "GFD": "/fotos/LINHA RÉPLICAS/R73/R73 15 5F GFD.png",
-    "GD": "/fotos/LINHA RÉPLICAS/R73/R73 15 GD.png"
+    "R73 15 5F GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R73/R73 15 5F GFD.webp",
+    "R73 15 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R73/R73 15 GD.webp",
+    "R73 15 GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R73/R73 15 GFD.webp"
   },
   "R74": {
-    "GD": "/fotos/LINHA RÉPLICAS/R74/R74 13 GD.png",
-    "BD": "/fotos/LINHA RÉPLICAS/R74/R74 15 4F BD.png"
+    "R74 13 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R74/R74 13 GD.webp",
+    "R74 15 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R74/R74 15 4F BD.webp"
   },
   "R75": {
-    "BD": "/fotos/LINHA RÉPLICAS/R75/R75 15 BD.png",
-    "GD": "/fotos/LINHA RÉPLICAS/R75/R75 15 GD.png"
+    "R75 15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R75/R75 15 BD.webp",
+    "R75 15 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R75/R75 15 GD.webp"
   },
   "R76": {
-    "GD": "/fotos/LINHA RÉPLICAS/R76/R76 16-18 GD.png"
+    "R76 16-18 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R76/R76 16-18 GD.webp"
   },
   "R77": {
-    "GD": "/fotos/LINHA RÉPLICAS/R77/R77 14-15 GD.png"
+    "R77 14-15 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R77/R77 14-15 GD.webp"
   },
   "R78": {
-    "GF": "/fotos/LINHA RÉPLICAS/R78/R78 14-15 GF.png",
-    "SS": "/fotos/LINHA RÉPLICAS/R78/R78 14-15 SS.png"
+    "R78 14-15 GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R78/R78 14-15 GF.webp",
+    "R78 14-15 SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R78/R78 14-15 SS.webp"
   },
   "R79": {
-    "BD": "/fotos/LINHA RÉPLICAS/R79/R79 16 BD.png",
-    "B": "/fotos/LINHA RÉPLICAS/R79/R79 16-18 B.png"
+    "R79 16 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R79/R79 16 BD.webp",
+    "R79 16-18 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R79/R79 16-18 B.webp",
+    "R79 18-20 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R79/R79 18-20 BD.webp"
   },
   "R8": {
-    "GF": "/fotos/LINHA RÉPLICAS/R8/R8 4F GF.jpg",
-    "SS": "/fotos/LINHA RÉPLICAS/R8/R8 4F SS.jpg"
+    "R8 4F GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R8/R8 4F GF.webp",
+    "R8 4F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R8/R8 4F SS.webp",
+    "R8 5F SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R8/R8 5F SS.webp"
   },
   "R80": {
-    "B": "/fotos/LINHA RÉPLICAS/R80/R80 15 B.png",
-    "BD": "/fotos/LINHA RÉPLICAS/R80/R80 15 BD.png",
-    "GD": "/fotos/LINHA RÉPLICAS/R80/R80 15 GD.png"
+    "R80 15 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R80/R80 15 B.webp",
+    "R80 15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R80/R80 15 BD.webp",
+    "R80 15 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R80/R80 15 GD.webp"
   },
   "R81": {
-    "BD": "/fotos/LINHA RÉPLICAS/R81/R81 14-15 BD.png"
+    "R81 14-15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R81/R81 14-15 BD.webp"
   },
   "R82": {
-    "BD": "/fotos/LINHA RÉPLICAS/R82/R82 15 4F BD.png",
-    "GDC": "/fotos/LINHA RÉPLICAS/R82/R82 15 4F GDC.png",
-    "GDE": "/fotos/LINHA RÉPLICAS/R82/R82 15 4F GDE.png"
+    "R82 15 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R82/R82 15 4F BD.webp",
+    "R82 15 4F GDC": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R82/R82 15 4F GDC.webp",
+    "R82 15 4F GDE": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R82/R82 15 4F GDE.webp"
   },
   "R83": {
-    "BD": "/fotos/LINHA RÉPLICAS/R83/R83 15-17 BD.png"
+    "R83 15-17 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R83/R83 15-17 BD.webp"
   },
   "R84": {
-    "BD": "/fotos/LINHA RÉPLICAS/R84/R84 14 5X112 BD.png",
-    "GD": "/fotos/LINHA RÉPLICAS/R84/R84 15-17 4F GD.png",
-    "POLIDA": "/fotos/LINHA RÉPLICAS/R84/R84 15-17 4F POLIDA.png",
-    "SD": "/fotos/LINHA RÉPLICAS/R84/R84 15-17 4F SD.png"
+    "R84 14 5X112 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R84/R84 14 5X112 BD.webp",
+    "R84 15-17 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R84/R84 15-17 4F BD.webp",
+    "R84 15-17 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R84/R84 15-17 4F GD.webp",
+    "R84 15-17 4F POLIDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R84/R84 15-17 4F POLIDA.webp",
+    "R84 15-17 4F SD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R84/R84 15-17 4F SD.webp"
   },
   "R86": {
-    "BD": "/fotos/LINHA RÉPLICAS/R86/R86 4F BD.jpg"
+    "R86 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R86/R86 4F BD.webp",
+    "R86 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R86/R86 5F BD.webp"
   },
   "R87": {
-    "BLACK": "/fotos/LINHA RÉPLICAS/R87/R87 18-20 BLACK.png",
-    "BD": "/fotos/LINHA RÉPLICAS/R87/R87 20 BD.png"
+    "R87 18-20 BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R87/R87 18-20 BLACK.webp",
+    "R87 20 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R87/R87 20 BD.webp"
   },
   "R88": {
-    "BD": "/fotos/LINHA RÉPLICAS/R88/R88 14 BD.png"
+    "R88 14 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R88/R88 14 BD.webp"
   },
   "R89": {
-    "BD": "/fotos/LINHA RÉPLICAS/R89/R89 16-17 BD.png",
-    "GD": "/fotos/LINHA RÉPLICAS/R89/R89 16-17 GD.png"
+    "R89 16-17 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R89/R89 16-17 BD.webp",
+    "R89 16-17 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R89/R89 16-17 GD.webp"
   },
   "R90": {
-    "GM": "/fotos/LINHA RÉPLICAS/R90/GM/R90 BD GM.jpg",
-    "HYUNDAI": "/fotos/LINHA RÉPLICAS/R90/HYUNDAI/R90 BD HYUNDAI.jpg",
-    "HONDA": "/fotos/LINHA RÉPLICAS/R90/R90 4F BD HONDA.jpg",
-    "BD": "/fotos/LINHA RÉPLICAS/R90/R90 4F BD.jpg",
-    "BLACK": "/fotos/LINHA RÉPLICAS/R90/R90 4F BLACK.jpg",
-    "RENAULT": "/fotos/LINHA RÉPLICAS/R90/RENAULT/R90 BD RENAULT.jpg",
-    "VW": "/fotos/LINHA RÉPLICAS/R90/VW/R90 BD VW.jpg"
+    "R90 BD GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R90/GM/R90 BD GM.webp",
+    "R90 BLACK GM": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R90/GM/R90 BLACK GM.webp",
+    "R90 BD HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R90/HYUNDAI/R90 BD HYUNDAI.webp",
+    "R90 BLACK HYUNDAI": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R90/HYUNDAI/R90 BLACK HYUNDAI.webp",
+    "R90 4F BD HONDA": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R90/R90 4F BD HONDA.webp",
+    "R90 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R90/R90 4F BD.webp",
+    "R90 4F BLACK": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R90/R90 4F BLACK.webp",
+    "R90 BD RENAULT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R90/RENAULT/R90 BD RENAULT.webp",
+    "R90 BLACK RENAULT": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R90/RENAULT/R90 BLACK RENAULT.webp",
+    "R90 BD VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R90/VW/R90 BD VW.webp",
+    "R90 BLACK VW": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R90/VW/R90 BLACK VW.webp"
   },
   "R91": {
-    "BD": "/fotos/LINHA RÉPLICAS/R91/R91 14 BD.png"
+    "R91 14 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R91/R91 14 BD.webp"
   },
   "R92": {
-    "B": "/fotos/LINHA RÉPLICAS/R92/R92 14-15-17 B.png",
-    "BD": "/fotos/LINHA RÉPLICAS/R92/R92 14-15-17 BD.png"
+    "R92 14-15-17 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R92/R92 14-15-17 B.webp",
+    "R92 14-15-17 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R92/R92 14-15-17 BD.webp"
   },
   "R93": {
-    "BD": "/fotos/LINHA RÉPLICAS/R93/R93 15 4F BD.png",
-    "GD": "/fotos/LINHA RÉPLICAS/R93/R93 15 4F GD.png",
-    "B": "/fotos/LINHA RÉPLICAS/R93/R93 15 5F B.png"
+    "R93 15 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R93/R93 15 4F BD.webp",
+    "R93 15 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R93/R93 15 4F GD.webp",
+    "R93 15 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R93/R93 15 5F B.webp",
+    "R93 15 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R93/R93 15 5F BD.webp",
+    "R93 15 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R93/R93 15 5F GD.webp",
+    "R93 17 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R93/R93 17 4F B.webp",
+    "R93 17 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R93/R93 17 5F GD.webp",
+    "R93 18 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R93/R93 18 4F BD.webp",
+    "R93 18 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R93/R93 18 5F BD.webp"
   },
   "R94": {
-    "B": "/fotos/LINHA RÉPLICAS/R94/R94 15 4F B.png",
-    "BD": "/fotos/LINHA RÉPLICAS/R94/R94 15 4F BD.png",
-    "BDS": "/fotos/LINHA RÉPLICAS/R94/R94 15 4F BDS.png",
-    "GD": "/fotos/LINHA RÉPLICAS/R94/R94 15 4F GD.png"
+    "R94 15 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R94/R94 15 4F B.webp",
+    "R94 15 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R94/R94 15 4F BD.webp",
+    "R94 15 4F BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R94/R94 15 4F BDS.webp",
+    "R94 15 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R94/R94 15 4F GD.webp",
+    "R94 15 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R94/R94 15 5F B.webp",
+    "R94 15 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R94/R94 15 5F BD.webp",
+    "R94 15 5F BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R94/R94 15 5F BDS.webp",
+    "R94 15 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R94/R94 15 5F GD.webp"
   },
   "R96": {
-    "BD": "/fotos/LINHA RÉPLICAS/R96/R96 14 BD.png"
+    "R96 14 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R96/R96 14 BD.webp"
   },
   "R97": {
-    "BD": "/fotos/LINHA RÉPLICAS/R97/R97 15 BD.png",
-    "GB": "/fotos/LINHA RÉPLICAS/R97/R97 15 GB.png"
+    "R97 15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R97/R97 15 BD.webp",
+    "R97 15 GB": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R97/R97 15 GB.webp"
   },
   "R98": {
-    "98": "/fotos/LINHA RÉPLICAS/R98/FORA DE LINHA/R 98.jpg",
-    "GDC": "/fotos/LINHA RÉPLICAS/R98/FORA DE LINHA/r98 5f gdc.jpg",
-    "GDE": "/fotos/LINHA RÉPLICAS/R98/FORA DE LINHA/r98 5f gde.jpg",
-    "HG": "/fotos/LINHA RÉPLICAS/R98/FORA DE LINHA/R98 5F HG.jpg",
-    "BD": "/fotos/LINHA RÉPLICAS/R98/r98  5f bd.jpg"
+    "R 98": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R98/FORA DE LINHA/R 98.webp",
+    "R98 5F GDC": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R98/FORA DE LINHA/r98 5f gdc.webp",
+    "R98 5F GDE": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R98/FORA DE LINHA/r98 5f gde.webp",
+    "R98 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R98/FORA DE LINHA/R98 5F HG.webp",
+    "R98  5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R98/r98  5f bd.webp"
   },
   "R99": {
-    "BD": "/fotos/LINHA RÉPLICAS/R99/R99 15 BD.png"
+    "R99 15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA REPLICAS/R99/R99 15 BD.webp"
   },
   "S02": {
-    "BD": "/fotos/LINHA S/S02/S02 16-18 BD.png",
-    "GD": "/fotos/LINHA S/S02/S02 16-18 GD.png"
+    "S02 16-18 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S02/S02 16-18 BD.webp",
+    "S02 16-18 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S02/S02 16-18 GD.webp"
   },
   "S03": {
-    "B": "/fotos/LINHA S/S03/S03 14-15 B.png",
-    "BD": "/fotos/LINHA S/S03/S03 14-15 BD.png",
-    "GD": "/fotos/LINHA S/S03/S03 14-15 GD.png",
-    "GFD": "/fotos/LINHA S/S03/S03 15-17 GFD.png"
+    "S03 14-15 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S03/S03 14-15 B.webp",
+    "S03 14-15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S03/S03 14-15 BD.webp",
+    "S03 14-15 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S03/S03 14-15 GD.webp",
+    "S03 15-17 GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S03/S03 15-17 GFD.webp"
   },
   "S04": {
-    "BD": "/fotos/LINHA S/S04/S04 15 BD.png"
+    "S04 15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S04/S04 15 BD.webp"
   },
   "S05": {
-    "BFD": "/fotos/LINHA S/S05/S05 16 BFD.png"
+    "S05 16 BFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S05/S05 16 BFD.webp"
   },
   "S07": {
-    "B": "/fotos/LINHA S/S07/S07 18-20-22 B.png",
-    "GF": "/fotos/LINHA S/S07/S07 18-20-22 GF.png",
-    "HG": "/fotos/LINHA S/S07/S07 18-20-22 HG.png"
+    "S07 18-20-22 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S07/S07 18-20-22 B.webp",
+    "S07 18-20-22 GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S07/S07 18-20-22 GF.webp",
+    "S07 18-20-22 HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S07/S07 18-20-22 HG.webp"
   },
   "S08": {
-    "BD": "/fotos/LINHA S/S08/S08 16 BD.png"
+    "S08 16 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S08/S08 16 BD.webp"
   },
   "S09": {},
   "S1": {},
   "S10": {
-    "GD": "/fotos/LINHA S/S10/S10 16 GD.png"
+    "S10 16 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S10/S10 16 GD.webp"
   },
   "S11": {
-    "BD": "/fotos/LINHA S/S11/S11 17-18-20 BD.png"
+    "S11 17-18-20 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S11/S11 17-18-20 BD.webp"
   },
   "S12": {
-    "BD": "/fotos/LINHA S/S12/S12 16 BD.png"
+    "S12 16 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S12/S12 16 BD.webp"
   },
   "S13": {
-    "B": "/fotos/LINHA S/S13/S13 14-15 B.png",
-    "BD": "/fotos/LINHA S/S13/S13 14-15 BD.png"
+    "S13 14-15 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S13/S13 14-15 B.webp",
+    "S13 14-15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S13/S13 14-15 BD.webp"
   },
   "S14": {
-    "BD": "/fotos/LINHA S/S14/S14 16-17 BD.png"
+    "S14 16-17 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S14/S14 16-17 BD.webp"
   },
   "S15": {
-    "B": "/fotos/LINHA S/S15/S15 15 B.png",
-    "GB": "/fotos/LINHA S/S15/S15 15 GB.png",
-    "HG": "/fotos/LINHA S/S15/S15 15 HG.png"
+    "S15 15 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S15/S15 15 B.webp",
+    "S15 15 GB": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S15/S15 15 GB.webp",
+    "S15 15 HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S15/S15 15 HG.webp"
   },
   "S16": {
-    "BD": "/fotos/LINHA S/S16/S16 16 BD.png"
+    "S16 16 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S16/S16 16 BD.webp"
   },
   "S17": {},
   "S18": {
-    "15": "/fotos/LINHA S/S18/Nova pasta/s18 aro 15.jpg",
-    "B": "/fotos/LINHA S/S18/S18 15-17-18 4F B.png",
-    "HG": "/fotos/LINHA S/S18/S18 15-17-18 4F HG.png",
-    "GB": "/fotos/LINHA S/S18/S18 15-17-18 5F GB.png"
+    "S18 ARO 15": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S18/Nova pasta/s18 aro 15.webp",
+    "S18 15-17-18 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S18/S18 15-17-18 4F B.webp",
+    "S18 15-17-18 4F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S18/S18 15-17-18 4F HG.webp",
+    "S18 15-17-18 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S18/S18 15-17-18 5F B.webp",
+    "S18 15-17-18 5F GB": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S18/S18 15-17-18 5F GB.webp",
+    "S18 15-17-18 5F HG": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S18/S18 15-17-18 5F HG.webp"
   },
   "S19": {
-    "BD": "/fotos/LINHA S/S19/S19 15-17-18 4F BD.png",
-    "BDS": "/fotos/LINHA S/S19/S19 15-17-18 5F BDS.png"
+    "S19 15-17-18 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S19/S19 15-17-18 4F BD.webp",
+    "S19 15-17-18 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S19/S19 15-17-18 5F BD.webp",
+    "S19 15-17-18 5F BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S19/S19 15-17-18 5F BDS.webp"
   },
   "S20": {
-    "BD": "/fotos/LINHA S/S20/S20 15 BD.png",
-    "GF": "/fotos/LINHA S/S20/S20 15 GF.png"
+    "S20 15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S20/S20 15 BD.webp",
+    "S20 15 GF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S20/S20 15 GF.webp"
   },
   "S21": {
-    "B": "/fotos/LINHA S/S21/S21 14-15-17 B.png",
-    "BD": "/fotos/LINHA S/S21/S21 14-15-17 BD.png",
-    "SS": "/fotos/LINHA S/S21/S21 15-17 SS.png"
+    "S21 14-15-17 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S21/S21 14-15-17 B.webp",
+    "S21 14-15-17 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S21/S21 14-15-17 BD.webp",
+    "S21 15-17 SS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S21/S21 15-17 SS.webp"
   },
   "S22": {
-    "BD": "/fotos/LINHA S/S22/S22 16-17 BD.png",
-    "GB": "/fotos/LINHA S/S22/S22 16-17 GB.png",
-    "LBD": "/fotos/LINHA S/S22/S22 16-17 LBD.png"
+    "S22 16-17 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S22/S22 16-17 BD.webp",
+    "S22 16-17 GB": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S22/S22 16-17 GB.webp",
+    "S22 16-17 LBD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S22/S22 16-17 LBD.webp"
   },
   "S23": {
-    "BD": "/fotos/LINHA S/S23/S23 17-18 4F BD.png",
-    "B": "/fotos/LINHA S/S23/S23 18 4F B.png"
+    "S23 17-18 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S23/S23 17-18 4F BD.webp",
+    "S23 17-18 4X108 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S23/S23 17-18 4X108 BD.webp",
+    "S23 17-18 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S23/S23 17-18 5F BD.webp",
+    "S23 17-18 5X105-8 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S23/S23 17-18 5X105-8 BD.webp",
+    "S23 18 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S23/S23 18 4F B.webp",
+    "S23 18 4X100 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S23/S23 18 4X100 B.webp"
   },
   "S24": {
-    "BD": "/fotos/LINHA S/S24/S24 16-17 4F BD.png",
-    "GFD": "/fotos/LINHA S/S24/S24 16-17 4F GFD.png",
-    "GD": "/fotos/LINHA S/S24/S24 16-17 5F GD.png"
+    "S24 16-17 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S24/S24 16-17 4F BD.webp",
+    "S24 16-17 4F GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S24/S24 16-17 4F GFD.webp",
+    "S24 16-17 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S24/S24 16-17 5F BD.webp",
+    "S24 16-17 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S24/S24 16-17 5F GD.webp"
   },
   "S25": {
-    "BD": "/fotos/LINHA S/S25/S25 16-17 BD.png",
-    "BDS": "/fotos/LINHA S/S25/S25 16-17 BDS.png"
+    "S25 16-17 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S25/S25 16-17 BD.webp",
+    "S25 16-17 BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S25/S25 16-17 BDS.webp"
   },
   "S26": {},
   "S27": {
-    "BD": "/fotos/LINHA S/S27/S27 15 BD.png",
-    "GFD": "/fotos/LINHA S/S27/S27 15-16 GFD.png"
+    "S27 15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S27/S27 15 BD.webp",
+    "S27 15-16 GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S27/S27 15-16 GFD.webp"
   },
   "S28": {},
   "S29": {
-    "BD": "/fotos/LINHA S/S29/S29 16 BD.png",
-    "GFD": "/fotos/LINHA S/S29/S29 16 GFD.png"
+    "S29 16 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S29/S29 16 BD.webp",
+    "S29 16 GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S29/S29 16 GFD.webp"
   },
   "S30": {
-    "B": "/fotos/LINHA S/S30/S30 16-18 B.png",
-    "BD": "/fotos/LINHA S/S30/S30 16-18 BD.png",
-    "GD": "/fotos/LINHA S/S30/S30 16-18 GD.png"
+    "S30 16-18 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S30/S30 16-18 B.webp",
+    "S30 16-18 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S30/S30 16-18 BD.webp",
+    "S30 16-18 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S30/S30 16-18 GD.webp"
   },
   "S31": {
-    "BD": "/fotos/LINHA S/S31/S31 17-18-20 BD.png"
+    "S31 17-18-20 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S31/S31 17-18-20 BD.webp"
   },
   "S32": {
-    "BD": "/fotos/LINHA S/S32/S32 18-20-22 BD.png",
-    "GL": "/fotos/LINHA S/S32/S32 18-20-22 GL.png"
+    "S32 18-20-22 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S32/S32 18-20-22 BD.webp",
+    "S32 18-20-22 GL": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S32/S32 18-20-22 GL.webp"
   },
   "S33": {
-    "B": "/fotos/LINHA S/S33/S33 16 B.png",
-    "BD": "/fotos/LINHA S/S33/S33 16 BD.png"
+    "S33 16 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S33/S33 16 B.webp",
+    "S33 16 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S33/S33 16 BD.webp"
   },
   "S34": {
-    "B": "/fotos/LINHA S/S34/S34 16-18 B.png",
-    "BD": "/fotos/LINHA S/S34/S34 16-18 BD.png",
-    "GD": "/fotos/LINHA S/S34/S34 16-18 GD.png"
+    "S34 16-18 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S34/S34 16-18 B.webp",
+    "S34 16-18 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S34/S34 16-18 BD.webp",
+    "S34 16-18 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S34/S34 16-18 GD.webp"
   },
   "S35": {
-    "B": "/fotos/LINHA S/S35/S35 14-15 B.png",
-    "BD": "/fotos/LINHA S/S35/S35 14-15 BD.png"
+    "S35 14-15 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S35/S35 14-15 B.webp",
+    "S35 14-15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S35/S35 14-15 BD.webp"
   },
   "S36": {
-    "BD": "/fotos/LINHA S/S36/S36 18 BD.png"
+    "S36 18 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S36/S36 18 BD.webp"
   },
   "S37": {
-    "BD": "/fotos/LINHA S/S37/S37 16 BD.png"
+    "S37 16 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S37/S37 16 BD.webp"
   },
   "S38": {
-    "B": "/fotos/LINHA S/S38/S38 15 B.png",
-    "BD": "/fotos/LINHA S/S38/S38 15 BD.png",
-    "GD": "/fotos/LINHA S/S38/S38 15 GD.png"
+    "S38 15 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S38/S38 15 B.webp",
+    "S38 15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S38/S38 15 BD.webp",
+    "S38 15 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S38/S38 15 GD.webp"
   },
   "S39": {
-    "BDS": "/fotos/LINHA S/S39/S39 18 BDS.png",
-    "GD": "/fotos/LINHA S/S39/S39 18 GD.png",
-    "BD": "/fotos/LINHA S/S39/S39 18-20-22 BD.png"
+    "S39 18 BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S39/S39 18 BDS.webp",
+    "S39 18 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S39/S39 18 GD.webp",
+    "S39 18-20-22 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S39/S39 18-20-22 BD.webp"
   },
   "S40": {
-    "BD": "/fotos/LINHA S/S40/S40 15 BD.png"
+    "S40 15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S40/S40 15 BD.webp"
   },
   "S41": {
-    "BD": "/fotos/LINHA S/S41/S41 16 BD.png",
-    "GD": "/fotos/LINHA S/S41/S41 16 GD.png"
+    "S41 16 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S41/S41 16 BD.webp",
+    "S41 16 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S41/S41 16 GD.webp"
   },
   "S42": {
-    "BD": "/fotos/LINHA S/S42/S42 14-15 BD.png",
-    "GD": "/fotos/LINHA S/S42/S42 14-15 GD.png"
+    "S42 14-15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S42/S42 14-15 BD.webp",
+    "S42 14-15 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S42/S42 14-15 GD.webp"
   },
   "S43": {
-    "BD": "/fotos/LINHA S/S43/S43 15 BD.png"
+    "S43 15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S43/S43 15 BD.webp"
   },
   "S44": {
-    "BD": "/fotos/LINHA S/S44/S44 15 4F BD.png",
-    "GD": "/fotos/LINHA S/S44/S44 15 5F GD.png"
+    "S44 15 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S44/S44 15 4F BD.webp",
+    "S44 15 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S44/S44 15 5F BD.webp",
+    "S44 15 5F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S44/S44 15 5F GD.webp"
   },
   "S45": {
-    "BD": "/fotos/LINHA S/S45/S45 18 4F BD.png",
-    "GD": "/fotos/LINHA S/S45/S45 18 4F GD.png"
+    "S45 18 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S45/S45 18 4F BD.webp",
+    "S45 18 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S45/S45 18 4F GD.webp",
+    "S45 18 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S45/S45 18 5F BD.webp",
+    "S45 18 5F FIAT BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S45/S45 18 5F FIAT BD.webp"
   },
   "S46": {
-    "BDS": "/fotos/LINHA S/S46/S46 15-17 4F BDS.png",
-    "BD": "/fotos/LINHA S/S46/S46 15-17-18 4F BD.png"
+    "S46 15-17 4F BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S46/S46 15-17 4F BDS.webp",
+    "S46 15-17 5F BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S46/S46 15-17 5F BDS.webp",
+    "S46 15-17-18 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S46/S46 15-17-18 4F BD.webp",
+    "S46 15-17-18 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S46/S46 15-17-18 5F BD.webp"
   },
   "S47": {
-    "B": "/fotos/LINHA S/S47/S47 16-17 4F B.png",
-    "BD": "/fotos/LINHA S/S47/S47 16-17 4F BD.png",
-    "GD": "/fotos/LINHA S/S47/S47 17 4F GD.png"
+    "S47 16-17 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S47/S47 16-17 4F B.webp",
+    "S47 16-17 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S47/S47 16-17 4F BD.webp",
+    "S47 16-17 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S47/S47 16-17 5F B.webp",
+    "S47 16-17 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S47/S47 16-17 5F BD.webp",
+    "S47 16-17 5F KR B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S47/S47 16-17 5F KR B.webp",
+    "S47 17 4F GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S47/S47 17 4F GD.webp"
   },
   "S48": {
-    "BDS": "/fotos/LINHA S/S48/S48 15 4F BDS.png",
-    "B": "/fotos/LINHA S/S48/S48 15-17 4F B.png",
-    "BD": "/fotos/LINHA S/S48/S48 15-17 4F BD.png"
+    "S48 15 4F BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S48/S48 15 4F BDS.webp",
+    "S48 15-17 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S48/S48 15-17 4F B.webp",
+    "S48 15-17 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S48/S48 15-17 4F BD.webp",
+    "S48 15-17 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S48/S48 15-17 5F BD.webp"
   },
   "S49": {
-    "LBD": "/fotos/LINHA S/S49/S49 17 5F LBD.png",
-    "KR": "/fotos/LINHA S/S49/S49 17-18 4F BD KR.png",
-    "TOY": "/fotos/LINHA S/S49/S49 17-18 4F BD TOY.png",
-    "BD": "/fotos/LINHA S/S49/S49 20 5F BD.png"
+    "S49 17 5F LBD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S49/S49 17 5F LBD.webp",
+    "S49 17 5X100 LBD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S49/S49 17 5X100 LBD.webp",
+    "S49 17-18 4F BD KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S49/S49 17-18 4F BD KR.webp",
+    "S49 17-18 4F BD TOY": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S49/S49 17-18 4F BD TOY.webp",
+    "S49 17-18 5F BD - KR": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S49/S49 17-18 5F BD - KR.webp",
+    "S49 17-18 5F BD TOY": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S49/S49 17-18 5F BD TOY.webp",
+    "S49 20 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S49/S49 20 5F BD.webp",
+    "S49 20 5F LBD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S49/S49 20 5F LBD.webp",
+    "S49 20 5X100 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S49/S49 20 5X100 BD.webp",
+    "S49 20 5X100 LBD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S49/S49 20 5X100 LBD.webp",
+    "S49 20 5F VW BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S49/VW/S49 20 5F VW BD.webp",
+    "S49 20 5F VW LBD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S49/VW/S49 20 5F VW LBD.webp"
   },
   "S50": {
-    "B": "/fotos/LINHA S/S50/S50 17-18-20 B.png",
-    "BD": "/fotos/LINHA S/S50/S50 17-18-20 BD.png",
-    "BF": "/fotos/LINHA S/S50/S50 17-18-20 BF.png"
+    "S50 17-18-20 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S50/S50 17-18-20 B.webp",
+    "S50 17-18-20 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S50/S50 17-18-20 BD.webp",
+    "S50 17-18-20 BF": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S50/S50 17-18-20 BF.webp"
   },
   "S51": {
-    "GD": "/fotos/LINHA S/S51/S51 20 5F BD GD.png",
-    "BD": "/fotos/LINHA S/S51/S51 20 5F BD.png"
+    "S51 20 5F BD GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S51/S51 20 5F BD GD.webp",
+    "S51 20 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S51/S51 20 5F BD.webp"
   },
   "S52": {
-    "BD": "/fotos/LINHA S/S52/S52 14-15 BD.png",
-    "GD": "/fotos/LINHA S/S52/S52 14-15 GD.png"
+    "S52 14-15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S52/S52 14-15 BD.webp",
+    "S52 14-15 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S52/S52 14-15 GD.webp"
   },
   "S53": {
-    "B": "/fotos/LINHA S/S53/S53 20 5F B.png",
-    "BD": "/fotos/LINHA S/S53/S53 20 5F BD.png"
+    "S53 20 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S53/S53 20 5F B.webp",
+    "S53 20 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S53/S53 20 5F BD.webp",
+    "S53 20 6F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S53/S53 20 6F BD.webp"
   },
   "S54": {
-    "BD": "/fotos/LINHA S/S54/S54 18-20 4F BD.png",
-    "BDS": "/fotos/LINHA S/S54/S54 18-20 5F BDS.png"
+    "S54 18-20 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S54/S54 18-20 4F BD.webp",
+    "S54 18-20 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S54/S54 18-20 5F BD.webp",
+    "S54 18-20 5F BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S54/S54 18-20 5F BDS.webp"
   },
   "S55": {
-    "BD": "/fotos/LINHA S/S55/S55 15 BD.png",
-    "GFD": "/fotos/LINHA S/S55/S55 15 GFD.png"
+    "S55 15 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S55/S55 15 BD.webp",
+    "S55 15 GFD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S55/S55 15 GFD.webp"
   },
   "S56": {
-    "B": "/fotos/LINHA S/S56/S56 16-17 4F B.png",
-    "BD": "/fotos/LINHA S/S56/S56 16-17 4F BD.png",
-    "BDS": "/fotos/LINHA S/S56/S56 16-17 4F BDS.png"
+    "S56 16-17 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S56/S56 16-17 4F B.webp",
+    "S56 16-17 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S56/S56 16-17 4F BD.webp",
+    "S56 16-17 4F BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S56/S56 16-17 4F BDS.webp",
+    "S56 16-17 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S56/S56 16-17 5F B.webp",
+    "S56 16-17 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S56/S56 16-17 5F BD.webp",
+    "S56 16-17 5F BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S56/S56 16-17 5F BDS.webp"
   },
   "S57": {
-    "BD": "/fotos/LINHA S/S57/S57 18-20-22 BD.png",
-    "GD": "/fotos/LINHA S/S57/S57 18-20-22 GD.png"
+    "S57 18-20-22 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S57/S57 18-20-22 BD.webp",
+    "S57 18-20-22 GD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S57/S57 18-20-22 GD.webp"
   },
   "S58": {
-    "B": "/fotos/LINHA S/S58/S58 18-20-22 B.png",
-    "BD": "/fotos/LINHA S/S58/S58 18-20-22 BD.png",
-    "BDS": "/fotos/LINHA S/S58/S58 18-20-22 BDS.png"
+    "S58 18-20-22 B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S58/S58 18-20-22 B.webp",
+    "S58 18-20-22 BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S58/S58 18-20-22 BD.webp",
+    "S58 18-20-22 BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S58/S58 18-20-22 BDS.webp"
   },
   "S59": {
-    "BD": "/fotos/LINHA S/S59/S59 16-17 4F BD.png",
-    "BDS": "/fotos/LINHA S/S59/S59 16-17 4F BDS.png"
+    "S59 16-17 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S59/S59 16-17 4F BD.webp",
+    "S59 16-17 4F BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S59/S59 16-17 4F BDS.webp",
+    "S59 16-17 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S59/S59 16-17 5F BD.webp",
+    "S59 16-17 5F BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S59/S59 16-17 5F BDS.webp"
   },
   "S6": {},
   "S60": {
-    "BD": "/fotos/LINHA S/S60/S60 16-17 4F BD.png",
-    "BDS": "/fotos/LINHA S/S60/S60 16-17 4F BDS.png"
+    "S60 16-17 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S60/S60 16-17 4F BD.webp",
+    "S60 16-17 4F BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S60/S60 16-17 4F BDS.webp",
+    "S60 16-17 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S60/S60 16-17 5F BD.webp",
+    "S60 16-17 5F BDS": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S60/S60 16-17 5F BDS.webp"
   },
   "S61": {
-    "B": "/fotos/LINHA S/S61/S61 17 5F B.png",
-    "BD": "/fotos/LINHA S/S61/S61 17 5F BD.png"
+    "S61 17 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S61/S61 17 5F B.webp",
+    "S61 17 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S61/S61 17 5F BD.webp"
   },
   "S62": {
-    "B": "/fotos/LINHA S/S62/S62 17 4F B.png",
-    "BD": "/fotos/LINHA S/S62/S62 17 4F BD.png"
+    "S62 17 4F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S62/S62 17 4F B.webp",
+    "S62 17 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S62/S62 17 4F BD.webp",
+    "S62 17 5F B": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S62/S62 17 5F B.webp",
+    "S62 17 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA S/S62/S62 17 5F BD.webp"
   },
   "COM LOGO": {
-    "BD": "/fotos/LINHA T/COM LOGO/T2 4F BD.JPEG"
+    "T2 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA T/COM LOGO/T2 4F BD.webp",
+    "T2 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA T/COM LOGO/T2 5F BD.webp"
   },
   "SEM LOGO": {
-    "BD": "/fotos/LINHA T/SEM LOGO/T2/T2 4F BD.jpeg"
+    "T2 4F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA T/SEM LOGO/T2/T2 4F BD.webp",
+    "T2 5F BD": "https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA T/SEM LOGO/T2/T2 5F BD.webp"
   }
 }

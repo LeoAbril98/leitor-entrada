@@ -14,7 +14,9 @@ import {
     Factory,
     FileSpreadsheet,
     Pencil,
-    History as HistoryIcon
+    History as HistoryIcon,
+    Tag,
+    Trash2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ExcelJS from 'exceljs';
@@ -26,7 +28,10 @@ import {
     archiveAndClearPedidos, 
     getItemTags,
     getAllCloudSketches,
-    getAllCloudAudios
+    getAllCloudAudios,
+    getGlobalTags,
+    addGlobalTag,
+    deleteGlobalTag
 } from '../lib/supabase';
 import { getAllSketches, getAllAudioKeys, getAudio, deleteSketch, deleteAudio } from '../lib/sketchStore';
 import { StockItem } from '../types';
@@ -47,6 +52,11 @@ export const AdminManagementPanel: React.FC<AdminManagementPanelProps> = ({ onBa
     const [editValues, setEditValues] = useState<{ descricao?: string, preco?: number }>({});
     const [isExporting, setIsExporting] = useState(false);
     const [allTags, setAllTags] = useState<Record<string, string[]>>({});
+    
+    // Gestão de Tags Globais
+    const [globalTags, setGlobalTags] = useState<string[]>([]);
+    const [isTagModalOpen, setIsTagModalOpen] = useState(false);
+    const [newTagName, setNewTagName] = useState("");
 
     useEffect(() => {
         loadData();
@@ -58,6 +68,7 @@ export const AdminManagementPanel: React.FC<AdminManagementPanelProps> = ({ onBa
             const inventory = await getPendenciasInventory();
             const pendsData = await loadPedidosFabrica();
             const tags = await getItemTags();
+            const gTags = await getGlobalTags();
 
             // Organizar pedidos no formato Record<codigo, Record<factory, qty>>
             const pends: Record<string, any> = {};
@@ -71,6 +82,7 @@ export const AdminManagementPanel: React.FC<AdminManagementPanelProps> = ({ onBa
             setStock(inventory);
             setPendencies(pends);
             setAllTags(tags);
+            setGlobalTags(gTags);
         } catch (error) {
             toast.error("Erro ao carregar dados administrativos");
         } finally {
@@ -287,6 +299,29 @@ export const AdminManagementPanel: React.FC<AdminManagementPanelProps> = ({ onBa
         }
     };
 
+    const handleAddTag = async () => {
+        if (!newTagName.trim()) return;
+        const success = await addGlobalTag(newTagName.trim());
+        if (success) {
+            setGlobalTags(prev => [...prev, newTagName.trim().toUpperCase()].sort());
+            setNewTagName("");
+            toast.success("Tag adicionada!");
+        } else {
+            toast.error("Erro ao adicionar tag");
+        }
+    };
+
+    const handleDeleteTag = async (tagName: string) => {
+        if (!window.confirm(`Excluir a etiqueta "${tagName}" da biblioteca?`)) return;
+        const success = await deleteGlobalTag(tagName);
+        if (success) {
+            setGlobalTags(prev => prev.filter(t => t !== tagName));
+            toast.success("Tag removida");
+        } else {
+            toast.error("Erro ao remover tag");
+        }
+    };
+
     const handleClearWeek = async () => {
         const confirmMsg = "ATENÇÃO: Isso irá ARQUIVAR todos os pedidos atuais, incluindo Etiquetas, Rascunhos e Áudios, e zerar a tabela para uma nova semana. Deseja continuar?";
         
@@ -390,6 +425,13 @@ export const AdminManagementPanel: React.FC<AdminManagementPanelProps> = ({ onBa
                         >
                             <LayoutGrid className="w-4 h-4" />
                             Acessar Tabela
+                        </button>
+                        <button 
+                            onClick={() => setIsTagModalOpen(true)}
+                            className="flex items-center gap-2 px-6 py-2.5 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-all shadow-lg active:scale-95 border border-slate-700"
+                        >
+                            <Tag className="w-4 h-4" />
+                            Gestão de Tags
                         </button>
                     </div>
                 </div>
@@ -584,6 +626,82 @@ export const AdminManagementPanel: React.FC<AdminManagementPanelProps> = ({ onBa
                     </div>
                 </div>
             </div>
+
+            {/* Modal de Gestão de Tags */}
+            <AnimatePresence>
+                {isTagModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsTagModalOpen(false)}
+                            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+                        />
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase">Biblioteca de Tags</h3>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Personalize suas sugestões</p>
+                                </div>
+                                <button onClick={() => setIsTagModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                                    <X className="w-5 h-5 text-slate-400" />
+                                </button>
+                            </div>
+
+                            <div className="p-8">
+                                <div className="flex gap-2 mb-6">
+                                    <input 
+                                        type="text"
+                                        placeholder="Nova etiqueta..."
+                                        value={newTagName}
+                                        onChange={e => setNewTagName(e.target.value)}
+                                        onKeyDown={e => e.key === 'Enter' && handleAddTag()}
+                                        className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 transition-all uppercase"
+                                    />
+                                    <button 
+                                        onClick={handleAddTag}
+                                        className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+
+                                <div className="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                                    {globalTags.map(tag => (
+                                        <div key={tag} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 group">
+                                            <span className="text-sm font-black text-slate-600 dark:text-slate-300 tracking-wider">
+                                                {tag}
+                                            </span>
+                                            <button 
+                                                onClick={() => handleDeleteTag(tag)}
+                                                className="p-3.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-all active:scale-90"
+                                                title="Excluir etiqueta"
+                                            >
+                                                <Trash2 className="w-6 h-6" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {globalTags.length === 0 && (
+                                        <p className="text-center py-4 text-slate-400 text-sm italic">Nenhuma tag cadastrada.</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="p-6 bg-slate-50 dark:bg-slate-800/20 text-center">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                    Alterações sincronizadas em tempo real
+                                </p>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

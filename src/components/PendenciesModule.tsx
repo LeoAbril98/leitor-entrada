@@ -19,6 +19,7 @@ import {
     getCloudAudio,
     getAllCloudSketches,
     getAllCloudAudios,
+    getGlobalTags,
     getLastUpdate,
     USE_LOCAL_DB
 } from '../lib/supabase';
@@ -734,6 +735,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     const [showOnlyWithAudio, setShowOnlyWithAudio] = useState(false);
     const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
     const [isTourOpen, setIsTourOpen] = useState(false);
+    const [globalTags, setGlobalTags] = useState<string[]>(['VÍDEO', 'PEDIR', 'FOTO', 'WILLIAM', 'SP']);
     const [showOnlyWithTags, setShowOnlyWithTags] = useState(false);
     const [showOnlyWithSketches, setShowOnlyWithSketches] = useState(false);
 
@@ -863,7 +865,11 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
 
         const fetchData = async () => {
             try {
-                // 1. Carregar Pedidos da Nuvem (Sempre a prioridade para estar sincronizado)
+                // Carregar Catálogo de Tags
+                const gTags = await getGlobalTags();
+                setGlobalTags(gTags);
+
+                // 1. Carregar Pedidos da Nuvem
                 const pedidosData = await loadPedidosFabrica();
                 if (pedidosData && pedidosData.length > 0) {
                     const loadedPendencies: Record<string, Record<FactoryName, number>> = {};
@@ -1170,10 +1176,10 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                                                     e.stopPropagation();
                                                                     handleToggleTag(item.codigo, tag);
                                                                 }}
-                                                                className="px-1.5 py-0.5 text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 rounded border border-slate-200 dark:border-slate-700 transition-all flex items-center gap-1 group/tag"
+                                                                className="px-3 py-1.5 text-xs font-black bg-slate-100 dark:bg-slate-800 text-slate-600 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/40 rounded-xl border-2 border-slate-200 dark:border-slate-700 transition-all flex items-center gap-2 group/tag shadow-sm active:scale-90"
                                                             >
                                                                 {tag}
-                                                                <X className="w-2.5 h-2.5" />
+                                                                <X className="w-4 h-4 text-slate-400 group-hover/tag:text-red-500" />
                                                             </button>
                                                         ))}
 
@@ -1304,7 +1310,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                                                                     <Tag className="w-3 h-3 text-indigo-500" /> Selecionar Tag
                                                                                 </div>
                                                                                 <div className="grid grid-cols-1 gap-1">
-                                                                                    {['VÍDEO', 'PEDIR', 'FOTO', 'WILLIAM', 'SP'].map(tag => (
+                                                                                    {globalTags.map(tag => (
                                                                                         <button
                                                                                             key={tag}
                                                                                             onClick={() => handleToggleTag(item.codigo, tag)}

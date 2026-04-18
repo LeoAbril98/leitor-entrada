@@ -576,6 +576,56 @@ export async function saveItemTags(tagsMap: Record<string, string[]>) {
     return false;
   }
 }
+/**
+ * Funções para Catálogo Global de Etiquetas (Tags)
+ */
+export async function getGlobalTags(): Promise<string[]> {
+    if (USE_LOCAL_DB) return ['VÍDEO', 'PEDIR', 'FOTO', 'WILLIAM', 'SP'];
+    
+    try {
+        const { data, error } = await supabase
+            .from('tags_disponiveis')
+            .select('nome')
+            .order('nome', { ascending: true });
+        
+        if (error) throw error;
+        return data?.map(row => row.nome) || [];
+    } catch (err) {
+        console.error('Erro ao buscar catálogo de tags:', err);
+        return ['VÍDEO', 'PEDIR', 'FOTO', 'WILLIAM', 'SP'];
+    }
+}
+
+export async function addGlobalTag(nome: string): Promise<boolean> {
+    if (USE_LOCAL_DB) return false;
+    try {
+        const { error } = await supabase
+            .from('tags_disponiveis')
+            .insert([{ nome: nome.toUpperCase() }]);
+        
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Erro ao adicionar tag global:', err);
+        return false;
+    }
+}
+
+export async function deleteGlobalTag(nome: string): Promise<boolean> {
+    if (USE_LOCAL_DB) return false;
+    try {
+        const { error } = await supabase
+            .from('tags_disponiveis')
+            .delete()
+            .eq('nome', nome);
+        
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Erro ao excluir tag global:', err);
+        return false;
+    }
+}
 
 /**
  * Funções para Inventário Sincronizado (Contagem Cloud)

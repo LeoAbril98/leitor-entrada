@@ -166,7 +166,7 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                     </thead>
                     <tbody>
                         {sortedData.map((item, index) => {
-                            // Extraímos a chamada da função para não repeti-la no if/else do render
+                            // Extraímos a chamada da função para não repeti-la
                             const photoUrl = getWheelPhotoUrl(item.descricao);
 
                             return (
@@ -189,7 +189,21 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                                                     objectFit: 'cover', 
                                                     borderRadius: '8px',
                                                     border: '1px solid #e2e8f0'
-                                                }} 
+                                                }}
+                                                onError={(e) => {
+                                                    // Esconde a imagem quebrada
+                                                    e.currentTarget.style.display = 'none';
+                                                    
+                                                    // Injeta o fallback vermelho de "ERRO"
+                                                    const parent = e.currentTarget.parentElement;
+                                                    if (parent && !parent.querySelector('.fallback-img')) {
+                                                        const fallback = document.createElement('div');
+                                                        fallback.className = 'fallback-img';
+                                                        fallback.style.cssText = 'width: 60px; height: 60px; background-color: #fee2e2; border-radius: 8px; border: 1px solid #f87171; display: flex; align-items: center; justify-content: center; margin: 0 auto;';
+                                                        fallback.innerHTML = '<span style="font-size: 10px; color: #ef4444; font-weight: 600;">ERRO</span>';
+                                                        parent.appendChild(fallback);
+                                                    }
+                                                }}
                                             />
                                         ) : (
                                             <div 

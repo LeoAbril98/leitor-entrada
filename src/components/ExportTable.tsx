@@ -12,6 +12,7 @@ interface ExportTableProps {
     page?: number;
     totalPages?: number;
 }
+
 export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
     ({ groupedData, origin, client, totalUnique, totalReadings, totalVolumes, page, totalPages }, ref) => {
 
@@ -164,40 +165,65 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                         </tr>
                     </thead>
                     <tbody>
-                        {sortedData.map((item, index) => (
-                            <tr
-                                key={item.codigo || index}
-                                style={{
-                                    backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc',
-                                    borderBottom: '1px solid #e2e8f0'
-                                }}
-                            >
-                                <td style={{ padding: '10px', textAlign: 'center' }}>
-                                    <img 
-                                        src={getWheelPhotoUrl(item.descricao)} 
-                                        alt="" 
-                                        crossOrigin="anonymous"
-                                        style={{ 
-                                            width: '60px', 
-                                            height: '60px', 
-                                            objectFit: 'cover', 
-                                            borderRadius: '8px',
-                                            border: '1px solid #e2e8f0'
-                                        }} 
-                                    />
-                                </td>
-                                <td style={{ padding: '14px 12px', textAlign: 'left', fontSize: '15px', color: '#334155' }}>
-                                    <div style={{ fontWeight: '600', marginBottom: '4px' }}>{item.descricao}</div>
-                                    <div style={{ fontSize: '12px', color: '#64748b', fontFamily: 'monospace' }}>{item.codigo}</div>
-                                </td>
-                                <td style={{ padding: '14px 12px', textAlign: 'center', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
-                                    {item.quantidade}
-                                </td>
-                                <td style={{ padding: '14px 12px', textAlign: 'center', fontSize: '14px', color: '#475569' }}>
-                                    {item.local || '-'}
-                                </td>
-                            </tr>
-                        ))}
+                        {sortedData.map((item, index) => {
+                            // Extraímos a chamada da função para não repeti-la no if/else do render
+                            const photoUrl = getWheelPhotoUrl(item.descricao);
+
+                            return (
+                                <tr
+                                    key={item.codigo || index}
+                                    style={{
+                                        backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc',
+                                        borderBottom: '1px solid #e2e8f0'
+                                    }}
+                                >
+                                    <td style={{ padding: '10px', textAlign: 'center' }}>
+                                        {photoUrl ? (
+                                            <img 
+                                                src={photoUrl} 
+                                                alt="Foto da Roda" 
+                                                crossOrigin="anonymous"
+                                                style={{ 
+                                                    width: '60px', 
+                                                    height: '60px', 
+                                                    objectFit: 'cover', 
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e2e8f0'
+                                                }} 
+                                            />
+                                        ) : (
+                                            <div 
+                                                style={{ 
+                                                    width: '60px', 
+                                                    height: '60px', 
+                                                    backgroundColor: '#f1f5f9',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e2e8f0',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    margin: '0 auto'
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '600' }}>
+                                                    S/ FOTO
+                                                </span>
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td style={{ padding: '14px 12px', textAlign: 'left', fontSize: '15px', color: '#334155' }}>
+                                        <div style={{ fontWeight: '600', marginBottom: '4px' }}>{item.descricao}</div>
+                                        <div style={{ fontSize: '12px', color: '#64748b', fontFamily: 'monospace' }}>{item.codigo}</div>
+                                    </td>
+                                    <td style={{ padding: '14px 12px', textAlign: 'center', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
+                                        {item.quantidade}
+                                    </td>
+                                    <td style={{ padding: '14px 12px', textAlign: 'center', fontSize: '14px', color: '#475569' }}>
+                                        {item.local || '-'}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>

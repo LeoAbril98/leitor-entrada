@@ -1,5 +1,15 @@
 import photoMap from '../data/photoMap.json';
 
+// Small 1x1 transparent PNG as a safe fallback that never triggers network requests
+export const NO_PHOTO_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+
+export function hasMapping(description: string | null | undefined): boolean {
+    if (!description) return false;
+    const modelCode = description.toUpperCase().split(' ')[0];
+    const modelPhotos = (photoMap as any)[modelCode];
+    return !!modelPhotos && Object.keys(modelPhotos).length > 0;
+}
+
 export const finishMapping: Record<string, string> = {
   'PRETO DIAMANTADO': 'BD',
   'BLACK DIAMOND': 'BD',

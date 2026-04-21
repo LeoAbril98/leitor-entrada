@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { GroupedReading, Origin } from '../types';
-import { getWheelPhotoUrl } from '../utils/photoUtils';
+import { getWheelPhotoUrl, hasMapping, NO_PHOTO_IMAGE } from '../utils/photoUtils';
 
 interface ExportTableProps {
     groupedData: GroupedReading[];
@@ -178,7 +178,7 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                                     }}
                                 >
                                     <td style={{ padding: '10px', textAlign: 'center' }}>
-                                        {photoUrl ? (
+                                        {hasMapping(item.descricao) ? (
                                             <img 
                                                 src={photoUrl} 
                                                 alt="Foto da Roda" 

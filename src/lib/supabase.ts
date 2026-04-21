@@ -146,8 +146,7 @@ export async function syncPendenciasToCloud(data: import('../types').StockItem[]
     const { data: invData, error: invError } = await supabase
       .from('inventarios')
       .insert({ 
-        criado_em: new Date().toISOString(),
-        nome_arquivo: fileName
+        criado_em: new Date().toISOString()
       })
       .select('id')
       .single();
@@ -200,17 +199,19 @@ export async function getLastUpdate(): Promise<{ date: string, fileName?: string
 
     const { data, error } = await supabase
       .from('inventarios')
-      .select('criado_em, nome_arquivo')
+      .select('criado_em')
       .order('criado_em', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
     
-    if (error) throw error;
-    if (!data) return null;
+    if (error) {
+        console.warn('Erro ao buscar última atualização (Supabase Pode não existir a tabela/coluna):', error);
+        return null;
+    }
+    
+    if (!data || data.length === 0) return null;
 
     return { 
-        date: data.criado_em, 
-        fileName: data.nome_arquivo 
+        date: data[0].criado_em
     };
   } catch (error) {
     console.error('Erro ao buscar última atualização do inventário (Supabase):', error);

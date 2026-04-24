@@ -7,9 +7,11 @@ import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AdminManagementPanel } from './components/AdminManagementPanel';
 
+import { UpdateWheelsModule } from './components/UpdateWheelsModule';
+
 import { HistoryModule } from './components/HistoryModule';
 
-type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history';
+type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('menu');
@@ -44,6 +46,10 @@ export default function App() {
 
   if (mode === 'pendencies') {
     return <PendenciesModule onBackToMenu={handleBackToMenu} />;
+  }
+
+  if (mode === 'update-wheels') {
+    return <UpdateWheelsModule onBackToMenu={handleBackToMenu} />;
   }
 
   if (mode === 'admin-login') {

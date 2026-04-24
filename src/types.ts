@@ -30,3 +30,14 @@ export interface GroupedReading {
   quantidade: number;
   found: boolean;
 }
+export interface WheelLocationReading {
+  id: string;
+  roda: string;
+  local: string;
+  timestamp: number;
+}
+
+export interface ConsolidatedWheel {
+  roda: string;
+  locais: string[];
+}

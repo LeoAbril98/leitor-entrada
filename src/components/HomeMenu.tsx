@@ -6,7 +6,7 @@ import { getInventory, getLastUpdate, clearLocalInventoryCache } from '../lib/su
 import { cn } from '../utils';
 
 interface HomeMenuProps {
-    onSelectMode: (mode: 'counting' | 'locator' | 'pendencies') => void;
+    onSelectMode: (mode: 'counting' | 'locator' | 'pendencies' | 'update-wheels') => void;
 }
 
 export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
@@ -216,7 +216,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
                         onClick={() => onSelectMode('pendencies')}
-                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 hover:border-amber-600 dark:hover:border-amber-500 hover:shadow-2xl hover:shadow-amber-100 dark:hover:shadow-none transition-all text-left flex flex-col items-start gap-4 active:scale-95 md:col-span-2 lg:col-span-1"
+                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 hover:border-amber-600 dark:hover:border-amber-500 hover:shadow-2xl hover:shadow-amber-100 dark:hover:shadow-none transition-all text-left flex flex-col items-start gap-4 active:scale-95"
                     >
                         <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                             <ClipboardList className="w-8 h-8" />
@@ -227,6 +227,26 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                             </h2>
                             <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
                                 Gerencie as pendências referentes aos pedidos de rodas feitos para a fábrica.
+                            </p>
+                        </div>
+                    </motion.button>
+
+                    <motion.button
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6 }}
+                        onClick={() => onSelectMode('update-wheels')}
+                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 hover:border-violet-600 dark:hover:border-violet-500 hover:shadow-2xl hover:shadow-violet-100 dark:hover:shadow-none transition-all text-left flex flex-col items-start gap-4 active:scale-95"
+                    >
+                        <div className="w-16 h-16 bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <RefreshCw className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+                                Atualizar Rodas
+                            </h2>
+                            <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
+                                Sincronize locais no estoque escaneando múltiplas rodas e informando suas posições.
                             </p>
                         </div>
                     </motion.button>

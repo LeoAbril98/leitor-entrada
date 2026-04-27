@@ -1,0 +1,4 @@
+- [ ] Fix photo selection logic in `photoUtils.ts` using `\b` word boundaries
+- [ ] Create a verification script to test GF vs GFD matching
+- [ ] Verify fix with the script
+- [ ] (Optional/Future) Add manual photo selection to Admin panel

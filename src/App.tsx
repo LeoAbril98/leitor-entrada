@@ -8,19 +8,27 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { AdminManagementPanel } from './components/AdminManagementPanel';
 
 import { UpdateWheelsModule } from './components/UpdateWheelsModule';
-
 import { HistoryModule } from './components/HistoryModule';
+import { getPhotoOverrides } from './lib/supabase';
+import { setPhotoOverrides } from './utils/photoUtils';
 
 type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('menu');
 
-  // Detect administrative route
+  // Detect administrative route e carregar overrides globais
   React.useEffect(() => {
     if (window.location.pathname === '/admin') {
       setMode('admin-login');
     }
+
+    // Carregar overrides de fotos do Supabase assim que o app inicia
+    getPhotoOverrides().then(overrides => {
+      if (overrides && overrides.length > 0) {
+        setPhotoOverrides(overrides);
+      }
+    });
   }, []);
 
   // Reset scroll on view change

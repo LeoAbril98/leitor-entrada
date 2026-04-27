@@ -1,0 +1,13 @@
+Testing Photo Matching Logic with Real Model Codes...
+Description: G1741 17 4F GF
+URL: https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA G/G1741/G1741 17 4F GF.webp
+Match GF: Ô£à
+---
+Description: K63 15-17 GFD
+URL: https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA K/K63/K63 15-17 GFD.webp
+Match GFD: Ô£à
+---
+Description: C10 15X10 4F BD
+URL: https://udgntgnjsncuzrgifwpa.supabase.co/storage/v1/object/public/fotos/LINHA C/C10/C10 15X10  4F BD.webp
+Match BD: Ô£à
+---

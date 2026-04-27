@@ -691,3 +691,41 @@ export async function clearCloudReadings(): Promise<boolean> {
         return false;
     }
 }
+
+export async function getPhotoOverrides() {
+    if (USE_LOCAL_DB) return [];
+    try {
+        const { data, error } = await supabase.from('photo_overrides').select('*');
+        if (error) throw error;
+        return data || [];
+    } catch (err) {
+        console.warn('Erro ao buscar overrides de fotos:', err);
+        return [];
+    }
+}
+
+export async function savePhotoOverride(model: string, finish: string, photo_url: string, item_codigo?: string) {
+    if (USE_LOCAL_DB) return true;
+    try {
+        // Para o Supabase Upsert funcionar com chaves compostas que incluem nulos, 
+        // usamos '' (vazio) como padrão para o nível de grupo.
+        const targetCodigo = item_codigo || '';
+        const payload = { 
+            model, 
+            finish, 
+            photo_url, 
+            item_codigo: targetCodigo,
+            updated_at: new Date().toISOString() 
+        };
+        
+        const { error } = await supabase
+            .from('photo_overrides')
+            .upsert(payload, { onConflict: 'model, finish, item_codigo' });
+        
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Erro ao salvar override de foto:', err);
+        return false;
+    }
+}

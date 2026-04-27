@@ -16,7 +16,9 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 const bucketName = 'fotos';
-const sourceDir = path.join(process.cwd(), 'public', 'fotos');
+const rootDir = path.join(process.cwd(), 'public', 'fotos');
+const subDir = process.argv[2] || ''; 
+const sourceDir = path.join(rootDir, subDir);
 
 async function getAllFiles(dirPath, arrayOfFiles) {
   const files = fs.readdirSync(dirPath);
@@ -47,7 +49,7 @@ async function migrate() {
 
   for (let i = 0; i < imageFiles.length; i++) {
     const filePath = imageFiles[i];
-    const relativePath = path.relative(sourceDir, filePath).replace(/\\/g, '/');
+    const relativePath = path.relative(rootDir, filePath).replace(/\\/g, '/');
     
     // O destino na nuvem será o mesmo caminho, mas com extensão .webp
     // Vamos normalizar para remover acentos e caracteres que o Supabase rejeita

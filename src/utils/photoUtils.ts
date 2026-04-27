@@ -1,3 +1,4 @@
+export { default as photoMap } from '../data/photoMap.json';
 import photoMap from '../data/photoMap.json';
 
 // Small 1x1 transparent PNG as a safe fallback that never triggers network requests
@@ -88,24 +89,56 @@ export const finishMapping: Record<string, string> = {
   ' FGF ': 'FGF',
   ' LVD ': 'LVD',
   ' GBL ': 'GBL',
+  'GF': 'GF',
+  'GFD': 'GFD',
+  'GD': 'GD',
+  'BD': 'BD',
+  'B': 'B',
+  'BF': 'BF',
+  'BFD': 'BFD',
+  'SS': 'SS',
+  'GB': 'GB',
+  'HG': 'HG',
+  'GL': 'GL',
+  'GS': 'GS',
+  'FBD': 'FBD',
 };
 
 export const sortedFinishKeys = Object.keys(finishMapping).sort((a, b) => b.length - a.length);
 
-/**
- * Resolve a URL da foto de uma roda baseada na sua descrição.
- * Transforma caminhos locais do photoMap em URLs públicas do Supabase Storage.
- */
-export function getWheelPhotoUrl(description: string): string {
-    const placeholder = "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO";
-    if (!description) return placeholder;
+// Mapa global de overrides
+// 1. Por Item individual (codigo -> url)
+let itemOverrides: Record<string, string> = {};
+// 2. Por Modelo/Acabamento (model -> finish -> url)
+let photoOverrides: Record<string, Record<string, string>> = {};
 
+export function setPhotoOverrides(
+    overrides: { model: string, finish: string, photo_url: string, item_codigo?: string }[]
+) {
+    const newItems: Record<string, string> = {};
+    const newModels: Record<string, Record<string, string>> = {};
+    
+    overrides.forEach(o => {
+        if (o.item_codigo) {
+            newItems[o.item_codigo] = o.photo_url;
+        } else {
+            if (!newModels[o.model]) newModels[o.model] = {};
+            newModels[o.model][o.finish] = o.photo_url;
+        }
+    });
+
+    itemOverrides = newItems;
+    photoOverrides = newModels;
+}
+
+/**
+ * Extrai o código do modelo e o acabamento de uma descrição.
+ */
+export function getModelAndFinish(description: string) {
     const descUpper = description.toUpperCase();
     const modelCode = descUpper.split(' ')[0];
-    const modelPhotos = (photoMap as Record<string, Record<string, string>>)[modelCode] || {};
     
-    // 1. Extrair Acabamento
-    let finishAbbr: string | undefined;
+    let finishAbbr: string = '';
     for (const key of sortedFinishKeys) {
         if (descUpper.includes(key)) {
             finishAbbr = finishMapping[key];
@@ -113,10 +146,37 @@ export function getWheelPhotoUrl(description: string): string {
         }
     }
 
-    // REGRA ESPECIAL LINHA C: Se não tiver acabamento, usar POLIDA como padrão
+    // REGRA ESPECIAL LINHA C: Se não tiver acabamento, usar BRUTA como padrão
     if (!finishAbbr && modelCode.startsWith('C')) {
-        finishAbbr = 'POLIDA';
+        finishAbbr = 'BRUTA';
     }
+
+    return { modelCode, finishAbbr };
+}
+
+/**
+ * Resolve a URL da foto de uma roda baseada na sua descrição.
+ * Transforma caminhos locais do photoMap em URLs públicas do Supabase Storage.
+ */
+export function getWheelPhotoUrl(description: string, itemCodigo?: string): string {
+    const placeholder = "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO";
+    if (!description) return placeholder;
+
+    // 0. Verificar Override Individual por Código
+    if (itemCodigo && itemOverrides[itemCodigo]) {
+        return itemOverrides[itemCodigo];
+    }
+
+    const descUpper = description.toUpperCase();
+    const { modelCode, finishAbbr } = getModelAndFinish(descUpper);
+    const modelPhotos = (photoMap as Record<string, Record<string, string>>)[modelCode] || {};
+    
+    // 1. Verificar Override por Modelo/Acabamento
+    if (finishAbbr && photoOverrides[modelCode]?.[finishAbbr]) {
+        return photoOverrides[modelCode][finishAbbr];
+    }
+
+    // 2. Extrair Acabamento (Já extraído acima)
 
     // 2. Extrair Aro/Tala (ex: 15X4, 15X4,0, 15X10)
     // Suporta X, x, * e separadores decimais ponto ou vírgula
@@ -129,10 +189,10 @@ export function getWheelPhotoUrl(description: string): string {
     let bestPath = "";
     
     if (finishAbbr) {
-        // Filtramos fotos do modelo que contenham o acabamento no nome/caminho
+        const finishRegex = new RegExp(`\\b${finishAbbr}\\b`, 'i');
+        // Filtramos fotos do modelo que contenham o acabamento no nome/caminho como uma "palavra" inteira
         const photosForFinish = Object.entries(modelPhotos).filter(([_, path]) => {
-            const pathUpper = path.toUpperCase();
-            return pathUpper.includes(finishAbbr);
+            return finishRegex.test(path);
         });
 
         if (photosForFinish.length > 0) {

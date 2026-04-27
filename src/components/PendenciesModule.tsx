@@ -30,95 +30,13 @@ import photoMap from '../data/photoMap.json';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import { getWheelPhotoUrl } from '../utils/photoUtils';
+import { getWheelPhotoUrl, getModelAndFinish } from '../utils/photoUtils';
 import { SketchModal } from './SketchModal';
 import { AudioRecorderModal } from './AudioRecorderModal';
 import { AudioPlayerModal } from './AudioPlayerModal';
 import { WelcomeModal } from './WelcomeModal';
 import { OnboardingTour } from './OnboardingTour';
 import { saveSketch, getSketch, getAllSketches, deleteSketch, saveAudio, getAudio, getAllAudioKeys, deleteAudio } from '../lib/sketchStore';
-
-const finishMapping: Record<string, string> = {
-    'PRETO DIAMANTADO': 'BD',
-    'BLACK DIAMOND': 'BD',
-    'PRETO': 'B',
-    'BLACK': 'B',
-    'PRETO FOSCO': 'BF',
-    'BRONZE FOSCO': 'BF',
-    'PRETA FOSCO DIAM': 'BFD',
-    'PRATA': 'SS',
-    'PRATA DIAM': 'SS',
-    'PRATA DIAMANTAD': 'SS',
-    'SILVER STAR': 'SS',
-    'GRAFITE BRILHANT': 'GB',
-    'GRAPHITE BRILHANT': 'GB',
-    'GRAPHITE BRILHANTE': 'GB',
-    'GRAFITE FOSC': 'GF',
-    'GRAPHITE FOSCO': 'GF',
-    'GRAPHITE FOSCO F.L': 'GF',
-    'GRAPHITE DIAM': 'GD',
-    'GRAPHITE DIAMANTAD': 'GD',
-    'GRAPHITE DIAM F.L': 'GD',
-    'GRAPHITE DIAM FL': 'GD',
-    'GRAF DIAM. F.L': 'GD',
-    'GRAPHITE FOSCO DIAM': 'GFD',
-    'GRAPHITE FOS DIAM': 'GFD',
-    'GRAPHITE FOSCO DIA': 'GFD',
-    'GRAPHITE FOSCO DI': 'GFD',
-    'OURO VELHO': 'OURO',
-    'OURO VELHO F': 'OURO',
-    'OURO BORDA DIAM.': 'OURO',
-    'OURO V DIAMANTADO': 'OURO',
-    'POLIDA': 'POLIDA',
-    'BRUTA': 'BRUTA',
-    'DIAMOND': 'D',
-    'DOURADA DIAMANTADA': 'DD',
-    'HYPER DIAM': 'HD',
-    'HYPER DIA.*R.C': 'HD',
-    'HYPER DIAM R.C': 'HD',
-    'HD': 'HD',
-    'HYPER GLOSS': 'HG',
-    'HYPER GLOSS F.L': 'HG',
-    'HYPER GLOS': 'HG',
-    'HYPER GL': 'HG',
-    'GLOSS': 'GL',
-    'GLOSS SHADOW': 'GS',
-    'GL SHADOW': 'GS',
-    'GLOS SHADOW': 'GS',
-    'INOX': 'INOX',
-    'CROMADA': 'CROMADA',
-    'FGF': 'FGF',
-    'VERM BORDA DIAM': 'LVD',
-    'VERM. C/BORDA DIA': 'LVD',
-    'VERM.. C/BORDA DIAM': 'LVD',
-    'VERM BORD DIAM': 'LVD',
-    'VERM. C/ BORDA DIAM': 'LVD',
-    'VERM. BORDA DIA': 'LVD',
-    'VER BOR DIAM': 'LVD',
-    'GOLD BLACK LIP': 'GBL',
-
-    // Mapeamentos diretos de abreviações e palavras isoladas que podem ser usadas
-    'OURO': 'OURO',
-    ' BD ': 'BD',
-    ' SS ': 'SS',
-    ' GB ': 'GB',
-    ' B ': 'B',
-    ' BF ': 'BF',
-    ' GF ': 'GF',
-    ' GD ': 'GD',
-    ' GFD ': 'GFD',
-    ' DD ': 'DD',
-    ' HD ': 'HD',
-    ' HG ': 'HG',
-    ' GL ': 'GL',
-    ' GS ': 'GS',
-    ' FGF ': 'FGF',
-    ' LVD ': 'LVD',
-    ' GBL ': 'GBL',
-};
-
-// Sort mapping keys by length descending to match longest phrases first (e.g., 'PRETO DIAMANTADO' before 'PRETO')
-const sortedFinishKeys = Object.keys(finishMapping).sort((a, b) => b.length - a.length);
 
 interface PendenciesModuleProps {
     onBackToMenu: () => void;
@@ -748,29 +666,17 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     const getFields = (item: StockItem) => {
         const descUpper = item.descricao.toUpperCase();
 
-        // Modelo: Geralmente o primeiro termo (ex: C10, G10)
-        // Mas para modelos compostos ou com prefixo, podemos ser mais precisos
-        const model = descUpper.split(' ')[0];
-
+        const { modelCode: model, finishAbbr: acabamento } = getModelAndFinish(descUpper);
+        
         // Linha: Prefixo alfabético do modelo (ex: C, G, E)
         const linha = model.match(/^[A-Z]+/i)?.[0] || "";
 
-        // Aro + Tala: Captura 15X4, 15X10, 17X7.5, etc.
-        // Se não houver tala explicita (ex: apenas "ARO 15"), captura apenas o 15
         const aroMatch = descUpper.match(/(\d{2}[XxX\*][\d\.]+)|(\b\d{2}\b)/i);
         const aro = aroMatch ? aroMatch[0] : "";
 
-        // Furação: Ex 4X100, 5X114.3
         const furMatch = descUpper.match(/\d[XxX\*]\d{2,3}(\.\d+)?|\d[Ff]/i);
         const furacao = furMatch ? furMatch[0] : "";
 
-        let acabamento = "";
-        for (const key of sortedFinishKeys) {
-            if (descUpper.includes(key)) {
-                acabamento = finishMapping[key];
-                break;
-            }
-        }
         return { linha, aro, furacao, model, acabamento, descUpper };
     };
 
@@ -1149,7 +1055,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                     const bgHighlight = isEven ? "bg-slate-50 dark:bg-slate-800" : "bg-slate-100 dark:bg-slate-700";
                                     const bgInput = isEven ? "bg-white dark:bg-slate-900" : "bg-slate-50 dark:bg-slate-800";
 
-                                    const photoUrl = getWheelPhotoUrl(item.descricao);
+                                    const photoUrl = getWheelPhotoUrl(item.descricao, item.codigo);
                                     const modelCode = item.descricao.split(' ')[0].toUpperCase();
 
                                     return (

@@ -167,7 +167,7 @@ export const ExportTable = forwardRef<HTMLDivElement, ExportTableProps>(
                     <tbody>
                         {sortedData.map((item, index) => {
                             // Extraímos a chamada da função para não repeti-la
-                            const photoUrl = getWheelPhotoUrl(item.descricao);
+                            const photoUrl = getWheelPhotoUrl(item.descricao, item.codigo);
 
                             return (
                                 <tr

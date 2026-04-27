@@ -376,7 +376,7 @@ export const UpdateWheelsModule: React.FC<UpdateWheelsModuleProps> = ({ onBackTo
                                                             <td className="px-6 py-4">
                                                                 <div className="flex items-center gap-4">
                                                                     <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 shrink-0 shadow-sm">
-                                                                        <img src={getWheelPhotoUrl(dbItem?.descricao || '')} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                                                        <img src={getWheelPhotoUrl(dbItem?.descricao || '', dbItem?.codigo)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                                                     </div>
                                                                     <div className="flex flex-col min-w-0">
                                                                         <span className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase line-clamp-1 mb-1">{dbItem?.descricao || 'DESCRIÇÃO NÃO ENCONTRADA'}</span>

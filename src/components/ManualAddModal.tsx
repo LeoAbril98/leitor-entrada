@@ -177,7 +177,7 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
                                                 >
                                                     <div className="w-16 h-16 shrink-0 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-700">
                                                         <img 
-                                                            src={getWheelPhotoUrl(item.descricao)} 
+                                                            src={getWheelPhotoUrl(item.descricao, item.codigo)} 
                                                             alt={item.descricao}
                                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                                             loading="lazy"
@@ -223,7 +223,7 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
                                                             className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-indigo-300 transition-all text-left"
                                                         >
                                                             <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
-                                                                <img src={getWheelPhotoUrl(item.descricao)} alt="" className="w-full h-full object-cover" />
+                                                                <img src={getWheelPhotoUrl(item.descricao, item.codigo)} alt="" className="w-full h-full object-cover" />
                                                             </div>
                                                             <div className="min-w-0">
                                                                 <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">{item.descricao}</p>
@@ -258,7 +258,7 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
                                 <div className="p-6 bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-100 dark:border-indigo-800/50 rounded-[32px] flex items-center gap-6">
                                     <div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-xl shrink-0">
                                         <img 
-                                            src={getWheelPhotoUrl(selectedItem.descricao)} 
+                                            src={getWheelPhotoUrl(selectedItem.descricao, selectedItem.codigo)} 
                                             alt={selectedItem.descricao}
                                             className="w-full h-full object-cover"
                                         />

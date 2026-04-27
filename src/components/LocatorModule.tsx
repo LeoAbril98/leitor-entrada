@@ -171,7 +171,7 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                             <div className="flex gap-4 mb-8">
                                 <div className="w-20 h-20 shrink-0 bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-md">
                                     <img 
-                                        src={getWheelPhotoUrl(scannedItem.descricao)} 
+                                        src={getWheelPhotoUrl(scannedItem.descricao, scannedItem.codigo)} 
                                         alt={scannedItem.descricao}
                                         className="w-full h-full object-cover"
                                         onError={(e) => {

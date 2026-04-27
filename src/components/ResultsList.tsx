@@ -68,7 +68,7 @@ export function ResultsList({ groupedData, searchTerm, setSearchTerm, onRemoveGr
                                         {/* Foto da Roda na Contagem */}
                                         <div className="w-14 h-14 shrink-0 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
                                             <img 
-                                                src={getWheelPhotoUrl(item.descricao)} 
+                                                src={getWheelPhotoUrl(item.descricao, item.codigo)} 
                                                 alt={item.descricao}
                                                 className="w-full h-full object-cover"
                                                 loading="lazy"

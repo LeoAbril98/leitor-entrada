@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { ScanBarcode, MapPin, RefreshCw, ClipboardList, RotateCcw, Lock, Database, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+    ScanBarcode, 
+    MapPin, 
+    RefreshCw, 
+    ClipboardList, 
+    RotateCcw, 
+    Lock, 
+    Database, 
+    ChevronRight,
+    Loader2,
+    Check
+} from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { getInventory, getLastUpdate, clearLocalInventoryCache } from '../lib/supabase';
 import { cn } from '../utils';
@@ -9,17 +20,26 @@ interface HomeMenuProps {
     onSelectMode: (mode: 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'admin-login') => void;
 }
 
+const SYNC_STEPS = [
+    { id: 1, label: "Iniciando conexão segura com servidor" },
+    { id: 2, label: "Acessando portal MK e autenticando" },
+    { id: 3, label: "Extraindo relatórios de inventário" },
+    { id: 4, label: "Baixando arquivos e decodificando dados" },
+    { id: 5, label: "Gravando novos saldos nas tabelas Cloud" }
+];
+
 export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
     const [isUpdating, setIsUpdating] = useState(false);
     const [updatesToday, setUpdatesToday] = useState(0);
     const [defaultStockCount, setDefaultStockCount] = useState(0);
     const [supabaseUpdate, setSupabaseUpdate] = useState<string | null>(null);
+    const [activeStepIndex, setActiveStepIndex] = useState(0);
 
     useEffect(() => {
-        // Fetch last update from Supabase DB
-        getLastUpdate().then(dateString => {
-            if (dateString) {
-                setSupabaseUpdate(dateString);
+        // Fetch last update from Supabase DB (corrected date extraction)
+        getLastUpdate().then(res => {
+            if (res && res.date) {
+                setSupabaseUpdate(res.date);
             }
         });
         const storedUpdates = localStorage.getItem('inventory_updates');
@@ -42,6 +62,29 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
             } catch (e) { }
         }
     }, []);
+
+    // Timer sequencing for sync checklist steps
+    useEffect(() => {
+        if (!isUpdating) {
+            setActiveStepIndex(0);
+            return;
+        }
+
+        const intervals = [6000, 16000, 30000, 45000, 60000];
+        const timers: NodeJS.Timeout[] = [];
+
+        SYNC_STEPS.forEach((_, index) => {
+            if (index === 0) return;
+            const timer = setTimeout(() => {
+                setActiveStepIndex(index);
+            }, intervals[index - 1]);
+            timers.push(timer);
+        });
+
+        return () => {
+            timers.forEach(t => clearTimeout(t));
+        };
+    }, [isUpdating]);
 
     const incrementUpdatesToday = () => {
         const today = new Date().toISOString().split('T')[0];
@@ -96,9 +139,9 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
             if (data && data.length) {
                 setDefaultStockCount(data.length);
             }
-            const dateString = await getLastUpdate();
-            if (dateString) {
-                setSupabaseUpdate(dateString);
+            const res = await getLastUpdate();
+            if (res && res.date) {
+                setSupabaseUpdate(res.date);
             }
 
         } catch (error) {
@@ -138,7 +181,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                 </motion.div>
 
                 {/* Títulos e Sincronização centralizados */}
-                <div className="flex flex-col items-center mb-4 gap-3">
+                <div className="flex flex-col items-center mb-4 gap-3 w-full max-w-xl">
                     <div className="text-center">
                         <motion.h1
                             initial={{ opacity: 0, y: 10 }}
@@ -161,30 +204,84 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-2 flex flex-col sm:flex-row sm:items-center gap-4 shadow-xl shadow-slate-200/50 dark:shadow-none"
+                        className="w-full bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-2 flex flex-col shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden"
                     >
-                        <div className="px-5 py-2 sm:py-0 flex flex-col justify-center">
-                            <div className="flex items-center justify-center sm:justify-start gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                                <Database className="w-3 h-3 text-indigo-500" /> Sincronização Server
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-1">
+                            <div className="px-5 py-2 sm:py-0 flex flex-col justify-center text-center sm:text-left">
+                                <div className="flex items-center justify-center sm:justify-start gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                                    <Database className="w-3 h-3 text-indigo-500" /> Sincronização Server
+                                </div>
+                                <div className="flex items-center justify-center sm:justify-start gap-3 text-sm text-slate-600 dark:text-slate-300 font-bold whitespace-nowrap">
+                                    <span><span className="text-indigo-600 dark:text-indigo-400">{defaultStockCount}</span> no banco</span>
+                                    <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                                    <span>{supabaseUpdate && !isNaN(new Date(supabaseUpdate).getTime()) ? new Date(supabaseUpdate).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '--/--'}</span>
+                                </div>
                             </div>
-                            <div className="flex items-center justify-center sm:justify-start gap-3 text-sm text-slate-600 dark:text-slate-300 font-bold whitespace-nowrap">
-                                <span><span className="text-indigo-600 dark:text-indigo-400">{defaultStockCount}</span> no banco</span>
-                                <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-                                <span>{supabaseUpdate ? new Date(supabaseUpdate).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '--/--'}</span>
-                            </div>
+
+                            <button
+                                onClick={handleUpdateInventory}
+                                disabled={isUpdating || updatesToday >= 2}
+                                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-500/20 disabled:opacity-50 transition-colors"
+                            >
+                                <RefreshCw className={cn("w-4 h-4", isUpdating && "animate-spin")} />
+                                {isUpdating ? 'Puxando do MK...' : 'Atualizar Dados'}
+                                <span className="bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-500/20 text-xs px-2 py-0.5 rounded-full ml-1 min-w-[2.5rem] text-center shadow-sm">
+                                    {2 - updatesToday}/2
+                                </span>
+                            </button>
                         </div>
 
-                        <button
-                            onClick={handleUpdateInventory}
-                            disabled={isUpdating || updatesToday >= 2}
-                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-500/20 disabled:opacity-50 transition-colors"
-                        >
-                            <RefreshCw className={cn("w-4 h-4", isUpdating && "animate-spin")} />
-                            {isUpdating ? 'Puxando do MK...' : 'Atualizar Dados'}
-                            <span className="bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-500/20 text-xs px-2 py-0.5 rounded-full ml-1 min-w-[2.5rem] text-center shadow-sm">
-                                {2 - updatesToday}/2
-                            </span>
-                        </button>
+                        {/* Checklist do Robô MK quando ativo */}
+                        <AnimatePresence>
+                            {isUpdating && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="border-t border-slate-100 dark:border-slate-800 p-4 px-5 bg-slate-50/50 dark:bg-slate-900/50 rounded-b-xl overflow-hidden"
+                                >
+                                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 text-left">
+                                        Progresso do Robô MK
+                                    </h4>
+                                    <div className="flex flex-col gap-2.5">
+                                        {SYNC_STEPS.map((step, index) => {
+                                            const isCompleted = activeStepIndex > index;
+                                            const isActive = activeStepIndex === index;
+                                            return (
+                                                <div key={step.id} className="flex items-center gap-3 text-xs text-left">
+                                                    <div className={cn(
+                                                        "h-5 w-5 rounded-full flex items-center justify-center transition-all",
+                                                        isCompleted 
+                                                            ? "bg-emerald-500 text-white" 
+                                                            : isActive 
+                                                                ? "bg-indigo-600 text-white animate-pulse" 
+                                                                : "bg-slate-200 dark:bg-slate-850 text-slate-400 dark:text-slate-500"
+                                                    )}>
+                                                        {isCompleted ? (
+                                                            <Check className="w-3.5 h-3.5" />
+                                                        ) : isActive ? (
+                                                            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                                        ) : (
+                                                            <span className="text-[9px] font-bold">{step.id}</span>
+                                                        )}
+                                                    </div>
+                                                    <span className={cn(
+                                                        "font-medium",
+                                                        isCompleted 
+                                                            ? "text-emerald-600 dark:text-emerald-400 line-through opacity-85" 
+                                                            : isActive 
+                                                                ? "text-indigo-600 dark:text-indigo-400 font-bold" 
+                                                                : "text-slate-500 dark:text-slate-400"
+                                                    )}>
+                                                        {step.label}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </motion.div>
                 </div>
 
@@ -195,16 +292,16 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                         onClick={() => onSelectMode('counting')}
-                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 xl:p-6 hover:border-indigo-600 dark:hover:border-indigo-500 hover:shadow-xl hover:shadow-indigo-500/10 dark:hover:shadow-none transition-all text-left flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-3 active:scale-95"
+                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 xl:p-6 hover:border-indigo-600 dark:hover:border-indigo-500 hover:shadow-xl hover:shadow-indigo-500/10 dark:hover:shadow-none transition-all text-left flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-3 active:scale-95 animate-fade-in"
                     >
-                        <div className="w-12 h-12 min-w-12 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <div className="w-12 h-12 min-w-12 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform animate-fade-in">
                             <ScanBarcode className="w-6 h-6" />
                         </div>
-                        <div className="flex-1">
-                            <h2 className="text-base sm:text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 mb-0.5 sm:mb-1">
+                        <div className="flex-1 animate-fade-in">
+                            <h2 className="text-base sm:text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 mb-0.5 sm:mb-1 animate-fade-in">
                                 Contagem
                             </h2>
-                            <p className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs md:text-sm leading-snug font-medium">
+                            <p className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs md:text-sm leading-snug font-medium animate-fade-in">
                                 Realize conferências de estoque e gere exportações.
                             </p>
                         </div>
@@ -216,16 +313,16 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
                         onClick={() => onSelectMode('locator')}
-                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 xl:p-6 hover:border-emerald-600 dark:hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-500/10 dark:hover:shadow-none transition-all text-left flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-3 active:scale-95"
+                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 xl:p-6 hover:border-emerald-600 dark:hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-500/10 dark:hover:shadow-none transition-all text-left flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-3 active:scale-95 animate-fade-in"
                     >
-                        <div className="w-12 h-12 min-w-12 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <MapPin className="w-6 h-6" />
+                        <div className="w-12 h-12 min-w-12 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform animate-fade-in">
+                            <MapPin className="w-6 h-6 animate-fade-in" />
                         </div>
-                        <div className="flex-1">
-                            <h2 className="text-base sm:text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 mb-0.5 sm:mb-1">
+                        <div className="flex-1 animate-fade-in">
+                            <h2 className="text-base sm:text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 mb-0.5 sm:mb-1 animate-fade-in">
                                 Localização
                             </h2>
-                            <p className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs md:text-sm leading-snug font-medium">
+                            <p className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs md:text-sm leading-snug font-medium animate-fade-in">
                                 Buscas rápidas para descobrir posição e quantidade instantaneamente.
                             </p>
                         </div>
@@ -237,20 +334,20 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
                         onClick={() => onSelectMode('pendencies')}
-                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 xl:p-6 hover:border-amber-600 dark:hover:border-amber-500 hover:shadow-xl hover:shadow-amber-500/10 dark:hover:shadow-none transition-all text-left flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-3 active:scale-95"
+                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 xl:p-6 hover:border-amber-600 dark:hover:border-amber-500 hover:shadow-xl hover:shadow-amber-500/10 dark:hover:shadow-none transition-all text-left flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-3 active:scale-95 animate-fade-in"
                     >
-                        <div className="w-12 h-12 min-w-12 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <ClipboardList className="w-6 h-6" />
+                        <div className="w-12 h-12 min-w-12 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform animate-fade-in">
+                            <ClipboardList className="w-6 h-6 animate-fade-in" />
                         </div>
-                        <div className="flex-1">
-                            <h2 className="text-base sm:text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 mb-0.5 sm:mb-1">
+                        <div className="flex-1 animate-fade-in">
+                            <h2 className="text-base sm:text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 mb-0.5 sm:mb-1 animate-fade-in">
                                 Pendências
                             </h2>
-                            <p className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs md:text-sm leading-snug font-medium">
+                            <p className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs md:text-sm leading-snug font-medium animate-fade-in">
                                 Gerencie pendências e crie relatórios sobre as fábricas de forma inteligente.
                             </p>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600 shrink-0 ml-auto sm:hidden" />
+                        <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600 shrink-0 ml-auto sm:hidden animate-fade-in" />
                     </motion.button>
 
                     <motion.button
@@ -258,20 +355,20 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.6 }}
                         onClick={() => onSelectMode('update-wheels')}
-                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 xl:p-6 hover:border-violet-600 dark:hover:border-violet-500 hover:shadow-xl hover:shadow-violet-500/10 dark:hover:shadow-none transition-all text-left flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-3 active:scale-95"
+                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 xl:p-6 hover:border-violet-600 dark:hover:border-violet-500 hover:shadow-xl hover:shadow-violet-500/10 dark:hover:shadow-none transition-all text-left flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-3 active:scale-95 animate-fade-in"
                     >
-                        <div className="w-12 h-12 min-w-12 bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <RefreshCw className="w-6 h-6" />
+                        <div className="w-12 h-12 min-w-12 bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform animate-fade-in">
+                            <RotateCcw className="w-6 h-6 animate-fade-in" />
                         </div>
-                        <div className="flex-1">
-                            <h2 className="text-base sm:text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 mb-0.5 sm:mb-1">
+                        <div className="flex-1 animate-fade-in">
+                            <h2 className="text-base sm:text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 mb-0.5 sm:mb-1 animate-fade-in">
                                 Atualizar Locais
                             </h2>
-                            <p className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs md:text-sm leading-snug font-medium">
+                            <p className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs md:text-sm leading-snug font-medium animate-fade-in">
                                 Sincronize locais escaneando itens de ruas e prateleiras.
                             </p>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600 shrink-0 ml-auto sm:hidden" />
+                        <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600 shrink-0 ml-auto sm:hidden animate-fade-in" />
                     </motion.button>
                 </div>
             </main>
@@ -290,7 +387,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                     className="flex items-center justify-center w-10 h-10 text-slate-300 dark:text-slate-800 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-500 rounded-full transition-all group"
                     title="Limpar Cache e Resetar App"
                 >
-                    <RotateCcw className="w-4 h-4 group-hover:-rotate-180 transition-transform duration-500" />
+                    <RotateCcw className="w-4 h-4 group-hover:-rotate-180 transition-transform duration-500 animate-fade-in" />
                 </button>
             </motion.div>
         </div >

@@ -16,7 +16,7 @@ import {
 import { toast } from 'react-hot-toast';
 
 import { 
-    getPendenciasInventory, 
+    getInventory, 
     getPhotoOverrides, 
     savePhotoOverride,
     uploadPhotoToStorage
@@ -109,7 +109,7 @@ export const AdminSettingsPanel: React.FC<AdminSettingsPanelProps> = ({ onBack }
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const inventory = await getPendenciasInventory();
+            const inventory = await getInventory();
             const overrides = await getPhotoOverrides();
             setPhotoOverrides(overrides);
             setStock(inventory);

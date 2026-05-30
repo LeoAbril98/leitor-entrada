@@ -1,0 +1,503 @@
+from dotenv import load_dotenv
+import os
+import re
+from pathlib import Path
+from datetime import datetime, timezone
+import xml.etree.ElementTree as ET
+import requests
+
+load_dotenv()
+
+from playwright.sync_api import sync_playwright, TimeoutError as PWTimeoutError
+
+# ==============================================================================
+# MK (ENV)
+# ==============================================================================
+MK_LOGIN = os.getenv("MK_LOGIN", "http://mkrodas.ddns.net/web/view/app/ger/GER800V.php")
+MK_EMPRESA = os.getenv("MK_EMPRESA", "TREINAMENTO - MKRODAS")
+MK_USUARIO = os.getenv("MK_USUARIO", "LEO")
+MK_SENHA = os.getenv("MK_SENHA", "LEO1703")
+MK_TITULO_TELA = os.getenv("MK_TITULO_TELA", "SGM961 - Gerar Inventário")
+
+# onde salvar o XML baixado
+# No Windows roda num lugar, na Nuvem (Docker) usa /tmp
+DOWNLOAD_DIR = Path(os.getenv("MK_DOWNLOAD_DIR", "/tmp" if os.name != 'nt' else str(Path.home() / "Downloads")))
+
+# padrão do XML REAL (igual ao seu print)
+XML_RE = re.compile(r"/relatorios/RGM961\.REL.*\.xml(\?.*)?$", re.I)
+
+# ==============================================================================
+# Supabase (ENV)
+# ==============================================================================
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+TBL_INV = os.getenv("SB_TBL_INV", "inventarios")
+TBL_ITENS = os.getenv("SB_TBL_ITENS", "inventario_itens")
+BATCH_SIZE = int(os.getenv("SB_BATCH_SIZE", "500"))
+
+
+# ==============================================================================
+# Helpers gerais
+# ==============================================================================
+def _sb_headers():
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        raise RuntimeError("Faltou SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY (env).")
+    return {
+        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+        "Content-Type": "application/json",
+    }
+
+
+def _chunks(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i:i+n]
+
+
+# ==============================================================================
+# Playwright helpers (baseado no que já funcionou pra você)
+# ==============================================================================
+def find_frame_by_text(page, text, tries=80, sleep_ms=500):
+    for _ in range(tries):
+        for f in page.frames:
+            try:
+                if f.locator(f"text={text}").count() > 0:
+                    return f
+            except Exception:
+                pass
+        page.wait_for_timeout(sleep_ms)
+    return None
+
+
+def set_toggle_off_near_text(frame, text_regex: re.Pattern) -> bool:
+    try:
+        t = frame.get_by_text(text_regex).first
+        if t.count() == 0:
+            return False
+        t.scroll_into_view_if_needed()
+
+        container = t.locator("xpath=ancestor::*[self::tr or self::td or self::div or self::fieldset][1]")
+        cb = container.locator("input[type='checkbox']")
+        if cb.count() == 0:
+            cb = t.locator("xpath=following::input[@type='checkbox'][1]")
+        if cb.count() == 0:
+            return False
+
+        el = cb.first
+        try:
+            if el.is_checked():
+                el.uncheck(timeout=3000)
+        except Exception:
+            handle = el.element_handle()
+            frame.evaluate(
+                """(el) => {
+                    el.checked = false;
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                }""",
+                handle,
+            )
+        return True
+    except Exception:
+        return False
+
+
+def disable_print_obsolete(page) -> bool:
+    patterns = [
+        re.compile(r"imprime\s+itens\s+obsolet", re.I),
+        re.compile(r"itens\s+obsolet", re.I),
+        re.compile(r"\bobsolet", re.I),
+    ]
+    page.wait_for_timeout(1200)
+    for _ in range(1, 9):
+        for fr in page.frames:
+            try:
+                for pat in patterns:
+                    if set_toggle_off_near_text(fr, pat):
+                        print("✅ 'Imprime Itens Obsoletos' desativado.")
+                        return True
+            except Exception:
+                pass
+        page.wait_for_timeout(700)
+    print("⚠️ Não consegui desativar 'Imprime Itens Obsoletos'.")
+    return False
+
+
+def click_filtros_especificos(page, frame_hint=None) -> bool:
+    targets = [frame_hint] if frame_hint else []
+    targets.extend(page.frames)
+    for fr in targets:
+        try:
+            loc = fr.locator("text=Filtros Específicos").first
+            if loc.count() > 0:
+                loc.scroll_into_view_if_needed()
+                loc.click(timeout=5000)
+                print("✅ Cliquei em 'Filtros Específicos'.")
+                return True
+        except Exception:
+            pass
+    print("⚠️ Não consegui clicar em 'Filtros Específicos'.")
+    return False
+
+
+def esperar_sumir_aguarde(page, timeout_ms=600000):
+    for _ in range(int(timeout_ms / 500)):
+        vis = False
+        for fr in page.frames:
+            try:
+                loc = fr.locator("text=Por favor, aguarde").first
+                if loc.count() > 0 and loc.is_visible():
+                    vis = True
+                    break
+            except Exception:
+                pass
+        if not vis:
+            return True
+        page.wait_for_timeout(500)
+    return False
+
+
+def achar_frame_com_botao_gerar(page):
+    for fr in page.frames:
+        try:
+            if fr.locator("#bGerar").count() > 0:
+                return fr
+        except Exception:
+            pass
+    return None
+
+
+def click_selecionar_deposito(page) -> bool:
+    btn_re = re.compile(r"Selecionar\s+Dep[oó]sito", re.I)
+    for fr in page.frames:
+        try:
+            btn = fr.get_by_text(btn_re).first
+            if btn.count() > 0:
+                btn.scroll_into_view_if_needed()
+                btn.click(timeout=8000)
+                print("✅ Cliquei em 'Selecionar Depósito'.")
+                return True
+        except Exception:
+            pass
+    print("⚠️ Não encontrei o botão 'Selecionar Depósito'.")
+    return False
+
+
+def preencher_deposito_e_fechar_modal(page, codigo="ALMOX") -> None:
+    print(f"⌨️ Preenchendo depósito com: {codigo}")
+    page.wait_for_timeout(1200)
+    page.keyboard.type(codigo, delay=100)
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(500)
+    page.keyboard.press("Enter")
+
+    page.wait_for_timeout(800)
+
+    # seu X original
+    for fr in page.frames:
+        try:
+            x = fr.locator("span.class_icon_fechar_janela.icon-controller.icon-fechar").first
+            if x.count() > 0:
+                x.dispatch_event("click")
+                print("✅ Modal do depósito fechado (X).")
+                return
+        except Exception:
+            pass
+
+    # fallback
+    for fr in page.frames:
+        for sel in ["text=Fechar", "text=Cancelar", "button:has-text('Fechar')", "button:has-text('Cancelar')"]:
+            try:
+                b = fr.locator(sel).first
+                if b.count() > 0 and b.is_visible():
+                    b.click(timeout=3000)
+                    print("✅ Modal do depósito fechado (fallback).")
+                    return
+            except Exception:
+                pass
+
+    print("⚠️ Não consegui confirmar o fechamento do modal (talvez já fechou).")
+
+
+# ==============================================================================
+# 1) GERAR e BAIXAR XML
+# ==============================================================================
+def gerar_xml_e_pegar_url(deposito: str = "", headless: bool = False):
+    """
+    Roda o MK, clica gerar, captura a URL real do XML na rede e baixa o arquivo.
+    Retorna: (xml_url, xml_path)
+    """
+    xml_url_holder = {"url": None}
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=headless, slow_mo=80)
+        context = browser.new_context(ignore_https_errors=True, accept_downloads=True)
+        page = context.new_page()
+        page.set_default_timeout(60000)
+
+        def on_response(resp):
+            try:
+                url = resp.url
+                if XML_RE.search(url) and xml_url_holder["url"] is None:
+                    xml_url_holder["url"] = url
+            except Exception:
+                pass
+
+        context.on("response", on_response)
+
+        try:
+            # login
+            page.goto(MK_LOGIN, wait_until="domcontentloaded")
+            page.get_by_placeholder("Ex: Softdib").click()
+            page.get_by_text(MK_EMPRESA, exact=False).click()
+            page.get_by_placeholder("Nome do Usuário").fill(MK_USUARIO)
+            page.get_by_placeholder("Senha do Usuário").fill(MK_SENHA)
+            page.get_by_role("button", name=re.compile("Acessar", re.I)).click()
+
+            # abre SGM961
+            page.wait_for_selector("#SGM961_005", state="visible")
+            page.locator("#SGM961_005").click()
+
+            # espera frame
+            frame = find_frame_by_text(page, MK_TITULO_TELA)
+            if not frame:
+                raise RuntimeError("Não achei o frame do SGM961.")
+
+            print("2) Configurando opções...")
+            disable_print_obsolete(page)
+            click_filtros_especificos(page, frame_hint=frame)
+
+            # depósito
+            print("3) Selecionando Depósito...")
+            # SÓ seleciona o depósito no ERP se passarmos algo diferente de vazio
+            if deposito and click_selecionar_deposito(page):
+                preencher_deposito_e_fechar_modal(page, codigo=deposito)
+            else:
+                print("ℹ️ Nenhum depósito especificado. Gerando relatório COMPLETO de catálogo.")
+
+            # gerar
+            print("5) Gerando inventário (capturando o XML REAL RGM961.REL*.xml)...")
+            frame_gerar = achar_frame_com_botao_gerar(page)
+            if not frame_gerar:
+                raise RuntimeError("Não encontrei o botão #bGerar.")
+
+            # clique gerar (pode abrir aba ou não)
+            try:
+                with context.expect_page(timeout=15000):
+                    frame_gerar.locator("#bGerar").first.click(timeout=10000, no_wait_after=True)
+            except PWTimeoutError:
+                frame_gerar.locator("#bGerar").first.click(timeout=10000, no_wait_after=True)
+
+            # aguarde finalizar
+            esperar_sumir_aguarde(page, timeout_ms=600000)
+
+            # aguarda XML aparecer na rede
+            for _ in range(600):
+                if xml_url_holder["url"]:
+                    break
+                page.wait_for_timeout(1000)
+
+            xml_url = xml_url_holder["url"]
+            if not xml_url:
+                raise RuntimeError("Não capturei a URL do XML real (RGM961.REL*.xml).")
+
+            # baixa via sessão logada
+            r = context.request.get(xml_url, timeout=600000)
+            if not r.ok:
+                raise RuntimeError(f"Falha ao baixar XML. Status={r.status}")
+
+            xml_path = DOWNLOAD_DIR / "inventario_real.xml"
+            # Garante que a pasta (ex: /tmp) existe antes de salvar
+            xml_path.parent.mkdir(parents=True, exist_ok=True)
+            xml_path.write_bytes(r.body())
+
+            return xml_url, xml_path
+
+        finally:
+            browser.close()
+
+
+# ==============================================================================
+# 2) PARSE XML
+# ==============================================================================
+def _get_text(el) -> str:
+    if el is None or el.text is None:
+        return ""
+    return el.text.strip()
+
+
+def parse_qty_br(qty_str: str) -> int:
+    # '1,000' -> 1
+    s = (qty_str or "").strip()
+    if not s:
+        return 0
+    s = s.replace(".", "")
+    if "," in s:
+        s = s.split(",")[0]
+    s = re.sub(r"[^\d-]", "", s)
+    try:
+        return int(s) if s else 0
+    except:
+        return 0
+
+
+def parse_xml_items(xml_path: Path):
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+
+    header = root.find("header")
+    empresa = _get_text(header.find("cab-empresa")) if header is not None else ""
+    filial = _get_text(header.find("cab-filial")) if header is not None else ""
+    equipe = _get_text(header.find("cab-equipe")) if header is not None else ""
+    depositos = _get_text(header.find("cab-depositos")) if header is not None else ""
+
+    items = []
+    detail = root.find("detail")
+    if detail is None:
+        return (empresa, filial, equipe, depositos, items)
+
+    for rec in detail.findall("record"):
+        codigo = _get_text(rec.find("det-material-a"))
+        descricao = _get_text(rec.find("det-descricao"))
+        qty_raw = _get_text(rec.find("det-quantidade"))
+        local = _get_text(rec.find("det-prateleira"))
+        deposito_item = _get_text(rec.find("det-deposito"))  # 🟢 Lê o depósito do registro
+
+        if not codigo and not descricao:
+            continue
+
+        # 🚫 FILTRO DE SEGURANÇA CONTRA DUPLICATAS:
+        # Importa apenas os dados de estoque do depósito principal físico (ALMOX)
+        # Descarta registros de Consignado (CONS), Defeito (DEF), Vitrine, etc.
+        if deposito_item != "ALMOX":
+            continue
+
+        quantidade = parse_qty_br(qty_raw)
+
+        items.append(
+            {"codigo": codigo, "descricao": descricao, "quantidade": quantidade, "local": local}
+        )
+
+    return (empresa, filial, equipe, depositos, items)
+
+
+# ==============================================================================
+# 3) ENVIAR SUPABASE
+# ==============================================================================
+def _sb_insert_one(table: str, payload: dict) -> dict:
+    url = f"{SUPABASE_URL}/rest/v1/{table}"
+    h = _sb_headers()
+    h["Prefer"] = "return=representation"
+    r = requests.post(url, headers=h, json=[payload], timeout=60)
+    r.raise_for_status()
+    data = r.json()
+    if not data:
+        raise RuntimeError("Supabase não retornou registro inserido.")
+    return data[0]
+
+
+def _sb_upsert_batch(table: str, rows: list[dict], on_conflict: str):
+    if not rows:
+        return
+    url = f"{SUPABASE_URL}/rest/v1/{table}?on_conflict={on_conflict}"
+    h = _sb_headers()
+    h["Prefer"] = "resolution=merge-duplicates,return=minimal"
+    r = requests.post(url, headers=h, json=rows, timeout=120)
+    r.raise_for_status()
+
+
+def _sb_delete_old_inventories(deposito: str):
+    """
+    Deleta os inventários anteriores deste mesmo depósito.
+    Se o banco de dados tiver as FKs configuradas com ON DELETE CASCADE,
+    isso deletará também os itens em `inventario_itens`.
+    Caso contrário, você precisaria deletar os itens primeiro:
+      DELETE FROM inventario_itens WHERE inventario_id IN (...)
+    Mas deletar o inventario_pai via REST faz isso automático (se o BD permitir cascade).
+    Abaixo, vamos apagar todos os inventários com `depositos` = deposito.
+    """
+    url = f"{SUPABASE_URL}/rest/v1/{TBL_INV}?depositos=eq.{deposito}"
+    h = _sb_headers()
+    h["Prefer"] = "return=minimal"
+    r = requests.delete(url, headers=h, timeout=60)
+    if r.status_code >= 400 and r.status_code != 404:
+        raise RuntimeError(f"Falha ao deletar inventário antigo: {r.text}")
+
+
+def enviar_para_supabase(meta, items, xml_url: str):
+    empresa, filial, equipe, depositos = meta
+    
+    # 1. Passo Crítico: DELETAR O INVENTÁRIO ANTIGO DESTE DEPÓSITO PARA NÃO SOMAR/DUPLICAR
+    print(f"🧹 Deletando inventários antigos do depósito: '{depositos}'")
+    _sb_delete_old_inventories(depositos)
+
+    # 2. Continua inserção normal
+    criado_em = datetime.now(timezone.utc).isoformat()
+
+    inv_row = _sb_insert_one(
+        TBL_INV,
+        {
+            "empresa": empresa,
+            "filial": filial,
+            "equipe": equipe,
+            "depositos": depositos,
+            "xml_url": xml_url,
+            "criado_em": criado_em,
+        },
+    )
+    inv_id = inv_row["id"]
+
+    rows = [
+        {
+            "inventario_id": inv_id,
+            "codigo": it["codigo"],
+            "descricao": it["descricao"],
+            "quantidade": it["quantidade"],
+            "local": it["local"],
+        }
+        for it in items
+    ]
+
+    sent = 0
+    for batch in _chunks(rows, BATCH_SIZE):
+        _sb_upsert_batch(TBL_ITENS, batch, on_conflict="inventario_id,codigo")
+        sent += len(batch)
+
+    return inv_id, sent
+
+
+# ==============================================================================
+# PIPELINE COMPLETO
+# ==============================================================================
+def pipeline_atualizar(deposito="", headless=False):
+    # Roda Playwright gerando catálogo geral (sem filtros de depósito)
+    xml_url, xml_path = gerar_xml_e_pegar_url(deposito=deposito, headless=headless)
+    
+    # Faz o parsing do XML filtrando apenas o depósito "ALMOX"
+    empresa, filial, equipe, depositos, items = parse_xml_items(xml_path)
+    
+    # Grava no Supabase
+    inv_id, sent = enviar_para_supabase((empresa, filial, equipe, depositos), items, xml_url=xml_url)
+    return {
+        "inventario_id": inv_id,
+        "itens": sent,
+        "empresa": empresa,
+        "filial": filial,
+        "equipe": equipe,
+        "depositos": depositos,
+        "xml_url": xml_url,
+        "xml_path": str(xml_path),
+    }
+
+if __name__ == "__main__":
+    import traceback
+    print("🚀 Iniciando pipeline completo de integração (MK -> Supabase)...")
+    try:
+        # Passando "" para gerar o relatório mestre completo sem filtros
+        resultado = pipeline_atualizar(deposito="", headless=False)
+        print("\n✅ PIPELINE CONCLUIDO COM SUCESSO!")
+        for k, v in resultado.items():
+            print(f"  {k}: {v}")
+    except Exception as e:
+        print(f"\n❌ ERRO NO PIPELINE: {e}")
+        traceback.print_exc()

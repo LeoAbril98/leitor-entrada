@@ -65,11 +65,7 @@ export const AdminManagementPanel: React.FC<AdminManagementPanelProps> = ({ onBa
     const [globalTags, setGlobalTags] = useState<string[]>([]);
     const [isTagModalOpen, setIsTagModalOpen] = useState(false);
     const [newTagName, setNewTagName] = useState("");
-    
-    // Gestão de Overrides de Fotos
-    const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
-    const [targetWheel, setTargetWheel] = useState<{ model: string, finish: string, description: string, codigo: string } | null>(null);
-    const [availablePhotos, setAvailablePhotos] = useState<string[]>([]);
+
 
     useEffect(() => {
         loadData();
@@ -399,43 +395,6 @@ export const AdminManagementPanel: React.FC<AdminManagementPanelProps> = ({ onBa
         item.descricao.toLowerCase().includes(searchQuery.toLowerCase())
     ).slice(0, 100);
 
-    const handleOpenPhotoSelection = (item: StockItem) => {
-        const { modelCode, finishAbbr } = getModelAndFinish(item.descricao);
-        const modelsPhotos = (photoMap as any)[modelCode] || {};
-        const urls = Object.values(modelsPhotos) as string[];
-        
-        setTargetWheel({ 
-            model: modelCode, 
-            finish: finishAbbr, 
-            description: item.descricao,
-            codigo: item.codigo
-        });
-        setAvailablePhotos(urls);
-        setIsPhotoModalOpen(true);
-    };
-
-    const handleSavePhotoOverride = async (url: string, scope: 'item' | 'model') => {
-        if (!targetWheel) return;
-        
-        const success = await savePhotoOverride(
-            targetWheel.model, 
-            targetWheel.finish, 
-            url, 
-            scope === 'item' ? targetWheel.codigo : undefined
-        );
-
-        if (success) {
-            toast.success(scope === 'item' ? "Foto salva apenas para este item!" : "Foto salva para todo o grupo!");
-            setIsPhotoModalOpen(false);
-            // Recarregar overrides localmente
-            const overrides = await getPhotoOverrides();
-            setPhotoOverrides(overrides);
-            // Forçar re-render do estoque
-            setStock([...stock]); 
-        } else {
-            toast.error("Erro ao salvar override");
-        }
-    };
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8">
@@ -609,17 +568,14 @@ export const AdminManagementPanel: React.FC<AdminManagementPanelProps> = ({ onBa
                                                 </div>
                                             </td>
                                             <td className="px-4 py-5 text-center">
-                                                <button 
-                                                    onClick={() => handleOpenPhotoSelection(item)}
-                                                    className="relative w-12 h-12 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 hover:ring-2 hover:ring-indigo-500 transition-all flex items-center justify-center group/photo"
-                                                >
+                                                <div className="w-12 h-12 mx-auto rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
                                                     <img 
                                                         src={getWheelPhotoUrl(item.descricao, item.codigo)} 
                                                         alt="Roda"
-                                                        className="w-full h-full object-cover group-hover/photo:scale-110 transition-transform"
+                                                        className="w-full h-full object-cover"
                                                         onError={(e) => (e.currentTarget.src = "https://placehold.co/100x100?text=NF")}
                                                     />
-                                                </button>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-5">
                                                 {editingId === item.codigo ? (
@@ -771,107 +727,6 @@ export const AdminManagementPanel: React.FC<AdminManagementPanelProps> = ({ onBa
                 )}
             </AnimatePresence>
 
-            {/* Modal de Seleção de Foto */}
-            <AnimatePresence>
-                {isPhotoModalOpen && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setIsPhotoModalOpen(false)}
-                            className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
-                        />
-                        <motion.div 
-                            initial={{ scale: 0.9, y: 20, opacity: 0 }}
-                            animate={{ scale: 1, y: 0, opacity: 1 }}
-                            exit={{ scale: 0.9, y: 20, opacity: 0 }}
-                            className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-                        >
-                            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase">Personalizar Foto</h3>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                                        Definir foto padrão para {targetWheel?.model} - {targetWheel?.finish}
-                                    </p>
-                                </div>
-                                <button onClick={() => setIsPhotoModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
-                                    <X className="w-5 h-5 text-slate-400" />
-                                </button>
-                            </div>
-
-                            <div className="p-8 overflow-y-auto custom-scrollbar">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                                    <div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Foto Atual</p>
-                                        <div className="aspect-square rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 shadow-inner group/current">
-                                            <img 
-                                                src={targetWheel ? getWheelPhotoUrl(targetWheel.description, targetWheel.codigo) : ""} 
-                                                className="w-full h-full object-cover group-hover/current:scale-105 transition-transform duration-700"
-                                                alt="Atual"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col justify-center gap-4">
-                                        <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-[2rem] border border-indigo-100 dark:border-indigo-900/30">
-                                            <h4 className="text-sm font-black text-indigo-700 dark:text-indigo-300 uppercase mb-2">Instruções</h4>
-                                            <p className="text-xs text-indigo-600 dark:text-indigo-400 font-bold leading-relaxed">
-                                                Escolha uma nova imagem ao lado. Ao clicar na imagem, você poderá decidir se quer aplicar a mudança apenas para este código (<span className="underline">{targetWheel?.codigo}</span>) ou para todo o grupo de {targetWheel?.model} {targetWheel?.finish}.
-                                            </p>
-                                        </div>
-                                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                                                    {availablePhotos.length} fotos encontradas para este modelo
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="border-t border-slate-100 dark:border-slate-800 pt-8">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Opções Disponíveis</p>
-                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                                        {availablePhotos.map((url, idx) => (
-                                            <div key={idx} className="group relative">
-                                                <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border-2 border-transparent group-hover:border-indigo-500 transition-all shadow-sm">
-                                                    <img 
-                                                        src={url} 
-                                                        alt={`Opção ${idx}`} 
-                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                    />
-                                                </div>
-                                                {/* Overlay de Ação */}
-                                                <div className="absolute inset-x-0 bottom-0 p-2 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 flex flex-col gap-1">
-                                                    <button 
-                                                        onClick={() => handleSavePhotoOverride(url, 'item')}
-                                                        className="w-full py-2 bg-white text-indigo-600 text-[9px] font-black uppercase rounded-lg shadow-xl hover:bg-indigo-600 hover:text-white transition-colors"
-                                                    >
-                                                        Apenas este
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleSavePhotoOverride(url, 'model')}
-                                                        className="w-full py-2 bg-indigo-600 text-white text-[9px] font-black uppercase rounded-lg shadow-xl hover:bg-slate-900 transition-colors"
-                                                    >
-                                                        Todo grupo
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 text-center border-t border-slate-100 dark:border-slate-800">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] max-w-lg mx-auto">
-                                    Dica: Se a foto correta não estiver aqui, verifique se ela foi enviada para a pasta correta no servidor de imagens.
-                                </p>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
         </div>
     );
 };

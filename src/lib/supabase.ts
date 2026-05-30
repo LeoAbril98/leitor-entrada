@@ -729,3 +729,32 @@ export async function savePhotoOverride(model: string, finish: string, photo_url
         return false;
     }
 }
+
+export async function uploadPhotoToStorage(file: Blob, fileName: string): Promise<string | null> {
+    if (USE_LOCAL_DB) return "https://placehold.co/400x400?text=Upload+Simulado";
+    try {
+        // Garantir que a extensão seja sempre .jpg após compressão
+        const cleanName = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+        const path = `uploads/${Date.now()}_${cleanName}.jpg`;
+        
+        const { data, error } = await supabase.storage
+            .from('fotos')
+            .upload(path, file, {
+                cacheControl: '3600',
+                contentType: 'image/jpeg',
+                upsert: true
+            });
+
+        if (error) throw error;
+
+        // Recuperar a URL pública do item recém-enviado
+        const { data: publicUrlData } = supabase.storage
+            .from('fotos')
+            .getPublicUrl(path);
+
+        return publicUrlData.publicUrl;
+    } catch (error) {
+        console.error('Erro ao fazer upload da imagem para o Supabase Storage:', error);
+        return null;
+    }
+}

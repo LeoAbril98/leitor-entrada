@@ -6,13 +6,14 @@ import { PendenciesModule } from './components/PendenciesModule';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AdminManagementPanel } from './components/AdminManagementPanel';
+import { AdminSettingsPanel } from './components/AdminSettingsPanel';
 
 import { UpdateWheelsModule } from './components/UpdateWheelsModule';
 import { HistoryModule } from './components/HistoryModule';
 import { getPhotoOverrides } from './lib/supabase';
 import { setPhotoOverrides } from './utils/photoUtils';
 
-type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history';
+type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history' | 'admin-settings';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('menu');
@@ -72,7 +73,10 @@ export default function App() {
   if (mode === 'admin-dashboard') {
     return (
       <AdminDashboard 
-        onSelectModule={(mod) => mod === 'pendencies' ? setMode('admin-management') : null}
+        onSelectModule={(mod) => {
+          if (mod === 'pendencies') setMode('admin-management');
+          if (mod === 'settings') setMode('admin-settings');
+        }}
         onLogout={handleBackToMenu}
       />
     );
@@ -94,6 +98,10 @@ export default function App() {
 
   if (mode === 'admin-panel') {
     return <PendenciesModule onBackToMenu={() => setMode('admin-management')} isAdmin={true} />;
+  }
+
+  if (mode === 'admin-settings') {
+    return <AdminSettingsPanel onBack={() => setMode('admin-dashboard')} />;
   }
 
   // mode === 'counting'

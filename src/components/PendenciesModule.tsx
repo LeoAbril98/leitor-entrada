@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
-import { ArrowLeft, ClipboardList, Pencil, Search, Filter, Upload, Trash2, Archive, X, CloudUpload, FileSpreadsheet, CheckCircle2, Plus, Tag, PenTool, Mic, Volume2, Play, Square } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Pencil, Search, Filter, Trash2, Archive, X, FileSpreadsheet, Plus, Tag, PenTool, Mic, Volume2, Play, Square, AlertTriangle, Upload, CloudUpload } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
     getInventory, 
@@ -9,6 +9,7 @@ import {
     archiveAndClearPedidos, 
     syncPendenciasToCloud, 
     getPendenciasInventory, 
+    clearPendenciasInventory,
     getItemTags, 
     saveItemTags,
     saveCloudSketch,
@@ -47,7 +48,6 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     const [stock, setStock] = useState<StockItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [lastUploadDate, setLastUploadDate] = useState<string | null>(null);
-    const [importedFileName, setImportedFileName] = useState<string | null>(null);
 
     type FactoryName = 'MK' | 'MOLERI' | 'CM' | 'OLIMPO';
     const [pendencies, setPendencies] = useState<Record<string, Record<FactoryName, number>>>({});
@@ -63,14 +63,16 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
         photoUrl?: string;
     }>({ item: null, factory: 'MK', currentQty: 0, stockQty: 0, pendencyQty: 0, photoUrl: '' });
 
-    // Upload Modal State
-    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-    const [tempProcessedData, setTempProcessedData] = useState<StockItem[]>([]);
-    const [isSyncingCloud, setIsSyncingCloud] = useState(false);
-
     // Export Modal State
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [isExportLoading, setIsExportLoading] = useState(false);
+    const [isClearWeekModalOpen, setIsClearWeekModalOpen] = useState(false);
+    const [isClearingWeek, setIsClearingWeek] = useState(false);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+    const [tempProcessedData, setTempProcessedData] = useState<StockItem[]>([]);
+    const [importedFileName, setImportedFileName] = useState('');
+    const [expandedMobileCode, setExpandedMobileCode] = useState<string | null>(null);
 
     // Scroll Ref
     const tableContainerRef = React.useRef<HTMLDivElement>(null);
@@ -293,20 +295,31 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     };
 
     const handleClearAll = async () => {
-        const confirm1 = window.confirm("ATENÇÃO: Isso irá mover TODOS os pedidos atuais para o HISTÓRICO e zerar a lista atual para uma nova semana.\n\nDeseja continuar?");
-        if (!confirm1) return;
+        setIsClearWeekModalOpen(true);
+    };
 
-        const confirm2 = window.confirm("Tem certeza absoluta? Essa ação não pode ser desfeita facilmente.");
-        if (!confirm2) return;
-
+    const executeClearWeek = async () => {
+        setIsClearingWeek(true);
         const loadingToast = toast.loading("Arquivando e limpando lista...");
 
-        const success = await archiveAndClearPedidos();
-        if (success) {
-            setPendencies({});
-            toast.success("Lista arquivada e zerada com sucesso! Pronto para nova semana.", { id: loadingToast });
-        } else {
-            toast.error("Erro ao arquivar pedidos. Tente novamente.", { id: loadingToast });
+        try {
+            const success = await archiveAndClearPedidos();
+            const inventoryCleared = await clearPendenciasInventory();
+            if (success && inventoryCleared) {
+                setPendencies({});
+                setStock([]);
+                setLastUploadDate(null);
+                localStorage.removeItem('inventory_cache');
+                setIsClearWeekModalOpen(false);
+                toast.success("Lista, estoque e pendência arquivados/zerados com sucesso! Pronto para nova semana.", { id: loadingToast });
+            } else {
+                toast.error("Erro ao zerar semana. Tente novamente.", { id: loadingToast });
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Erro ao zerar semana. Tente novamente.", { id: loadingToast });
+        } finally {
+            setIsClearingWeek(false);
         }
     };
 
@@ -761,6 +774,34 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     const itemsPerPage = 100;
     const totalPages = Math.ceil(filteredStock.length / itemsPerPage) || 1;
     const paginatedStock = filteredStock.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const factories: Array<{
+        key: FactoryName;
+        label: string;
+        shortLabel: string;
+        estKey: keyof StockItem;
+        pendKey: keyof StockItem;
+        color: string;
+        text: string;
+        border: string;
+    }> = [
+        { key: 'MK', label: 'MK - PARANÁ', shortLabel: 'MK', estKey: 'est_mk', pendKey: 'pend_mk', color: 'bg-indigo-50 dark:bg-indigo-950/40', text: 'text-indigo-700 dark:text-indigo-300', border: 'border-indigo-300 dark:border-indigo-700' },
+        { key: 'MOLERI', label: 'MOLERI', shortLabel: 'MOLERI', estKey: 'est_moleri', pendKey: 'pend_moleri', color: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-700 dark:text-emerald-300', border: 'border-emerald-300 dark:border-emerald-700' },
+        { key: 'CM', label: 'CM', shortLabel: 'CM', estKey: 'est_cm', pendKey: 'pend_cm', color: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-700 dark:text-amber-300', border: 'border-amber-300 dark:border-amber-700' },
+        { key: 'OLIMPO', label: 'OLIMPO', shortLabel: 'OLIMPO', estKey: 'est_olimpo', pendKey: 'pend_olimpo', color: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-700 dark:text-slate-300', border: 'border-slate-300 dark:border-slate-700' }
+    ];
+    const getFactoryValue = (item: StockItem, key: keyof StockItem) => Number(item[key] || 0);
+    const getFactoryOrder = (item: StockItem, factory: FactoryName) => Number(pendencies[item.codigo]?.[factory] || 0);
+    const getItemTotals = (item: StockItem) => factories.reduce((totals, factory) => ({
+        estoque: totals.estoque + getFactoryValue(item, factory.estKey),
+        pendencia: totals.pendencia + getFactoryValue(item, factory.pendKey),
+        pedido: totals.pedido + getFactoryOrder(item, factory.key)
+    }), { estoque: 0, pendencia: 0, pedido: 0 });
+    const factoryTotals = factories.map((factory) => ({
+        ...factory,
+        estoque: filteredStock.reduce((acc, item) => acc + getFactoryValue(item, factory.estKey), 0),
+        pendencia: filteredStock.reduce((acc, item) => acc + getFactoryValue(item, factory.pendKey), 0),
+        pedido: filteredStock.reduce((acc, item) => acc + getFactoryOrder(item, factory.key), 0)
+    }));
 
     useEffect(() => {
         // Verificar se é o primeiro acesso à versão 2.0 (Cloud)
@@ -797,14 +838,13 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                     const updateData = await getLastUpdate();
                     if (updateData) {
                         setLastUploadDate(updateData.date);
-                        if (updateData.fileName) setImportedFileName(updateData.fileName);
                     }
 
                     // Atualizar cache local
                     localStorage.setItem('inventory_cache', JSON.stringify({
                         data: inventoryData,
                         updatedAt: updateData?.date || new Date().toISOString(),
-                        fileName: updateData?.fileName || importedFileName
+                        fileName: updateData?.fileName || 'Base Fixa Sincronizada'
                     }));
                 } else {
                     // 3. Se não houver nada na nuvem, tentar carregar do Cache Local (Backup)
@@ -813,14 +853,8 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                         const { data, updatedAt, fileName } = JSON.parse(savedCache);
                         setStock(data as StockItem[]);
                         setLastUploadDate(updatedAt || null);
-                        setImportedFileName(fileName || null);
                         toast.success('Usando inventário carregado localmente.', { duration: 2000 });
                     }
-                }
-
-                // Em modo Local DB, se não houver nome, setamos o padrão do mock
-                if (import.meta.env.VITE_USE_LOCAL_DB === 'true') {
-                    setImportedFileName(prev => prev || 'pendencias_estoque_rows.csv');
                 }
 
                 await loadTags();
@@ -917,18 +951,6 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
 
                             {isAdmin && (
                                 <button
-                                    onClick={() => {
-                                        setTempProcessedData([]);
-                                        setIsUploadModalOpen(true);
-                                    }}
-                                    className="px-2.5 py-1.5 text-xs font-bold rounded-lg border bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer flex items-center gap-1.5 shadow-sm"
-                                >
-                                    <Upload className="w-3.5 h-3.5" /> Importar
-                                </button>
-                            )}
-
-                            {isAdmin && (
-                                <button
                                     onClick={handleExport}
                                     className="px-2.5 py-1.5 text-xs font-black rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-1.5 shadow-sm"
                                 >
@@ -1015,7 +1037,120 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                         )}
                     </div>
 
-                    <div ref={tableContainerRef} className="flex-1 overflow-auto relative">
+                    <div className="md:hidden flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 px-3 py-3 space-y-3">
+                        {isLoading ? (
+                            <div className="px-4 py-10 text-center text-sm font-bold text-slate-400">
+                                Carregando itens...
+                            </div>
+                        ) : paginatedStock.map((item) => {
+                            const photoUrl = getWheelPhotoUrl(item.descricao, item.codigo);
+                            const isExpanded = expandedMobileCode === item.codigo;
+
+                            return (
+                                <div key={item.codigo} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+                                    <button
+                                        type="button"
+                                        onClick={() => setExpandedMobileCode(isExpanded ? null : item.codigo)}
+                                        className="w-full p-3 flex gap-3 text-left active:bg-slate-50 dark:active:bg-slate-800 transition-colors"
+                                    >
+                                        <img
+                                            src={photoUrl}
+                                            alt={`Foto ${item.descricao}`}
+                                            className="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-700 bg-white shrink-0"
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="min-w-0">
+                                                    <h3 className="text-base font-black text-slate-900 dark:text-slate-100 leading-tight line-clamp-2">
+                                                        {item.descricao}
+                                                    </h3>
+                                                    <p className="mt-1 text-xs font-mono text-slate-400">{item.codigo}</p>
+                                                </div>
+                                                <span className="shrink-0 text-sm font-bold text-slate-600 dark:text-slate-300">
+                                                    {item.preco ? item.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}
+                                                </span>
+                                            </div>
+                                            <div className="mt-2 flex items-center justify-between">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                                    {isExpanded ? 'Fechar detalhes' : 'Abrir detalhes'}
+                                                </span>
+                                                <span className={cn("text-lg leading-none text-slate-500 transition-transform", isExpanded && "rotate-180")}>
+                                                    ^
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </button>
+
+                                    <div className="px-3 pb-3">
+                                        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                                            <div className="grid grid-cols-[54px_repeat(4,minmax(0,1fr))] bg-slate-50 dark:bg-slate-950">
+                                                <div className="border-r border-slate-200 dark:border-slate-800" />
+                                                {factories.map((factory) => (
+                                                    <div key={factory.key} className={cn("h-9 flex items-center justify-center px-1 text-[10px] font-black uppercase text-center border-r last:border-r-0 border-slate-200 dark:border-slate-800", factory.color, factory.text)}>
+                                                        {factory.shortLabel}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {[
+                                                { label: 'Est.', color: 'text-blue-600', getValue: (factory: typeof factories[number]) => getFactoryValue(item, factory.estKey) },
+                                                { label: 'Pend.', color: 'text-orange-600', getValue: (factory: typeof factories[number]) => getFactoryValue(item, factory.pendKey) },
+                                                { label: 'Ped.', color: 'text-emerald-600', getValue: (factory: typeof factories[number]) => getFactoryOrder(item, factory.key) }
+                                            ].map((metric) => (
+                                                <div key={metric.label} className="grid grid-cols-[54px_repeat(4,minmax(0,1fr))] border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                                                    <div className="h-9 flex items-center justify-center text-[10px] font-black uppercase text-slate-400 border-r border-slate-200 dark:border-slate-800">
+                                                        {metric.label}
+                                                    </div>
+                                                    {factories.map((factory) => (
+                                                        <div key={factory.key} className="h-9 flex items-center justify-center border-r last:border-r-0 border-slate-200 dark:border-slate-800">
+                                                            <span className={cn("text-base font-black", metric.color)}>
+                                                                {metric.getValue(factory)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <AnimatePresence initial={false}>
+                                        {isExpanded && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                className="overflow-hidden border-t border-slate-100 dark:border-slate-800"
+                                            >
+                                                {factories.map((factory) => (
+                                                    <div key={factory.key} className="grid grid-cols-[92px_1fr_1fr_92px] min-h-[58px] border-b last:border-b-0 border-slate-100 dark:border-slate-800">
+                                                        <div className={cn("flex items-center justify-center px-2 text-[11px] font-black uppercase text-center", factory.color, factory.text)}>
+                                                            {factory.shortLabel}
+                                                        </div>
+                                                        <div className="flex flex-col items-center justify-center border-l border-slate-100 dark:border-slate-800">
+                                                            <span className="text-[10px] font-bold uppercase text-slate-400">Est.</span>
+                                                            <span className="text-lg font-black text-blue-600">{getFactoryValue(item, factory.estKey)}</span>
+                                                        </div>
+                                                        <div className="flex flex-col items-center justify-center border-l border-slate-100 dark:border-slate-800">
+                                                            <span className="text-[10px] font-bold uppercase text-slate-400">Pend.</span>
+                                                            <span className="text-lg font-black text-orange-600">{getFactoryValue(item, factory.pendKey)}</span>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => openModal(item, factory.key)}
+                                                            className={cn("m-2 rounded-lg border bg-white dark:bg-slate-950 flex items-center justify-center gap-1 font-black text-base transition-all active:scale-95", factory.border, factory.text)}
+                                                        >
+                                                            {getFactoryOrder(item, factory.key)}
+                                                            <Pencil className="w-3.5 h-3.5 opacity-70" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div ref={tableContainerRef} className="hidden md:block flex-1 overflow-auto relative">
                         <table className="w-full text-[15px] text-left whitespace-nowrap border-separate border-spacing-0">
                             <thead className="sticky top-[-2px] z-30 text-xs font-black uppercase bg-white dark:bg-slate-900 shadow-sm">
                                 {/* Linha 1: Cabeçalhos de Grupo */}
@@ -1059,7 +1194,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                     const modelCode = item.descricao.split(' ')[0].toUpperCase();
 
                                     return (
-                                        <tr key={idx} className="hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors group">
+                                        <tr key={item.codigo} className="hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors group">
                                             <td className={cn("sticky left-0 z-10 px-4 py-3 min-w-[100px]", bgNormal)}>
                                                 <img
                                                     src={photoUrl}
@@ -1327,8 +1462,29 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
 
                     {!isLoading && (
                         <div className="flex-none border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-20 shadow-[0_-8px_15px_-3px_rgba(0,0,0,0.1)]">
+                            <div className="md:hidden p-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+                                <div className="grid grid-cols-4 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                    {factoryTotals.map((factory) => (
+                                        <div key={factory.key} className="border-r last:border-r-0 border-slate-200 dark:border-slate-800">
+                                            <div className={cn("h-10 flex items-center justify-center px-1 text-[10px] font-black uppercase text-center", factory.color, factory.text)}>
+                                                {factory.shortLabel}
+                                            </div>
+                                            <div className="grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-950">
+                                                <div className="py-2 text-center">
+                                                    <span className="block text-[9px] font-bold uppercase text-slate-400">Est.</span>
+                                                    <span className="text-xs font-black text-slate-800 dark:text-slate-100">{factory.estoque}</span>
+                                                </div>
+                                                <div className="py-2 text-center">
+                                                    <span className="block text-[9px] font-bold uppercase text-slate-400">Pend.</span>
+                                                    <span className="text-xs font-black text-orange-600">{factory.pendencia}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                             {/* Totais do Rodapé - Divididos por Fábrica */}
-                            <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
+                            <div className="hidden md:block px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
                                 <div className="flex items-start justify-start gap-6 min-w-max pb-1">
                                     {/* MK */}
                                     <div className="flex flex-col gap-1 border-r border-slate-200 dark:border-slate-700 pr-6">
@@ -1467,6 +1623,54 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
             {/* Modal de Importação e Sincronização Cloud */}
             {/* Modal de Exportação */}
             <AnimatePresence>
+                {isClearWeekModalOpen && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => !isClearingWeek && setIsClearWeekModalOpen(false)}
+                            className="absolute inset-0 bg-slate-950/65 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ scale: 0.92, opacity: 0, y: 18 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.92, opacity: 0, y: 18 }}
+                            className="relative w-full max-w-md rounded-[28px] bg-white dark:bg-slate-900 shadow-2xl border border-white/60 dark:border-slate-800 overflow-hidden"
+                        >
+                            <div className="px-8 py-9 text-center">
+                                <div className="mx-auto mb-7 w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                                    <AlertTriangle className="w-8 h-8 text-amber-500" />
+                                </div>
+
+                                <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 mb-3">
+                                    Atenção!
+                                </h2>
+                                <p className="text-slate-500 dark:text-slate-400 text-[15px] leading-7 font-medium">
+                                    Ao zerar a semana, todos os pedidos atuais serão enviados para o <strong className="text-slate-700 dark:text-slate-200">histórico</strong>. Também serão limpos o <strong className="text-slate-700 dark:text-slate-200">estoque</strong> e a <strong className="text-slate-700 dark:text-slate-200">pendência</strong> carregados por upload na nuvem.
+                                </p>
+
+                                <div className="mt-8 space-y-3">
+                                    <button
+                                        onClick={executeClearWeek}
+                                        disabled={isClearingWeek}
+                                        className="w-full h-12 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-600/20 transition-all active:scale-[0.98]"
+                                    >
+                                        {isClearingWeek ? 'Zerando semana...' : 'Zerar semana'}
+                                    </button>
+                                    <button
+                                        onClick={() => setIsClearWeekModalOpen(false)}
+                                        disabled={isClearingWeek}
+                                        className="w-full h-12 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 font-black text-xs uppercase tracking-widest transition-all disabled:opacity-50"
+                                    >
+                                        Voltar
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
                 {isExportModalOpen && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                         <motion.div
@@ -1545,94 +1749,6 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                 )}
             </AnimatePresence>
 
-            <AnimatePresence>
-                {isUploadModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
-                        >
-                            <div className="p-8">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                        <CloudUpload className="text-amber-500 w-6 h-6" /> Importar
-                                    </h2>
-                                    <button
-                                        onClick={() => setIsUploadModalOpen(false)}
-                                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400"
-                                    >
-                                        <X className="w-6 h-6" />
-                                    </button>
-                                </div>
-
-                                <div className="space-y-6">
-                                    {tempProcessedData.length === 0 ? (
-                                        <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl hover:border-amber-400 dark:hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-amber-900/20 transition-all cursor-pointer group">
-                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                                <FileSpreadsheet className="w-12 h-12 text-slate-300 dark:text-slate-600 mb-4 group-hover:scale-110 transition-transform" />
-                                                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Clique para carregar planilha</p>
-                                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">.XLSX ou .XLS</p>
-                                            </div>
-                                            <input
-                                                type="file"
-                                                className="hidden"
-                                                accept=".xlsx, .xlsm, .xls"
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) processExcelFile(file);
-                                                }}
-                                            />
-                                        </label>
-                                    ) : (
-                                        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 rounded-3xl p-6 text-center">
-                                            <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-                                            <h3 className="text-xl font-black text-emerald-800 dark:text-emerald-300">Planilha Carregada!</h3>
-                                            <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 mt-1">
-                                                Identificamos <span className="text-lg font-black">{tempProcessedData.length}</span> rodas prontas para sincronizar.
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
-                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 text-center">Instruções</p>
-                                        <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2 font-medium">
-                                            <li className="flex gap-2"><span>1.</span> A aba deve se chamar <strong>"PRINCIPAL"</strong></li>
-                                            <li className="flex gap-2"><span>2.</span> Colunas obrigatórias: Código, Catálogo, Preço.</li>
-                                            <li className="flex gap-2"><span>3.</span> Campos de estoque MK, Moleri, CM e Olimpo são opcionais.</li>
-                                        </ul>
-                                    </div>
-
-                                    {tempProcessedData.length > 0 && (
-                                        <button
-                                            onClick={handleSyncToCloud}
-                                            disabled={isSyncingCloud}
-                                            className="w-full h-14 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-2xl font-black flex items-center justify-center gap-3 hover:opacity-90 transition-all active:scale-[0.98] shadow-lg shadow-slate-200 dark:shadow-none disabled:opacity-50"
-                                        >
-                                            {isSyncingCloud ? (
-                                                <div className="w-5 h-5 border-2 border-slate-400 border-t-white rounded-full animate-spin" />
-                                            ) : (
-                                                <CloudUpload className="w-5 h-5" />
-                                            )}
-                                            {isSyncingCloud ? 'SINCRONIZANDO...' : 'SINCRONIZAR COM NUVEM'}
-                                        </button>
-                                    )}
-
-                                    {tempProcessedData.length > 0 && !isSyncingCloud && (
-                                        <button
-                                            onClick={() => setTempProcessedData([])}
-                                            className="w-full text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors uppercase tracking-widest"
-                                        >
-                                            Trocar Planilha
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
             <WelcomeModal 
                 isOpen={isWelcomeModalOpen} 
                 onClose={() => {

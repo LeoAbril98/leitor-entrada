@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Play, Pause, Trash2, Volume2, Clock } from 'lucide-react';
+import { cn } from '../utils';
 
 interface AudioPlayerModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onDelete: () => void;
+    onDelete?: () => void;
     audioUrl: string | null;
     title: string;
+    readOnly?: boolean;
 }
 
-export const AudioPlayerModal: React.FC<AudioPlayerModalProps> = ({ isOpen, onClose, onDelete, audioUrl, title }) => {
+export const AudioPlayerModal: React.FC<AudioPlayerModalProps> = ({ isOpen, onClose, onDelete, audioUrl, title, readOnly }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -130,18 +132,20 @@ export const AudioPlayerModal: React.FC<AudioPlayerModalProps> = ({ isOpen, onCl
                                     </button>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button 
-                                        onClick={() => {
-                                            if (window.confirm("Deseja apagar este áudio permanentemente?")) {
-                                                onDelete();
-                                                onClose();
-                                            }
-                                        }}
-                                        className="py-3 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-center justify-center gap-2 font-bold text-sm hover:bg-red-50 hover:text-red-600 transition-all shadow-sm"
-                                    >
-                                        <Trash2 className="w-4 h-4" /> EXCLUIR
-                                    </button>
+                                <div className={cn("grid gap-3", readOnly ? "grid-cols-1" : "grid-cols-2")}>
+                                    {!readOnly && onDelete && (
+                                        <button 
+                                            onClick={() => {
+                                                if (window.confirm("Deseja apagar este áudio permanentemente?")) {
+                                                    onDelete();
+                                                    onClose();
+                                                }
+                                            }}
+                                            className="py-3 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-center justify-center gap-2 font-bold text-sm hover:bg-red-50 hover:text-red-600 transition-all shadow-sm"
+                                        >
+                                            <Trash2 className="w-4 h-4" /> EXCLUIR
+                                        </button>
+                                    )}
                                     <button 
                                         onClick={onClose}
                                         className="py-3 bg-slate-900 text-white rounded-2xl flex items-center justify-center gap-2 font-bold text-sm hover:bg-slate-800 transition-all"

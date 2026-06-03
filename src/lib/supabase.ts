@@ -190,6 +190,48 @@ export async function syncPendenciasToCloud(data: import('../types').StockItem[]
   }
 }
 
+export async function clearPendenciasInventory() {
+  try {
+    localStorage.removeItem('inventory_cache');
+
+    if (USE_LOCAL_DB) {
+      return true;
+    }
+
+    const { error } = await supabase
+      .from('pendencias_estoque')
+      .delete()
+      .neq('codigo', 'dummy_val');
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Erro ao limpar estoque de pendências:', error);
+    return false;
+  }
+}
+
+export async function clearAllPedidosFabrica() {
+  try {
+    if (USE_LOCAL_DB) {
+      return await localDb.clearLocalPedidosFabrica();
+    }
+
+    const { error } = await supabase
+      .from('pedidos_fabrica')
+      .delete()
+      .neq('codigo', 'dummy');
+
+    if (error) {
+      console.error('Erro ao limpar pedidos de fábrica:', error.message);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Erro crítico ao limpar pedidos de fábrica:', error);
+    throw error;
+  }
+}
+
 export async function getLastUpdate(): Promise<{ date: string, fileName?: string } | null> {
   try {
     if (USE_LOCAL_DB) {
@@ -403,8 +445,8 @@ export async function restoreHistoryBatch(lote_nome: string): Promise<{ success:
     const items = await getHistoryItems(lote_nome);
     if (!items || items.length === 0) return { success: false, items: [] };
 
-    // 2. Limpar pedidos atuais
-    await supabase.from('pedidos_fabrica').delete().gte('quantidade', -1);
+    // 2. Limpar pedidos atuais antes de restaurar o lote
+    await clearAllPedidosFabrica();
     
     // 3. Restaurar metadados se existirem
     const tagsToRestore: Record<string, string[]> = {};
@@ -426,15 +468,27 @@ export async function restoreHistoryBatch(lote_nome: string): Promise<{ success:
     for (const [codigo, data] of Object.entries(sketchesToRestore)) await saveCloudSketch(codigo, data);
     for (const [codigo, data] of Object.entries(audiosToRestore)) await saveCloudAudio(codigo, data);
 
-    // 4. Inserir itens restaurados
-    const batchToInsert = items.map((it: any) => ({
-      codigo: it.codigo,
-      factory: it.factory,
-      quantidade: it.quantidade,
-      updated_at: new Date().toISOString()
-    }));
+    // 4. Restaurar pedidos. Upsert evita conflito caso algum pedido atual ainda exista.
+    const now = new Date().toISOString();
+    const restoredByKey = new Map<string, { codigo: string; factory: string; quantidade: number; updated_at: string }>();
 
-    const { error: insertError } = await supabase.from('pedidos_fabrica').insert(batchToInsert);
+    items.forEach((it: any) => {
+      const codigo = String(it.codigo || '').trim();
+      const factory = String(it.factory || '').trim();
+      if (!codigo || !factory) return;
+
+      restoredByKey.set(`${codigo}__${factory}`, {
+        codigo,
+        factory,
+        quantidade: Number(it.quantidade) || 0,
+        updated_at: now
+      });
+    });
+
+    const batchToInsert = Array.from(restoredByKey.values());
+    const { error: insertError } = await supabase
+      .from('pedidos_fabrica')
+      .upsert(batchToInsert, { onConflict: 'codigo, factory' });
     if (insertError) throw insertError;
 
     return { success: true, items };
@@ -577,6 +631,84 @@ export async function saveItemTags(tagsMap: Record<string, string[]>) {
     return false;
   }
 }
+
+export interface PendenciaExportCodeMapping {
+  codigo_base: string;
+  codigo_original: string;
+  descricao_original?: string | null;
+}
+
+export async function getPendenciaExportCodeMappings(): Promise<Record<string, { codigo: string; descricao?: string }>> {
+  if (USE_LOCAL_DB) return {};
+
+  try {
+    const { data, error } = await supabase
+      .from('pendencia_codigo_export_mappings')
+      .select('codigo_base, codigo_original, descricao_original');
+
+    if (error) throw error;
+
+    const mappings: Record<string, { codigo: string; descricao?: string }> = {};
+    data?.forEach((row: PendenciaExportCodeMapping) => {
+      mappings[row.codigo_base] = {
+        codigo: row.codigo_original,
+        descricao: row.descricao_original || undefined
+      };
+    });
+
+    return mappings;
+  } catch (err) {
+    console.error('Erro ao buscar vínculos de exportação:', err);
+    return {};
+  }
+}
+
+export async function savePendenciaExportCodeMappings(
+  mappings: Record<string, { codigo: string; descricao?: string }>
+) {
+  if (USE_LOCAL_DB) return true;
+
+  try {
+    const entries = Object.entries(mappings)
+      .filter(([, mapping]) => mapping.codigo)
+      .map(([codigo_base, mapping]) => ({
+        codigo_base,
+        codigo_original: mapping.codigo,
+        descricao_original: mapping.descricao || null,
+        updated_at: new Date().toISOString()
+      }));
+
+    if (entries.length === 0) return true;
+
+    const { error } = await supabase
+      .from('pendencia_codigo_export_mappings')
+      .upsert(entries, { onConflict: 'codigo_base' });
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Erro ao salvar vínculos de exportação:', err);
+    return false;
+  }
+}
+
+export async function deletePendenciaExportCodeMapping(codigoBase: string) {
+  if (USE_LOCAL_DB) return true;
+
+  try {
+    const { error } = await supabase
+      .from('pendencia_codigo_export_mappings')
+      .delete()
+      .eq('codigo_base', codigoBase);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Erro ao excluir vínculo de exportação:', err);
+    return false;
+  }
+}
+
 /**
  * Funções para Catálogo Global de Etiquetas (Tags)
  */

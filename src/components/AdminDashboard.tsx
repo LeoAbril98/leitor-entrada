@@ -104,35 +104,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onSelectModule, 
 
                     {/* Coluna 2: Pendência Completo */}
                     <div className="flex flex-col">
-                        <motion.div
+                        <motion.button
+                            whileHover={{ y: -6 }}
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="group relative bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/50 rounded-[2.5rem] p-8 md:p-12 text-left grayscale opacity-70 cursor-not-allowed overflow-hidden h-full flex flex-col justify-between"
+                            onClick={() => onSelectModule('complete')}
+                            className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 md:p-12 text-left transition-all hover:border-indigo-500 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden h-full flex flex-col justify-between text-left"
                         >
-                            <div className="absolute top-4 right-8 bg-amber-500 text-white text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-full shadow-lg">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[60px] -mr-16 -mt-16" />
+                            
+                            <div className="absolute top-4 right-8 bg-indigo-650 text-white text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-full shadow-lg">
                                 Em Breve
                             </div>
 
                             <div>
-                                <div className="w-20 h-20 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-3xl flex items-center justify-center mb-8">
+                                <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
                                     <LayoutGrid className="w-10 h-10" />
                                 </div>
 
                                 <div>
-                                    <h2 className="text-3xl font-black text-slate-400 dark:text-slate-500 mb-4">
+                                    <h2 className="text-3xl font-black text-slate-800 dark:text-slate-100 mb-4 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                         Pendência Completo
                                     </h2>
-                                    <p className="text-slate-400 dark:text-slate-600 text-lg leading-relaxed">
-                                        Futura ferramenta para gerar relatórios consolidados de múltiplas fábricas e períodos de forma automatizada.
+                                    <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed mb-8">
+                                        Console consolidado para gerar relatórios de múltiplas fábricas e períodos de forma automatizada.
                                     </p>
                                 </div>
                             </div>
                             
-                            <div className="mt-8 flex items-center gap-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest">
+                            <div className="mt-8 flex items-center gap-2 text-slate-500 font-bold uppercase text-[10px] tracking-widest">
                                 <Settings2 className="w-4 h-4 animate-spin-slow" /> Módulo em desenvolvimento
                             </div>
-                        </motion.div>
+                        </motion.button>
                     </div>
                 </div>
 

@@ -10,9 +10,9 @@ load_dotenv()
 
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeoutError
 
-# ==============================================================================
+# =========================
 # MK (ENV)
-# ==============================================================================
+# =========================
 MK_LOGIN = os.getenv("MK_LOGIN", "http://mkrodas.ddns.net/web/view/app/ger/GER800V.php")
 MK_EMPRESA = os.getenv("MK_EMPRESA", "TREINAMENTO - MKRODAS")
 MK_USUARIO = os.getenv("MK_USUARIO", "LEO")
@@ -26,9 +26,9 @@ DOWNLOAD_DIR = Path(os.getenv("MK_DOWNLOAD_DIR", "/tmp" if os.name != 'nt' else 
 # padrão do XML REAL (igual ao seu print)
 XML_RE = re.compile(r"/relatorios/RGM961\.REL.*\.xml(\?.*)?$", re.I)
 
-# ==============================================================================
+# =========================
 # Supabase (ENV)
-# ==============================================================================
+# =========================
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 TBL_INV = os.getenv("SB_TBL_INV", "inventarios")
@@ -36,9 +36,9 @@ TBL_ITENS = os.getenv("SB_TBL_ITENS", "inventario_itens")
 BATCH_SIZE = int(os.getenv("SB_BATCH_SIZE", "500"))
 
 
-# ==============================================================================
+# =========================
 # Helpers gerais
-# ==============================================================================
+# =========================
 def _sb_headers():
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
         raise RuntimeError("Faltou SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY (env).")
@@ -54,9 +54,9 @@ def _chunks(lst, n):
         yield lst[i:i+n]
 
 
-# ==============================================================================
+# =========================
 # Playwright helpers (baseado no que já funcionou pra você)
-# ==============================================================================
+# =========================
 def find_frame_by_text(page, text, tries=80, sleep_ms=500):
     for _ in range(tries):
         for f in page.frames:
@@ -219,10 +219,10 @@ def preencher_deposito_e_fechar_modal(page, codigo="ALMOX") -> None:
     print("⚠️ Não consegui confirmar o fechamento do modal (talvez já fechou).")
 
 
-# ==============================================================================
+# =========================
 # 1) GERAR e BAIXAR XML
-# ==============================================================================
-def gerar_xml_e_pegar_url(deposito: str = "", headless: bool = False):
+# =========================
+def gerar_xml_e_pegar_url(deposito: str = "ALMOX", headless: bool = False):
     """
     Roda o MK, clica gerar, captura a URL real do XML na rede e baixa o arquivo.
     Retorna: (xml_url, xml_path)
@@ -269,11 +269,8 @@ def gerar_xml_e_pegar_url(deposito: str = "", headless: bool = False):
 
             # depósito
             print("3) Selecionando Depósito...")
-            # SÓ seleciona o depósito no ERP se passarmos algo diferente de vazio
-            if deposito and click_selecionar_deposito(page):
+            if click_selecionar_deposito(page):
                 preencher_deposito_e_fechar_modal(page, codigo=deposito)
-            else:
-                print("ℹ️ Nenhum depósito especificado. Gerando relatório COMPLETO de catálogo.")
 
             # gerar
             print("5) Gerando inventário (capturando o XML REAL RGM961.REL*.xml)...")
@@ -317,9 +314,9 @@ def gerar_xml_e_pegar_url(deposito: str = "", headless: bool = False):
             browser.close()
 
 
-# ==============================================================================
+# =========================
 # 2) PARSE XML
-# ==============================================================================
+# =========================
 def _get_text(el) -> str:
     if el is None or el.text is None:
         return ""
@@ -361,18 +358,11 @@ def parse_xml_items(xml_path: Path):
         descricao = _get_text(rec.find("det-descricao"))
         qty_raw = _get_text(rec.find("det-quantidade"))
         local = _get_text(rec.find("det-prateleira"))
-        deposito_item = _get_text(rec.find("det-deposito"))  # 🟢 Lê o depósito do registro
+
+        quantidade = parse_qty_br(qty_raw)
 
         if not codigo and not descricao:
             continue
-
-        # 🚫 FILTRO DE SEGURANÇA CONTRA DUPLICATAS:
-        # Importa apenas os dados de estoque do depósito principal físico (ALMOX)
-        # Descarta registros de Consignado (CONS), Defeito (DEF), Vitrine, etc.
-        if deposito_item != "ALMOX":
-            continue
-
-        quantidade = parse_qty_br(qty_raw)
 
         items.append(
             {"codigo": codigo, "descricao": descricao, "quantidade": quantidade, "local": local}
@@ -381,9 +371,9 @@ def parse_xml_items(xml_path: Path):
     return (empresa, filial, equipe, depositos, items)
 
 
-# ==============================================================================
+# =========================
 # 3) ENVIAR SUPABASE
-# ==============================================================================
+# =========================
 def _sb_insert_one(table: str, payload: dict) -> dict:
     url = f"{SUPABASE_URL}/rest/v1/{table}"
     h = _sb_headers()
@@ -418,8 +408,10 @@ def _sb_delete_old_inventories(deposito: str):
     """
     url = f"{SUPABASE_URL}/rest/v1/{TBL_INV}?depositos=eq.{deposito}"
     h = _sb_headers()
+    # Prefer return=minimal: não precisa retornar os dados deletados
     h["Prefer"] = "return=minimal"
     r = requests.delete(url, headers=h, timeout=60)
+    # Ignora 404/400 caso a tabela esteja vazia, mas pega outros erros:
     if r.status_code >= 400 and r.status_code != 404:
         raise RuntimeError(f"Falha ao deletar inventário antigo: {r.text}")
 
@@ -428,8 +420,9 @@ def enviar_para_supabase(meta, items, xml_url: str):
     empresa, filial, equipe, depositos = meta
     
     # 1. Passo Crítico: DELETAR O INVENTÁRIO ANTIGO DESTE DEPÓSITO PARA NÃO SOMAR/DUPLICAR
-    print(f"🧹 Deletando inventários antigos do depósito: '{depositos}'")
-    _sb_delete_old_inventories(depositos)
+    if depositos:
+        print(f"🧹 Deletando inventários antigos do depósito: {depositos}")
+        _sb_delete_old_inventories(depositos)
 
     # 2. Continua inserção normal
     criado_em = datetime.now(timezone.utc).isoformat()
@@ -466,17 +459,12 @@ def enviar_para_supabase(meta, items, xml_url: str):
     return inv_id, sent
 
 
-# ==============================================================================
+# =========================
 # PIPELINE COMPLETO
-# ==============================================================================
-def pipeline_atualizar(deposito="", headless=False):
-    # Roda Playwright gerando catálogo geral (sem filtros de depósito)
+# =========================
+def pipeline_atualizar(deposito="ALMOX", headless=False):
     xml_url, xml_path = gerar_xml_e_pegar_url(deposito=deposito, headless=headless)
-    
-    # Faz o parsing do XML filtrando apenas o depósito "ALMOX"
     empresa, filial, equipe, depositos, items = parse_xml_items(xml_path)
-    
-    # Grava no Supabase
     inv_id, sent = enviar_para_supabase((empresa, filial, equipe, depositos), items, xml_url=xml_url)
     return {
         "inventario_id": inv_id,
@@ -493,8 +481,7 @@ if __name__ == "__main__":
     import traceback
     print("🚀 Iniciando pipeline completo de integração (MK -> Supabase)...")
     try:
-        # Passando "" para gerar o relatório mestre completo sem filtros
-        resultado = pipeline_atualizar(deposito="", headless=False)
+        resultado = pipeline_atualizar(deposito="ALMOX", headless=False)
         print("\n✅ PIPELINE CONCLUIDO COM SUCESSO!")
         for k, v in resultado.items():
             print(f"  {k}: {v}")

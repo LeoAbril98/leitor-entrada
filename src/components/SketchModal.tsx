@@ -6,13 +6,14 @@ import { cn } from '../utils';
 interface SketchModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (dataUrl: string) => void;
-    onDelete: () => void;
+    onSave?: (dataUrl: string) => void;
+    onDelete?: () => void;
     initialData?: string | null;
     title: string;
+    readOnly?: boolean;
 }
 
-export const SketchModal: React.FC<SketchModalProps> = ({ isOpen, onClose, onSave, onDelete, initialData, title }) => {
+export const SketchModal: React.FC<SketchModalProps> = ({ isOpen, onClose, onSave, onDelete, initialData, title, readOnly }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [color, setColor] = useState('#1e293b'); // Slate 800 (Preto suave)
@@ -41,6 +42,7 @@ export const SketchModal: React.FC<SketchModalProps> = ({ isOpen, onClose, onSav
     }, [isOpen, initialData]);
 
     const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+        if (readOnly) return;
         setIsDrawing(true);
         draw(e);
     };
@@ -91,7 +93,7 @@ export const SketchModal: React.FC<SketchModalProps> = ({ isOpen, onClose, onSav
     };
 
     const handleSave = () => {
-        if (canvasRef.current) {
+        if (canvasRef.current && onSave) {
             const dataUrl = canvasRef.current.toDataURL('image/png');
             onSave(dataUrl);
             onClose();
@@ -149,51 +151,55 @@ export const SketchModal: React.FC<SketchModalProps> = ({ isOpen, onClose, onSav
                             </div>
 
                             {/* Toolbar */}
-                            <div className="w-full flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-2">
-                                    <button 
-                                        onClick={() => setColor('#ef4444')} // Vermelho caneta
-                                        className={cn("w-8 h-8 rounded-full border-2 transition-all", color === '#ef4444' ? "border-amber-600 scale-110 shadow-md" : "border-transparent bg-red-500")}
-                                    />
-                                    <button 
-                                        onClick={() => setColor('#1e293b')} // Preto/Slate caneta
-                                        className={cn("w-8 h-8 rounded-full border-2 transition-all", color === '#1e293b' ? "border-amber-600 scale-110 shadow-md" : "border-transparent bg-slate-800")}
-                                    />
-                                    <button 
-                                        onClick={() => setColor('#2563eb')} // Azul bic
-                                        className={cn("w-8 h-8 rounded-full border-2 transition-all", color === '#2563eb' ? "border-amber-600 scale-110 shadow-md" : "border-transparent bg-blue-600")}
-                                    />
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    {initialData && (
+                            {!readOnly && (
+                                <div className="w-full flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2">
                                         <button 
-                                            onClick={() => {
-                                                if (window.confirm("Deseja apagar este Post-it permanentemente?")) {
-                                                    onDelete();
-                                                    onClose();
-                                                }
-                                            }}
-                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                            title="Excluir Post-it"
+                                            onClick={() => setColor('#ef4444')} // Vermelho caneta
+                                            className={cn("w-8 h-8 rounded-full border-2 transition-all", color === '#ef4444' ? "border-amber-600 scale-110 shadow-md" : "border-transparent bg-red-500")}
+                                        />
+                                        <button 
+                                            onClick={() => setColor('#1e293b')} // Preto/Slate caneta
+                                            className={cn("w-8 h-8 rounded-full border-2 transition-all", color === '#1e293b' ? "border-amber-600 scale-110 shadow-md" : "border-transparent bg-slate-800")}
+                                        />
+                                        <button 
+                                            onClick={() => setColor('#2563eb')} // Azul bic
+                                            className={cn("w-8 h-8 rounded-full border-2 transition-all", color === '#2563eb' ? "border-amber-600 scale-110 shadow-md" : "border-transparent bg-blue-600")}
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        {initialData && onDelete && (
+                                            <button 
+                                                onClick={() => {
+                                                    if (window.confirm("Deseja apagar este Post-it permanentemente?")) {
+                                                        onDelete();
+                                                        onClose();
+                                                    }
+                                                }}
+                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                                title="Excluir Post-it"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={clearCanvas}
+                                            className="flex items-center gap-1 px-3 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all font-bold text-xs"
                                         >
-                                            <Trash2 className="w-5 h-5" />
+                                            <Eraser className="w-4 h-4" /> LIMPAR
                                         </button>
-                                    )}
-                                    <button 
-                                        onClick={clearCanvas}
-                                        className="flex items-center gap-1 px-3 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all font-bold text-xs"
-                                    >
-                                        <Eraser className="w-4 h-4" /> LIMPAR
-                                    </button>
-                                    <button 
-                                        onClick={handleSave}
-                                        className="flex items-center gap-1 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-black text-xs shadow-lg shadow-emerald-200"
-                                    >
-                                        <Save className="w-4 h-4" /> SALVAR
-                                    </button>
+                                        {onSave && (
+                                            <button 
+                                                onClick={handleSave}
+                                                className="flex items-center gap-1 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-black text-xs shadow-lg shadow-emerald-200"
+                                            >
+                                                <Save className="w-4 h-4" /> SALVAR
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Footer styling */}

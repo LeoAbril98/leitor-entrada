@@ -306,6 +306,7 @@ export const HistoryModule: React.FC<HistoryModuleProps> = ({ onBack }) => {
                                                     <td className="px-6 py-5 text-center text-sm font-black text-slate-600 dark:text-slate-400">{item.MOLERI || '-'}</td>
                                                     <td className="px-6 py-5 text-center text-sm font-black text-slate-600 dark:text-slate-400">{item.CM || '-'}</td>
                                                     <td className="px-6 py-5 text-center text-sm font-black text-slate-600 dark:text-slate-400">{item.OLIMPO || '-'}</td>
+                                                    <td className="px-6 py-5">
                                                         <div className="flex items-center justify-center gap-2">
                                                             {item.hasSketch && (
                                                                 <button 
@@ -334,6 +335,7 @@ export const HistoryModule: React.FC<HistoryModuleProps> = ({ onBack }) => {
                                                                 <span className="text-slate-300 dark:text-slate-700">-</span>
                                                             )}
                                                         </div>
+                                                    </td>
                                                 </tr>
                                             ))
                                         )}

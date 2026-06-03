@@ -32,6 +32,11 @@ export async function loadLocalPedidosFabrica() {
     }
 }
 
+export async function clearLocalPedidosFabrica() {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    return true;
+}
+
 export async function upsertLocalPedidoFabrica(codigo: string, factory: string, quantidade: number) {
     const current = await loadLocalPedidosFabrica();
     

@@ -211,6 +211,71 @@ export async function clearPendenciasInventory() {
   }
 }
 
+export interface PendenciaCompletaBaseRow {
+  codigo: string;
+  descricao: string;
+  custo?: number | null;
+  ordem?: number | null;
+  ordem_origem?: string | null;
+}
+
+export async function getPendenciaCompletaBaseRows(): Promise<PendenciaCompletaBaseRow[]> {
+  if (USE_LOCAL_DB) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('pendencia_completa_base_fixa')
+      .select('codigo, descricao, custo, ordem, ordem_origem')
+      .order('ordem', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Erro ao buscar base fixa da Pendência Completa:', error);
+    return [];
+  }
+}
+
+export async function savePendenciaCompletaBaseRows(rows: PendenciaCompletaBaseRow[]) {
+  if (USE_LOCAL_DB) return true;
+
+  try {
+    const payload = rows
+      .filter((row) => row.codigo && row.descricao)
+      .map((row, index) => ({
+        codigo: String(row.codigo).trim(),
+        descricao: String(row.descricao).trim(),
+        custo: Number(row.custo) || 0,
+        ordem: Number(row.ordem ?? index),
+        ordem_origem: row.ordem_origem || null,
+        updated_at: new Date().toISOString()
+      }));
+
+    const { error: deleteError } = await supabase
+      .from('pendencia_completa_base_fixa')
+      .delete()
+      .neq('codigo', '__dummy__');
+
+    if (deleteError) throw deleteError;
+    if (payload.length === 0) return true;
+
+    const batchSize = 500;
+    for (let i = 0; i < payload.length; i += batchSize) {
+      const batch = payload.slice(i, i + batchSize);
+      const { error } = await supabase
+        .from('pendencia_completa_base_fixa')
+        .insert(batch);
+
+      if (error) throw error;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Erro ao salvar base fixa da Pendência Completa:', error);
+    return false;
+  }
+}
+
 export async function clearAllPedidosFabrica() {
   try {
     if (USE_LOCAL_DB) {

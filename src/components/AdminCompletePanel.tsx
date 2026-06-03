@@ -47,6 +47,8 @@ import {
     deleteGlobalTag,
     syncPendenciasToCloud,
     clearPendenciasInventory,
+    getPendenciaCompletaBaseRows,
+    savePendenciaCompletaBaseRows,
     getPendenciaExportCodeMappings,
     savePendenciaExportCodeMappings,
     deletePendenciaExportCodeMapping,
@@ -639,6 +641,88 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     useEffect(() => {
         let isMounted = true;
 
+        const loadBaseRowsFromCloud = async () => {
+            if (rows.length > 0) return;
+
+            const cloudRows = await getPendenciaCompletaBaseRows();
+            if (!isMounted || cloudRows.length === 0) return;
+
+            const baseRows = cloudRows.map((row, index) => ({
+                ...emptyRow(),
+                codigo: row.codigo,
+                descricao: row.descricao,
+                custo: Number(row.custo) || 0,
+                ordem: Number(row.ordem ?? index),
+                ordemOrigem: row.ordem_origem === 'importada' ? 'importada' as const : undefined
+            }));
+
+            const pedidos = await loadPedidosFabrica();
+            const orderByCode = new Map<string, Partial<Record<DepotKey, number>>>();
+
+            pedidos.forEach((pedido: { codigo: string; factory: string; quantidade: number }) => {
+                const depot = DEPOTS.find((item) => DEPOT_FACTORIES[item.key] === pedido.factory)?.key;
+                if (!depot) return;
+
+                const current = orderByCode.get(pedido.codigo) || {};
+                current[depot] = Number(pedido.quantidade) || 0;
+                orderByCode.set(pedido.codigo, current);
+            });
+
+            const rowsWithOrders = baseRows.map((row) => {
+                const orders = orderByCode.get(row.codigo);
+                if (!orders) return row;
+
+                return {
+                    ...row,
+                    pedido_pr: orders.pr ?? row.pedido_pr,
+                    pedido_sc: orders.sc ?? row.pedido_sc,
+                    pedido_cm: orders.cm ?? row.pedido_cm,
+                    pedido_rs: orders.rs ?? row.pedido_rs
+                };
+            });
+
+            setRows(rowsWithOrders);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(rowsWithOrders));
+            toast.success('Base fixa carregada da nuvem.', { duration: 2000 });
+        };
+
+        loadBaseRowsFromCloud();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const migrateLocalBaseToCloud = async () => {
+            if (rows.length === 0) return;
+
+            const cloudRows = await getPendenciaCompletaBaseRows();
+            if (!isMounted || cloudRows.length > 0) return;
+
+            const success = await savePendenciaCompletaBaseRows(rows.map((row, index) => ({
+                codigo: row.codigo,
+                descricao: row.descricao,
+                custo: row.custo,
+                ordem: row.ordem ?? index,
+                ordem_origem: row.ordemOrigem || null
+            })));
+
+            if (success) toast.success('Base fixa enviada para a nuvem.', { duration: 2000 });
+        };
+
+        migrateLocalBaseToCloud();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+
         const syncOrdersFromPendencies = async () => {
             const pedidos = await loadPedidosFabrica();
             if (!isMounted || pedidos.length === 0) return;
@@ -683,6 +767,15 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const persistRows = (nextRows: CompleteWheelRow[]) => {
         setRows(nextRows);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRows));
+        savePendenciaCompletaBaseRows(nextRows.map((row, index) => ({
+            codigo: row.codigo,
+            descricao: row.descricao,
+            custo: row.custo,
+            ordem: row.ordem ?? index,
+            ordem_origem: row.ordemOrigem || null
+        }))).then((success) => {
+            if (!success) console.warn('Falha ao sincronizar base fixa da Pendência Completa.');
+        });
     };
 
     const persistUploadSummaries = (nextSummaries: Record<string, UploadSummary>) => {

@@ -18,7 +18,7 @@ export const SketchModal: React.FC<SketchModalProps> = ({ isOpen, onClose, onSav
     const [isDrawing, setIsDrawing] = useState(false);
     const [color, setColor] = useState('#1e293b'); // Slate 800 (Preto suave)
     const [lineWidth, setLineWidth] = useState(3);
-    
+
     // Configurações do Canvas
     useEffect(() => {
         if (isOpen && canvasRef.current) {
@@ -27,7 +27,7 @@ export const SketchModal: React.FC<SketchModalProps> = ({ isOpen, onClose, onSav
             if (ctx) {
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
-                
+
                 // Se houver dado inicial, carregar
                 if (initialData) {
                     const img = new Image();
@@ -104,14 +104,14 @@ export const SketchModal: React.FC<SketchModalProps> = ({ isOpen, onClose, onSav
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
                         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
                     />
-                    
+
                     <motion.div
                         initial={{ scale: 0.9, opacity: 0, y: 20 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -154,15 +154,15 @@ export const SketchModal: React.FC<SketchModalProps> = ({ isOpen, onClose, onSav
                             {!readOnly && (
                                 <div className="w-full flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-2">
-                                        <button 
+                                        <button
                                             onClick={() => setColor('#ef4444')} // Vermelho caneta
                                             className={cn("w-8 h-8 rounded-full border-2 transition-all", color === '#ef4444' ? "border-amber-600 scale-110 shadow-md" : "border-transparent bg-red-500")}
                                         />
-                                        <button 
+                                        <button
                                             onClick={() => setColor('#1e293b')} // Preto/Slate caneta
                                             className={cn("w-8 h-8 rounded-full border-2 transition-all", color === '#1e293b' ? "border-amber-600 scale-110 shadow-md" : "border-transparent bg-slate-800")}
                                         />
-                                        <button 
+                                        <button
                                             onClick={() => setColor('#2563eb')} // Azul bic
                                             className={cn("w-8 h-8 rounded-full border-2 transition-all", color === '#2563eb' ? "border-amber-600 scale-110 shadow-md" : "border-transparent bg-blue-600")}
                                         />
@@ -170,7 +170,7 @@ export const SketchModal: React.FC<SketchModalProps> = ({ isOpen, onClose, onSav
 
                                     <div className="flex items-center gap-2">
                                         {initialData && onDelete && (
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                     if (window.confirm("Deseja apagar este Post-it permanentemente?")) {
                                                         onDelete();
@@ -183,14 +183,14 @@ export const SketchModal: React.FC<SketchModalProps> = ({ isOpen, onClose, onSav
                                                 <Trash2 className="w-5 h-5" />
                                             </button>
                                         )}
-                                        <button 
+                                        <button
                                             onClick={clearCanvas}
                                             className="flex items-center gap-1 px-3 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all font-bold text-xs"
                                         >
                                             <Eraser className="w-4 h-4" /> LIMPAR
                                         </button>
                                         {onSave && (
-                                            <button 
+                                            <button
                                                 onClick={handleSave}
                                                 className="flex items-center gap-1 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-black text-xs shadow-lg shadow-emerald-200"
                                             >

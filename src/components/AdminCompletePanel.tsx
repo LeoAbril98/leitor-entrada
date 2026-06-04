@@ -7,6 +7,7 @@ import {
     Camera,
     CloudUpload,
     Database,
+    Download,
     FileSpreadsheet,
     Filter,
     History as HistoryIcon,
@@ -16,6 +17,8 @@ import {
     Package,
     Pencil,
     Plus,
+    Printer,
+    RefreshCw,
     RotateCcw,
     Save,
     Search,
@@ -53,7 +56,7 @@ import {
     savePendenciaExportCodeMappings,
     deletePendenciaExportCodeMapping,
     clearAllPendenciaExportCodeMappings,
-    getItemTags, 
+    getItemTags,
     saveItemTags,
     getItemCosts,
     saveItemCosts,
@@ -155,6 +158,7 @@ interface UploadSummary {
 const UPLOAD_SUMMARY_STORAGE_KEY = '@MK_PENDENCIA_COMPLETA_UPLOAD_SUMMARY';
 const CODE_MAPPING_STORAGE_KEY = '@MK_PENDENCIA_COMPLETA_CODE_MAPPINGS';
 const EXPORT_CODE_MAPPING_STORAGE_KEY = '@MK_PENDENCIA_COMPLETA_EXPORT_CODE_MAPPINGS';
+const CLOUD_SYNC_STATUS_STORAGE_KEY = '@MK_PENDENCIA_COMPLETA_LAST_SYNC';
 
 const DEPOTS: { key: DepotKey; label: string }[] = [
     { key: 'pr', label: 'PR' },
@@ -333,7 +337,7 @@ const normalizeUploadCode = (codigo: string, rules: ReplacementRule[] = DEFAULT_
             if (/^[CR]/.test(normalized)) {
                 normalized = normalized.replace(/\*/g, '');
             }
-        } 
+        }
         else if (rule.type === 'prefix_swap' && rule.oldPrefix && rule.newPrefix) {
             if (normalized.startsWith(rule.oldPrefix)) {
                 normalized = rule.newPrefix + normalized.slice(rule.oldPrefix.length);
@@ -480,7 +484,7 @@ const mergeExportCodeMappings = (...sources: Record<string, ExportMapping>[]) =>
         Object.entries(source || {}).forEach(([fixedCode, mapping]) => {
             if (!mapping?.codigo) return;
             const current = acc[fixedCode];
-            
+
             // Prioritize original codes that are different from the normalized/fixed base code.
             // A no-op mapping (where original code equals fixed base code) should never overwrite
             // a real mapped original code that is already registered.
@@ -488,7 +492,7 @@ const mergeExportCodeMappings = (...sources: Record<string, ExportMapping>[]) =>
             if (mapping.codigo === fixedCode && current?.codigo && current.codigo !== fixedCode) {
                 finalCodigo = current.codigo;
             }
-            
+
             acc[fixedCode] = {
                 codigo: finalCodigo,
                 descricao: mapping.descricao || current?.descricao
@@ -606,9 +610,10 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const [photoTarget, setPhotoTarget] = useState<PhotoTarget | null>(null);
     const [availablePhotos, setAvailablePhotos] = useState<string[]>([]);
     const [lastUploads, setLastUploads] = useState<Record<string, string>>({});
+    const [lastCloudSyncAt, setLastCloudSyncAt] = useState<string | null>(() => localStorage.getItem(CLOUD_SYNC_STATUS_STORAGE_KEY));
     const [globalTags, setGlobalTags] = useState<string[]>([]);
     const [newTagName, setNewTagName] = useState("");
-    
+
     // Filtros Antigos
     const [showFilters, setShowFilters] = useState(false);
     const [filterLinha, setFilterLinha] = useState("");
@@ -639,6 +644,28 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const baseInputRef = useRef<HTMLInputElement | null>(null);
     const costFileInputRef = useRef<HTMLInputElement | null>(null);
     const tableContainerRef = useRef<HTMLDivElement | null>(null);
+
+    const markCloudSaved = () => {
+        const timestamp = new Date().toISOString();
+        localStorage.setItem(CLOUD_SYNC_STATUS_STORAGE_KEY, timestamp);
+        setLastCloudSyncAt(timestamp);
+    };
+
+    const refreshSystem = () => {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then((registrations) => {
+                registrations.forEach((registration) => registration.update());
+            }).finally(() => window.location.reload());
+            return;
+        }
+
+        window.location.reload();
+    };
+
+    const formatCloudSyncStatus = () => {
+        if (!lastCloudSyncAt) return 'Status da nuvem indisponível';
+        return `Salvo na nuvem às ${new Date(lastCloudSyncAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+    };
 
     // Lógicas de Carregamento
     const loadItemTags = async () => {
@@ -764,7 +791,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                     custo: persistentCusto,
                     ordem: Number(row.ordem ?? index),
                     ordemOrigem: row.ordem_origem === 'importada' ? 'importada' as const : undefined,
-                    fixa: row.ordem_origem !== 'temporaria',
+                    fixa: row.ordem_origem !== 'temporaria' && row.ordem_origem !== 'importada',
                     estoque_pr: Number(stockRow.est_mk ?? stockRow.quantidade) || 0,
                     pendencia_pr: Number(stockRow.pend_mk) || 0,
                     estoque_sc: Number(stockRow.est_moleri) || 0,
@@ -866,6 +893,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             fixa: row.fixa !== false
         }))).then((success) => {
             if (!success) console.warn('Falha ao sincronizar tabela da Pendência Completa.');
+            if (success) markCloudSaved();
             return success;
         });
     };
@@ -882,7 +910,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
     const handleClearAllCodeMappings = async () => {
         if (!window.confirm('ATENÇÃO: Isso irá excluir TODOS os vínculos de códigos salvos no sistema. O sistema deixará de associar os códigos alternativos nos próximos uploads.\n\nDeseja continuar?')) return;
-        
+
         persistCodeMappings({});
         persistExportCodeMappings({});
         await clearAllPendenciaExportCodeMappings();
@@ -903,7 +931,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     };
 
     const toggleRuleActive = (ruleId: string) => {
-        const newRules = replacementRules.map(r => 
+        const newRules = replacementRules.map(r =>
             r.id === ruleId ? { ...r, active: !r.active } : r
         );
         persistReplacementRules(newRules);
@@ -913,7 +941,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const getFields = (item: CompleteWheelRow) => {
         const descUpper = item.descricao.toUpperCase();
         const { modelCode: model, finishAbbr: acabamento } = getModelAndFinish(descUpper);
-        
+
         // Linha: Prefixo alfabético do modelo (ex: C, G, E)
         const linha = model.match(/^[A-Z]+/i)?.[0] || "";
 
@@ -927,7 +955,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     };
 
     const uniqueLinhas = useMemo(() => Array.from(new Set(rows.map(item => getFields(item).linha))).filter(Boolean).sort(), [rows]);
-    
+
     const itemsForModelo = useMemo(() => rows.filter(item => !filterLinha || getFields(item).linha === filterLinha), [rows, filterLinha]);
     const uniqueModelos = useMemo(() => Array.from(new Set(itemsForModelo.map(item => getFields(item).model))).filter(Boolean).sort(), [itemsForModelo]);
 
@@ -946,7 +974,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             .split(/\s+/)
             .map(normalizeDescriptionSearch)
             .filter(Boolean);
-            
+
         let baseRows = terms.length === 0 ? rows : rows.filter((row) => {
             const haystackCode = normalize(row.codigo);
             const haystackDesc = normalizeDescriptionSearch(row.descricao);
@@ -960,12 +988,12 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             if (filterFuracao && furacao !== filterFuracao) return false;
             if (filterModelo && model !== filterModelo) return false;
             if (filterAcabamento && acabamento !== filterAcabamento) return false;
-            
+
             if (filterFactoryOrders) {
-                const hasOrder = (item.pedido_pr || 0) > 0 || 
-                                 (item.pedido_sc || 0) > 0 || 
-                                 (item.pedido_cm || 0) > 0 || 
-                                 (item.pedido_rs || 0) > 0;
+                const hasOrder = (item.pedido_pr || 0) > 0 ||
+                    (item.pedido_sc || 0) > 0 ||
+                    (item.pedido_cm || 0) > 0 ||
+                    (item.pedido_rs || 0) > 0;
                 if (!hasOrder) return false;
             }
             if (filterHasTags && (!itemTags[item.codigo] || itemTags[item.codigo].length === 0)) return false;
@@ -1042,12 +1070,12 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             const scEst = Number(item.estoque_sc || 0);
             const cmEst = Number(item.estoque_cm || 0);
             const rsEst = Number(item.estoque_rs || 0);
-            
+
             const prPnd = Number(item.pendencia_pr || 0);
             const scPnd = Number(item.pendencia_sc || 0);
             const cmPnd = Number(item.pendencia_cm || 0);
             const rsPnd = Number(item.pendencia_rs || 0);
-            
+
             const prOrd = Number(item.pedido_pr || 0);
             const scOrd = Number(item.pedido_sc || 0);
             const cmOrd = Number(item.pedido_cm || 0);
@@ -1109,10 +1137,10 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         const numericVal = parseNumber(value);
         const nextCosts = { ...itemCosts, [codigo]: numericVal };
         setItemCosts(nextCosts);
-        
+
         await saveItemCosts(nextCosts);
-        
-        setRows(currentRows => currentRows.map(row => 
+
+        setRows(currentRows => currentRows.map(row =>
             row.codigo === codigo ? { ...row, custo: numericVal } : row
         ));
     };
@@ -1123,8 +1151,8 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         delete nextCosts[codigo];
         setItemCosts(nextCosts);
         await saveItemCosts(nextCosts);
-        
-        setRows(currentRows => currentRows.map(row => 
+
+        setRows(currentRows => currentRows.map(row =>
             row.codigo === codigo ? { ...row, custo: 0 } : row
         ));
         toast.success(`Custo do código ${codigo} removido.`);
@@ -1145,9 +1173,9 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
             const codeAliases = ['PRODUTO', 'PRODUTOS', 'CODIGO', 'CÓDIGO', 'COD', 'CÓD', 'ITEM', 'PCE_ITEM', 'REFERENCIA', 'REFERÊNCIA'];
             const costAliases = [
-                'CUSTO', 'PRECO', 'PREÇO', 'VALOR', 
-                'VALOR UNITARIO', 'VALOR UNITÁRIO', 
-                'VLR UNITARIO', 'VLR UNITÁRIO', 
+                'CUSTO', 'PRECO', 'PREÇO', 'VALOR',
+                'VALOR UNITARIO', 'VALOR UNITÁRIO',
+                'VLR UNITARIO', 'VLR UNITÁRIO',
                 'VLR UNITARI', 'VLR UNITÁRI',
                 'CUSTO UNITARIO', 'CUSTO UNITÁRIO'
             ];
@@ -1317,7 +1345,8 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             }
 
             await syncPendenciasToCloud(rowsToStockItems(merged), 'BaseSemanal_Completa');
-            toast.success(`${mergedRows.length} rodas semanais importadas entre ${WEEKLY_BASE_INSERT_AFTER} e ${WEEKLY_BASE_INSERT_BEFORE}.`, { id: toastId });
+            markCloudSaved();
+            toast.success(`${mergedRows.length} rodas semanais importadas. ${preservedRows.length} fixas mantidas. ${merged.length} itens salvos na nuvem.`, { id: toastId });
         } catch (error) {
             console.error(error);
             toast.error('Erro ao ler a planilha da base semanal.', { id: toastId });
@@ -1542,10 +1571,14 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         toast('Upload cancelado. Nada foi salvo.');
     };
 
-    const confirmPendingUpload = () => {
+    const confirmPendingUpload = async () => {
         if (!importReport) return;
 
-        persistRows(importReport.pendingRows);
+        const saved = await persistRows(importReport.pendingRows);
+        if (!saved) {
+            toast.error('Erro ao salvar o upload na nuvem.');
+            return;
+        }
         persistExportCodeMappings(mergeExportCodeMappings(exportCodeMappings, importReport.exportCodeMappings));
         setLastUploads((current) => ({ ...current, [importReport.uploadKey]: importReport.fileName }));
         persistUploadSummaries({
@@ -1558,7 +1591,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         });
         setImportReport(null);
         setIsUploadModalOpen(true);
-        toast.success('Upload confirmado e salvo.');
+        toast.success(`${importReport.totalImportado} itens confirmados. Quantidade total ${importReport.quantidadeImportada}. Salvo na nuvem.`);
     };
 
     const confirmResetUpload = () => {
@@ -1714,7 +1747,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
     const clearVariableValues = async () => {
         if (!window.confirm('ATENÇÃO: isso vai arquivar os pedidos atuais no histórico, zerar pedidos, estoques e pendências do Painel Completo, remover as rodas semanais da tela atual e limpar áudios, rascunhos e tags. A base semanal continuará salva no banco até você importar uma nova base.\n\nDeseja continuar?')) return;
-        
+
         const toastId = toast.loading('Limpando dados e arquivos...');
         try {
             const nextRows = rows
@@ -1756,8 +1789,17 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             await archiveAndClearPedidos({
                 tags: itemTags,
                 sketches: sketches,
-                audios: audioHistory
+                audios: audioHistory,
+                inventorySnapshot: rowsToStockItems(rows)
             });
+
+            const savedBase = await persistRows(nextRows);
+            if (!savedBase) {
+                throw new Error('Falha ao salvar a base zerada na nuvem.');
+            }
+            await syncPendenciasToCloud(rowsToStockItems(nextRows), 'BaseFixa_Zerada');
+            markCloudSaved();
+
             // Apagar rascunhos locais e na nuvem
             for (const codigo of Object.keys(sketches)) {
                 await deleteSketch(codigo);
@@ -1784,7 +1826,8 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             }
             setItemTags({});
 
-            toast.success('Pedidos arquivados. Rodas semanais removidas da tela e mantidas no banco.', { id: toastId });
+            localStorage.removeItem('inventory_cache');
+            toast.success('Pedidos arquivados. Rodas semanais removidas e estoque/pendência zerados na nuvem.', { id: toastId });
         } catch (error) {
             console.error('Erro ao zerar valores e anexos:', error);
             toast.error('Erro parcial ao limpar anexos. Tente novamente.', { id: toastId });
@@ -1796,10 +1839,11 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         setIsUploadModalOpen(false);
         setIsSyncingCloud(true);
         setShowSyncSuccess(true);
-        
+
         try {
             await syncPendenciasToCloud(rowsToStockItems(rows), 'BaseFixa_Completa');
-            
+            markCloudSaved();
+
             setTimeout(() => {
                 setShowSyncSuccess(false);
             }, 3000);
@@ -1812,11 +1856,11 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         }
     };
 
-    const exportCompleteTable = async () => {
-        const toastId = toast.loading('Gerando planilha completa...');
+    const exportCompleteTable = async (blankOrders = false) => {
+        const toastId = toast.loading(blankOrders ? 'Gerando planilha para impressão...' : 'Gerando planilha completa...');
         try {
             const workbook = new ExcelJS.Workbook();
-            const worksheet = workbook.addWorksheet('Tabela Completa');
+            const worksheet = workbook.addWorksheet(blankOrders ? 'Tabela para Impressão' : 'Tabela Completa');
 
             // Configurar Página para Impressão
             worksheet.pageSetup = {
@@ -1830,12 +1874,11 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                     header: 0.1, footer: 0.1
                 },
                 printTitlesRow: '1:2',
-                printArea: `A1:O${rows.length + 3}`
+                printArea: `A1:N${rows.length + 3}`
             };
 
             // Definir Colunas
             worksheet.columns = [
-                { header: 'CÓDIGO', key: 'codigo', width: 22 },
                 { header: 'DESCRIÇÃO', key: 'descricao', width: 40 },
                 { header: 'CUSTO (R$)', key: 'custo', width: 15 },
                 { header: 'EST. MK', key: 'est_pr', width: 9 },
@@ -1856,10 +1899,10 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             worksheet.spliceRows(1, 0, []);
             const titleRow = worksheet.getRow(1);
             titleRow.height = 40;
-            worksheet.mergeCells('A1:O1');
+            worksheet.mergeCells('A1:N1');
             const titleCell = worksheet.getCell('A1');
             const today = new Date().toLocaleDateString('pt-BR').split('/').join(' ');
-            titleCell.value = `TABELA COMPLETA (GERAL) - ${today}`;
+            titleCell.value = `${blankOrders ? 'TABELA PARA IMPRESSÃO' : 'TABELA COMPLETA (GERAL)'} - ${today}`;
             titleCell.font = { bold: true, italic: true, size: 14 };
             titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
@@ -1884,24 +1927,23 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
             orderedRows.forEach((item) => {
                 const row = worksheet.addRow({
-                    codigo: item.codigo,
                     descricao: item.descricao,
                     custo: item.custo || 0,
                     est_pr: item.estoque_pr || 0,
                     pend_pr: item.pendencia_pr || 0,
-                    order_pr: item.pedido_pr || 0,
+                    order_pr: blankOrders ? '' : item.pedido_pr || 0,
                     est_sc: item.estoque_sc || 0,
                     pend_sc: item.pendencia_sc || 0,
-                    order_sc: item.pedido_sc || 0,
+                    order_sc: blankOrders ? '' : item.pedido_sc || 0,
                     est_cm: item.estoque_cm || 0,
                     pend_cm: item.pendencia_cm || 0,
-                    order_cm: item.pedido_cm || 0,
+                    order_cm: blankOrders ? '' : item.pedido_cm || 0,
                     est_rs: item.estoque_rs || 0,
                     pend_rs: item.pendencia_rs || 0,
-                    order_rs: item.pedido_rs || 0
+                    order_rs: blankOrders ? '' : item.pedido_rs || 0
                 });
 
-                row.height = 25;
+                row.height = 23;
                 row.eachCell((cell, colNumber) => {
                     cell.border = {
                         top: { style: 'thin', color: { argb: 'FF000000' } },
@@ -1912,11 +1954,11 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                     cell.font = { size: 11 };
                     cell.alignment = { vertical: 'middle' };
 
-                    if (colNumber === 1 || colNumber >= 3) {
+                    if (colNumber >= 3) {
                         cell.alignment = { vertical: 'middle', horizontal: 'center' };
                     }
 
-                    if (colNumber === 3) {
+                    if (colNumber === 2) {
                         cell.numFmt = '"R$ " #,##0.00';
                         cell.alignment = { vertical: 'middle', horizontal: 'right' };
                     }
@@ -1927,16 +1969,19 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             const lastDataRowIndex = orderedRows.length + 2;
             const totalRowIndex = lastDataRowIndex + 1;
             const totalRow = worksheet.addRow({});
-            totalRow.height = 30;
+            totalRow.height = 23;
             totalRow.getCell(1).value = 'TOTAL GERAL';
             totalRow.getCell(1).font = { bold: true, size: 10 };
             totalRow.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
             worksheet.mergeCells(`A${totalRowIndex}:B${totalRowIndex}`);
 
-            for (let i = 4; i <= 15; i++) {
+            const orderColumnIndexes = new Set([5, 8, 11, 14]);
+            for (let i = 3; i <= 14; i++) {
                 const cell = totalRow.getCell(i);
                 const colLetter = worksheet.getColumn(i).letter;
-                cell.value = { formula: `SUM(${colLetter}3:${colLetter}${lastDataRowIndex})` };
+                cell.value = blankOrders && orderColumnIndexes.has(i)
+                    ? ''
+                    : { formula: `SUM(${colLetter}3:${colLetter}${lastDataRowIndex})` };
                 cell.font = { bold: true };
                 cell.alignment = { horizontal: 'center', vertical: 'middle' };
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
@@ -1951,10 +1996,10 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             const buffer = await workbook.xlsx.writeBuffer();
             const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
             const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            saveAs(blob, `Tabela_Completa_Geral_${dateStr}.xlsx`);
+            saveAs(blob, `${blankOrders ? 'Tabela_Para_Impressao' : 'Tabela_Completa_Geral'}_${dateStr}.xlsx`);
 
             setIsExportModalOpen(false);
-            toast.success('Tabela completa exportada com sucesso!', { id: toastId });
+            toast.success(blankOrders ? 'Tabela para impressão exportada com sucesso!' : 'Tabela completa exportada com sucesso!', { id: toastId });
         } catch (error) {
             console.error(error);
             toast.error('Erro ao gerar exportação completa.', { id: toastId });
@@ -2119,12 +2164,12 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     return (
         <>
             <Toaster position="top-center" />
-            
+
             {view === 'dashboard' ? (
                 <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                            <button 
+                            <button
                                 onClick={onBack}
                                 className="flex items-center gap-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors group"
                             >
@@ -2133,35 +2178,35 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                             </button>
 
                             <div className="flex flex-wrap gap-3">
-                                <button 
+                                <button
                                     onClick={onViewHistory}
                                     className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm active:scale-95"
                                 >
                                     <HistoryIcon className="w-4 h-4 text-amber-500" />
                                     Histórico
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => setIsExportModalOpen(true)}
                                     className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
                                 >
                                     <FileSpreadsheet className="w-4 h-4" />
                                     Exportar Excel
                                 </button>
-                                <button 
+                                <button
                                     onClick={clearVariableValues}
                                     className="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl text-red-600 dark:text-red-400 font-bold hover:bg-red-100 transition-all shadow-sm active:scale-95"
                                 >
                                     <RotateCcw className="w-4 h-4" />
                                     Zerar Semana
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => setIsSettingsModalOpen(true)}
                                     className="flex items-center gap-2 px-6 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm active:scale-95"
                                 >
                                     <Settings className="w-4 h-4" />
                                     Configurações
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => setView('table')}
                                     className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
                                 >
@@ -2244,557 +2289,576 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                     </div>
                 </div>
             ) : (
-                <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-950 px-4 py-3 transition-colors">
-                    <div className="w-full max-w-[96rem] mx-auto flex-1 flex flex-col min-h-0">
-                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => setView('dashboard')}
-                            className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-200 transition-all shadow-sm active:scale-95"
-                            title="Voltar ao Dashboard"
-                        >
-                            <ArrowLeft className="w-4 h-4" />
-                        </button>
-                        <div>
-                            <h1 className="text-xl md:text-2xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 leading-tight">
-                                <Database className="w-5 h-5 text-indigo-500" />
-                                Pendência Completa
-                            </h1>
-                            <p className="text-slate-500 dark:text-slate-400 font-medium text-xs mt-0.5">
-                                Tabela de rodas com base semanal e itens fixos adicionados manualmente.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5">
-                        <input
-                            ref={baseInputRef}
-                            type="file"
-                            accept=".xlsx,.xls,.xlsm,.csv"
-                            className="hidden"
-                            onChange={(event) => {
-                                const file = event.target.files?.[0];
-                                if (file) importBaseFile(file);
-                            }}
-                        />
-                        <button
-                            onClick={() => baseInputRef.current?.click()}
-                            className="h-9 px-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
-                        >
-                            <Upload className="w-3.5 h-3.5" />
-                            Importar Base
-                        </button>
-                        <button
-                            onClick={() => setIsUploadModalOpen(true)}
-                            disabled={rows.length === 0}
-                            className="h-9 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-40 rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
-                        >
-                            <FileSpreadsheet className="w-3.5 h-3.5" />
-                            Uploads
-                        </button>
-                        <button
-                            onClick={() => startEdit()}
-                            className="h-9 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
-                        >
-                            <Plus className="w-3.5 h-3.5" />
-                            Adicionar
-                        </button>
-                        <button
-                            onClick={() => setIsExportModalOpen(true)}
-                            disabled={rows.length === 0}
-                            className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40 rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
-                        >
-                            <FileSpreadsheet className="w-3.5 h-3.5" />
-                            Exportar
-                        </button>
-                    </div>
-                </header>
-
-                <section className="flex-1 flex flex-col min-h-0">
-                    <main className="flex-1 flex flex-col min-h-0">
-                        <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden shadow-sm">
-                            <div className="p-2 border-b border-slate-200 dark:border-slate-800">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="relative w-full sm:max-w-xs md:max-w-sm">
-                                            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                            <input
-                                                value={query}
-                                                onChange={(event) => setQuery(event.target.value)}
-                                                placeholder="Buscar por código ou descrição"
-                                                className="w-full h-9 pl-8 pr-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-indigo-500"
-                                            />
-                                        </div>
-
+                <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-950 px-2 py-2 transition-colors">
+                    <div className="w-full max-w-[110rem] mx-auto flex-1 flex flex-col min-h-0">
+                        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setView('dashboard')}
+                                    className="p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-200 transition-all shadow-sm active:scale-95"
+                                    title="Voltar ao Dashboard"
+                                >
+                                    <ArrowLeft className="w-4 h-4" />
+                                </button>
+                                <div>
+                                    <h1 className="text-lg md:text-xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 leading-tight">
+                                        <Database className="w-4 h-4 text-indigo-500" />
+                                        Tabela semanal
+                                    </h1>
+                                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                                        <span className={cn(
+                                            "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-bold",
+                                            lastCloudSyncAt
+                                                ? "border-emerald-100 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300"
+                                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400"
+                                        )}>
+                                            <CloudUpload className="w-3 h-3" />
+                                            {formatCloudSyncStatus()}
+                                        </span>
                                         <button
-                                            onClick={() => setShowFilters(!showFilters)}
-                                            className={cn(
-                                                "px-2.5 py-1 text-xs font-bold rounded-lg border transition-colors flex items-center gap-1 h-9",
-                                                showFilters ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700" : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                            )}
+                                            type="button"
+                                            onClick={refreshSystem}
+                                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                            title="Buscar a versão mais nova do sistema"
                                         >
-                                            <Filter className="w-3.5 h-3.5" /> Filtros
+                                            <RefreshCw className="w-3 h-3" />
+                                            Atualizar sistema
                                         </button>
-
-                                        {(filterLinha || filterAro || filterFuracao || filterModelo || filterAcabamento || query) && (
-                                            <button onClick={() => { setFilterLinha(""); setFilterAro(""); setFilterFuracao(""); setFilterModelo(""); setFilterAcabamento(""); setQuery(""); }} className="px-2 py-1 text-[10px] uppercase tracking-wider font-black text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-900/40 h-9">
-                                                Limpar
-                                            </button>
-                                        )}
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                    <span className="text-[11px] font-bold text-slate-500">
-                                        {filteredRows.length} de {rows.length} itens
-                                    </span>
                                 </div>
-                                </div>
-                                {showFilters && (
-                                    <div className="flex flex-wrap items-center gap-2 pt-3 mt-3 border-t border-slate-100 dark:border-slate-800">
-                                        <select value={filterLinha} onChange={e => setFilterLinha(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-sm">
-                                            <option value="">Linhas</option>
-                                            {uniqueLinhas.map(o => <option key={o} value={o}>Linha {o}</option>)}
-                                        </select>
-
-                                        <select value={filterModelo} onChange={e => setFilterModelo(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-sm">
-                                            <option value="">Modelos</option>
-                                            {uniqueModelos.map(o => <option key={o} value={o}>{o}</option>)}
-                                        </select>
-
-                                        <select value={filterAro} onChange={e => setFilterAro(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-sm">
-                                            <option value="">Aros / Talas</option>
-                                            {uniqueAros.map(o => <option key={o} value={o}>{o}</option>)}
-                                        </select>
-
-                                        <select value={filterFuracao} onChange={e => setFilterFuracao(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-sm">
-                                            <option value="">Furações</option>
-                                            {uniqueFuracoes.map(o => <option key={o} value={o}>{o}</option>)}
-                                        </select>
-
-                                        <select value={filterAcabamento} onChange={e => setFilterAcabamento(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-sm">
-                                            <option value="">Acabamentos</option>
-                                            {uniqueAcabamentos.map(o => <option key={o} value={o}>{o}</option>)}
-                                        </select>
-
-                                        <div className="flex items-center gap-2 ml-auto">
-                                            <button
-                                                onClick={() => setFilterFactoryOrders(!filterFactoryOrders)}
-                                                className={cn(
-                                                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 shadow-sm active:scale-95",
-                                                    filterFactoryOrders
-                                                        ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400"
-                                                        : "bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                                )}
-                                                title="Filtrar apenas itens que têm pedido em alguma fábrica"
-                                            >
-                                                <ShoppingCart className="w-3.5 h-3.5" />
-                                                Com Pedidos
-                                            </button>
-                                            
-                                            <button
-                                                onClick={() => setFilterHasTags(!filterHasTags)}
-                                                className={cn(
-                                                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 shadow-sm active:scale-95",
-                                                    filterHasTags
-                                                        ? "bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-400"
-                                                        : "bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                                )}
-                                            >
-                                                <Tag className="w-3.5 h-3.5" />
-                                                Tags
-                                            </button>
-
-                                            <button
-                                                onClick={() => setFilterHasSketch(!filterHasSketch)}
-                                                className={cn(
-                                                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 shadow-sm active:scale-95",
-                                                    filterHasSketch
-                                                        ? "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-400"
-                                                        : "bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                                )}
-                                            >
-                                                <PenTool className="w-3.5 h-3.5" />
-                                                Posts
-                                            </button>
-
-                                            <button
-                                                onClick={() => setFilterHasAudio(!filterHasAudio)}
-                                                className={cn(
-                                                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 shadow-sm active:scale-95",
-                                                    filterHasAudio
-                                                        ? "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-400"
-                                                        : "bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                                )}
-                                            >
-                                                <Mic className="w-3.5 h-3.5" />
-                                                Áudio
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
 
-                            <div className="md:hidden flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 px-3 py-3 space-y-3">
-                                {filteredRows.length === 0 ? (
-                                    <div className="px-4 py-10 text-center text-sm font-bold text-slate-400">
-                                        Importe a base semanal para começar.
-                                    </div>
-                                ) : currentPageRows.map((row) => {
-                                    const photoUrl = getWheelPhotoUrl(row.descricao, row.codigo);
-                                    const isExpanded = expandedMobileCode === row.codigo;
+                            <div className="flex flex-wrap gap-1.5">
+                                <input
+                                    ref={baseInputRef}
+                                    type="file"
+                                    accept=".xlsx,.xls,.xlsm,.csv"
+                                    className="hidden"
+                                    onChange={(event) => {
+                                        const file = event.target.files?.[0];
+                                        if (file) importBaseFile(file);
+                                    }}
+                                />
+                                <button
+                                    onClick={() => baseInputRef.current?.click()}
+                                    className="h-10 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+                                >
+                                    <Upload className="w-4 h-4" />
+                                    Importar tabela
+                                </button>
+                                <button
+                                    onClick={() => setIsUploadModalOpen(true)}
+                                    disabled={rows.length === 0}
+                                    className="h-10 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-40 rounded-lg font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+                                >
+                                    <FileSpreadsheet className="w-4 h-4" />
+                                    Uploads
+                                </button>
+                                <button
+                                    onClick={() => startEdit()}
+                                    className="h-10 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-lg font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Adicionar
+                                </button>
+                                <button
+                                    onClick={() => setIsExportModalOpen(true)}
+                                    disabled={rows.length === 0}
+                                    className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40 rounded-lg font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+                                >
+                                    <FileSpreadsheet className="w-4 h-4" />
+                                    Exportar
+                                </button>
+                            </div>
+                        </header>
 
-                                    return (
-                                        <div key={row.codigo} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-                                            <button
-                                                type="button"
-                                                onClick={() => setExpandedMobileCode(isExpanded ? null : row.codigo)}
-                                                className="w-full p-3 flex gap-3 text-left active:bg-slate-50 dark:active:bg-slate-800 transition-colors"
-                                            >
-                                                <img
-                                                    src={photoUrl}
-                                                    alt={`Foto ${row.descricao}`}
-                                                    className="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-700 bg-white shrink-0"
-                                                />
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex items-start justify-between gap-2">
-                                                        <div className="min-w-0">
-                                                            <h3 className="text-base font-black text-slate-900 dark:text-slate-100 leading-tight line-clamp-2">
-                                                                {row.descricao}
-                                                            </h3>
-                                                            <p className="mt-1 text-xs font-mono text-slate-400">{row.codigo}</p>
-                                                        </div>
-                                                        <span className="shrink-0 text-sm font-bold text-slate-600 dark:text-slate-300">
-                                                            {row.custo ? row.custo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="mt-2 flex items-center justify-between">
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                                            {isExpanded ? 'Fechar detalhes' : 'Abrir detalhes'}
-                                                        </span>
-                                                        <span className={cn("text-lg leading-none text-slate-500 transition-transform", isExpanded && "rotate-180")}>
-                                                            ^
-                                                        </span>
-                                                    </div>
+                        <section className="flex-1 flex flex-col min-h-0">
+                            <main className="flex-1 flex flex-col min-h-0">
+                                <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden shadow-sm">
+                                    <div className="px-2 py-1.5 border-b border-slate-200 dark:border-slate-800">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="relative w-full sm:max-w-xs md:max-w-sm">
+                                                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                    <input
+                                                        value={query}
+                                                        onChange={(event) => setQuery(event.target.value)}
+                                                        placeholder="Buscar por código ou descrição"
+                                                        className="w-full h-8 pl-8 pr-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-indigo-500"
+                                                    />
                                                 </div>
-                                            </button>
 
-                                            <div className="px-3 pb-3">
-                                                <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-                                                    <div className="grid grid-cols-[54px_repeat(4,minmax(0,1fr))] bg-slate-50 dark:bg-slate-950">
-                                                        <div className="border-r border-slate-200 dark:border-slate-800" />
-                                                        {mobileDepots.map((depot) => (
-                                                            <div key={depot.key} className={cn("h-9 flex items-center justify-center px-1 text-[10px] font-black uppercase text-center border-r last:border-r-0 border-slate-200 dark:border-slate-800", depot.color, depot.text)}>
-                                                                {depot.shortLabel}
+                                                <button
+                                                    onClick={() => setShowFilters(!showFilters)}
+                                                    className={cn(
+                                                        "px-2.5 py-1 text-xs font-bold rounded-lg border transition-colors flex items-center gap-1 h-8",
+                                                        showFilters ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700" : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                    )}
+                                                >
+                                                    <Filter className="w-3.5 h-3.5" /> Filtros
+                                                </button>
+
+                                                {(filterLinha || filterAro || filterFuracao || filterModelo || filterAcabamento || query) && (
+                                                    <button onClick={() => { setFilterLinha(""); setFilterAro(""); setFilterFuracao(""); setFilterModelo(""); setFilterAcabamento(""); setQuery(""); }} className="px-2 py-1 text-[10px] uppercase tracking-wider font-black text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-900/40 h-8">
+                                                        Limpar
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-[11px] font-bold text-slate-500">
+                                                    {filteredRows.length} de {rows.length} itens
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {showFilters && (
+                                            <div className="flex flex-wrap items-center gap-1.5 pt-2 mt-1.5 border-t border-slate-100 dark:border-slate-800">
+                                                <select value={filterLinha} onChange={e => setFilterLinha(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-sm">
+                                                    <option value="">Linhas</option>
+                                                    {uniqueLinhas.map(o => <option key={o} value={o}>Linha {o}</option>)}
+                                                </select>
+
+                                                <select value={filterModelo} onChange={e => setFilterModelo(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-sm">
+                                                    <option value="">Modelos</option>
+                                                    {uniqueModelos.map(o => <option key={o} value={o}>{o}</option>)}
+                                                </select>
+
+                                                <select value={filterAro} onChange={e => setFilterAro(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-sm">
+                                                    <option value="">Aros / Talas</option>
+                                                    {uniqueAros.map(o => <option key={o} value={o}>{o}</option>)}
+                                                </select>
+
+                                                <select value={filterFuracao} onChange={e => setFilterFuracao(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-sm">
+                                                    <option value="">Furações</option>
+                                                    {uniqueFuracoes.map(o => <option key={o} value={o}>{o}</option>)}
+                                                </select>
+
+                                                <select value={filterAcabamento} onChange={e => setFilterAcabamento(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-sm">
+                                                    <option value="">Acabamentos</option>
+                                                    {uniqueAcabamentos.map(o => <option key={o} value={o}>{o}</option>)}
+                                                </select>
+
+                                                <div className="flex items-center gap-2 ml-auto">
+                                                    <button
+                                                        onClick={() => setFilterFactoryOrders(!filterFactoryOrders)}
+                                                        className={cn(
+                                                            "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 shadow-sm active:scale-95",
+                                                            filterFactoryOrders
+                                                                ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400"
+                                                                : "bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                        )}
+                                                        title="Filtrar apenas itens que têm pedido em alguma fábrica"
+                                                    >
+                                                        <ShoppingCart className="w-3.5 h-3.5" />
+                                                        Com Pedidos
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => setFilterHasTags(!filterHasTags)}
+                                                        className={cn(
+                                                            "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 shadow-sm active:scale-95",
+                                                            filterHasTags
+                                                                ? "bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-400"
+                                                                : "bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                        )}
+                                                    >
+                                                        <Tag className="w-3.5 h-3.5" />
+                                                        Tags
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => setFilterHasSketch(!filterHasSketch)}
+                                                        className={cn(
+                                                            "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 shadow-sm active:scale-95",
+                                                            filterHasSketch
+                                                                ? "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-400"
+                                                                : "bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                        )}
+                                                    >
+                                                        <PenTool className="w-3.5 h-3.5" />
+                                                        Posts
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => setFilterHasAudio(!filterHasAudio)}
+                                                        className={cn(
+                                                            "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 shadow-sm active:scale-95",
+                                                            filterHasAudio
+                                                                ? "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-400"
+                                                                : "bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                        )}
+                                                    >
+                                                        <Mic className="w-3.5 h-3.5" />
+                                                        Áudio
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="md:hidden flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 px-3 py-3 space-y-3">
+                                        {filteredRows.length === 0 ? (
+                                            <div className="px-4 py-10 text-center text-sm font-bold text-slate-400">
+                                                Importe a base semanal para começar.
+                                            </div>
+                                        ) : currentPageRows.map((row) => {
+                                            const photoUrl = getWheelPhotoUrl(row.descricao, row.codigo);
+                                            const isExpanded = expandedMobileCode === row.codigo;
+
+                                            return (
+                                                <div key={row.codigo} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setExpandedMobileCode(isExpanded ? null : row.codigo)}
+                                                        className="w-full p-3 flex gap-3 text-left active:bg-slate-50 dark:active:bg-slate-800 transition-colors"
+                                                    >
+                                                        <img
+                                                            src={photoUrl}
+                                                            alt={`Foto ${row.descricao}`}
+                                                            className="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-700 bg-white shrink-0"
+                                                        />
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex items-start justify-between gap-2">
+                                                                <div className="min-w-0">
+                                                                    <h3 className="text-base font-black text-slate-900 dark:text-slate-100 leading-tight line-clamp-2">
+                                                                        {row.descricao}
+                                                                    </h3>
+                                                                    <p className="mt-1 text-xs font-mono text-slate-400">{row.codigo}</p>
+                                                                </div>
+                                                                <span className="shrink-0 text-sm font-bold text-slate-600 dark:text-slate-300">
+                                                                    {row.custo ? row.custo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}
+                                                                </span>
                                                             </div>
-                                                        ))}
-                                                    </div>
-                                                    {[
-                                                        { label: 'Est.', color: 'text-blue-600', getValue: (depot: typeof mobileDepots[number]) => getDepotValue(row, depot.key, 'estoque') },
-                                                        { label: 'Pend.', color: 'text-orange-600', getValue: (depot: typeof mobileDepots[number]) => getDepotValue(row, depot.key, 'pendencia') },
-                                                        { label: 'Ped.', color: 'text-emerald-600', getValue: (depot: typeof mobileDepots[number]) => getDepotValue(row, depot.key, 'pedido') }
-                                                    ].map((metric) => (
-                                                        <div key={metric.label} className="grid grid-cols-[54px_repeat(4,minmax(0,1fr))] border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                                                            <div className="h-9 flex items-center justify-center text-[10px] font-black uppercase text-slate-400 border-r border-slate-200 dark:border-slate-800">
-                                                                {metric.label}
+                                                            <div className="mt-2 flex items-center justify-between">
+                                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                                                    {isExpanded ? 'Fechar detalhes' : 'Abrir detalhes'}
+                                                                </span>
+                                                                <span className={cn("text-lg leading-none text-slate-500 transition-transform", isExpanded && "rotate-180")}>
+                                                                    ^
+                                                                </span>
                                                             </div>
-                                                            {mobileDepots.map((depot) => (
-                                                                <div key={depot.key} className="h-9 flex items-center justify-center border-r last:border-r-0 border-slate-200 dark:border-slate-800">
-                                                                    <span className={cn("text-base font-black", metric.color)}>
-                                                                        {metric.getValue(depot)}
-                                                                    </span>
+                                                        </div>
+                                                    </button>
+
+                                                    <div className="px-3 pb-3">
+                                                        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                                                            <div className="grid grid-cols-[54px_repeat(4,minmax(0,1fr))] bg-slate-50 dark:bg-slate-950">
+                                                                <div className="border-r border-slate-200 dark:border-slate-800" />
+                                                                {mobileDepots.map((depot) => (
+                                                                    <div key={depot.key} className={cn("h-9 flex items-center justify-center px-1 text-[10px] font-black uppercase text-center border-r last:border-r-0 border-slate-200 dark:border-slate-800", depot.color, depot.text)}>
+                                                                        {depot.shortLabel}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            {[
+                                                                { label: 'Est.', color: 'text-blue-600', getValue: (depot: typeof mobileDepots[number]) => getDepotValue(row, depot.key, 'estoque') },
+                                                                { label: 'Pend.', color: 'text-orange-600', getValue: (depot: typeof mobileDepots[number]) => getDepotValue(row, depot.key, 'pendencia') },
+                                                                { label: 'Ped.', color: 'text-emerald-600', getValue: (depot: typeof mobileDepots[number]) => getDepotValue(row, depot.key, 'pedido') }
+                                                            ].map((metric) => (
+                                                                <div key={metric.label} className="grid grid-cols-[54px_repeat(4,minmax(0,1fr))] border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                                                                    <div className="h-9 flex items-center justify-center text-[10px] font-black uppercase text-slate-400 border-r border-slate-200 dark:border-slate-800">
+                                                                        {metric.label}
+                                                                    </div>
+                                                                    {mobileDepots.map((depot) => (
+                                                                        <div key={depot.key} className="h-9 flex items-center justify-center border-r last:border-r-0 border-slate-200 dark:border-slate-800">
+                                                                            <span className={cn("text-base font-black", metric.color)}>
+                                                                                {metric.getValue(depot)}
+                                                                            </span>
+                                                                        </div>
+                                                                    ))}
                                                                 </div>
                                                             ))}
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                                    </div>
 
-                                            <AnimatePresence initial={false}>
-                                                {isExpanded && (
-                                                    <motion.div
-                                                        initial={{ height: 0, opacity: 0 }}
-                                                        animate={{ height: 'auto', opacity: 1 }}
-                                                        exit={{ height: 0, opacity: 0 }}
-                                                        className="overflow-hidden border-t border-slate-100 dark:border-slate-800"
-                                                    >
-                                                        {mobileDepots.map((depot) => (
-                                                            <div key={depot.key} className="grid grid-cols-[92px_1fr_1fr_1fr] min-h-[58px] border-b last:border-b-0 border-slate-100 dark:border-slate-800">
-                                                                <div className={cn("flex items-center justify-center px-2 text-[11px] font-black uppercase text-center", depot.color, depot.text)}>
-                                                                    {depot.shortLabel}
-                                                                </div>
-                                                                <div className="flex flex-col items-center justify-center border-l border-slate-100 dark:border-slate-800">
-                                                                    <span className="text-[10px] font-bold uppercase text-slate-400">Est.</span>
-                                                                    <span className="text-lg font-black text-blue-600">{getDepotValue(row, depot.key, 'estoque')}</span>
-                                                                </div>
-                                                                <div className="flex flex-col items-center justify-center border-l border-slate-100 dark:border-slate-800">
-                                                                    <span className="text-[10px] font-bold uppercase text-slate-400">Pend.</span>
-                                                                    <span className="text-lg font-black text-orange-600">{getDepotValue(row, depot.key, 'pendencia')}</span>
-                                                                </div>
-                                                                <div className={cn("m-2 rounded-lg border bg-white dark:bg-slate-950 flex items-center justify-center font-black text-base", depot.border, depot.text)}>
-                                                                    {getDepotValue(row, depot.key, 'pedido')}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                        <div className="p-3 flex gap-2 bg-slate-50 dark:bg-slate-950">
-                                                            <button
-                                                                onClick={() => startEdit(row)}
-                                                                className="flex-1 h-10 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                                                    <AnimatePresence initial={false}>
+                                                        {isExpanded && (
+                                                            <motion.div
+                                                                initial={{ height: 0, opacity: 0 }}
+                                                                animate={{ height: 'auto', opacity: 1 }}
+                                                                exit={{ height: 0, opacity: 0 }}
+                                                                className="overflow-hidden border-t border-slate-100 dark:border-slate-800"
                                                             >
-                                                                <Pencil className="w-4 h-4" />
-                                                                Editar
-                                                            </button>
-                                                            <button
-                                                                onClick={() => deleteRow(row.codigo)}
-                                                                className="h-10 px-4 rounded-lg border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 font-black text-xs uppercase tracking-widest flex items-center justify-center"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            <div ref={tableContainerRef} className="hidden md:block flex-1 overflow-auto relative">
-                                <table className="w-full min-w-[1480px] text-[13px] text-left whitespace-nowrap border-separate border-spacing-0">
-                                    <thead className="sticky top-0 z-20 text-[11px] font-black uppercase bg-white dark:bg-slate-900 shadow-sm text-slate-500 dark:text-slate-300">
-                                        <tr className="h-9">
-                                            <th rowSpan={2} className="sticky left-0 top-0 z-40 px-3 py-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 min-w-[72px] align-middle">Foto</th>
-                                            <th rowSpan={2} className="sticky left-[72px] top-0 z-40 px-3 py-0 border-b border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 min-w-[280px] lg:min-w-[360px] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] align-middle">Identificação do produto</th>
-                                            <th rowSpan={2} className="top-0 px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-right min-w-[90px] align-middle bg-white dark:bg-slate-900">Custo</th>
-                                            {DEPOTS.map((depot) => (
-                                                <th
-                                                    key={depot.key}
-                                                    className={cn('top-0 px-2 py-0 border-r border-slate-200 dark:border-slate-700 text-center tracking-[0.2em] align-middle', DEPOT_STYLES[depot.key].group)}
-                                                    colSpan={3}
-                                                >
-                                                    <div className="p-1.5 text-center font-black">{depot.label}</div>
-                                                </th>
-                                            ))}
-                                            <th className="p-2 w-20">Ações</th>
-                                        </tr>
-                                        <tr className="h-7 text-[9px] uppercase tracking-widest">
-                                            {DEPOTS.map((depot) => (
-                                                <React.Fragment key={depot.key}>
-                                                    <th className={cn('px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center', DEPOT_STYLES[depot.key].group)}>Est.</th>
-                                                    <th className={cn('px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center', DEPOT_STYLES[depot.key].group)}>Pend.</th>
-                                                    <th className={cn('px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center', DEPOT_STYLES[depot.key].order)}>Pedido</th>
-                                                </React.Fragment>
-                                            ))}
-                                            <th />
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredRows.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={16} className="p-10 text-center text-slate-400 font-bold">
-                                                    Importe a base semanal para começar.
-                                                </td>
-                                            </tr>
-                                        ) : currentPageRows.map((row, index) => {
-                                            const isEven = index % 2 === 0;
-                                            const bgNormal = isEven ? 'bg-white dark:bg-slate-900' : 'bg-slate-50 dark:bg-slate-800';
-                                            const photoUrl = getWheelPhotoUrl(row.descricao, row.codigo);
-                                            const modelCode = row.descricao.split(' ')[0].toUpperCase();
-
-                                            return (
-                                            <tr key={row.codigo} className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors group">
-                                                <td className={cn('sticky left-0 z-10 px-3 py-1.5 min-w-[72px]', bgNormal)}>
-                                                    <img
-                                                        src={photoUrl}
-                                                        alt={`Foto ${modelCode}`}
-                                                        className="w-12 h-12 rounded object-cover border border-slate-200 dark:border-slate-700 shadow-sm"
-                                                    />
-                                                </td>
-                                                <td className={cn('sticky left-[72px] z-[5] px-3 py-1.5 min-w-[280px] lg:min-w-[360px] border-r border-slate-200 dark:border-slate-700/50 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]', bgNormal)}>
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-slate-700 dark:text-slate-200 font-bold text-sm leading-snug">{row.descricao}</span>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{row.codigo}</span>
-                                                            <span className={cn(
-                                                                "px-1 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border",
-                                                                row.fixa === false
-                                                                    ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
-                                                                    : "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800"
-                                                            )}>
-                                                                {row.fixa === false ? 'Semanal' : 'Fixa'}
-                                                            </span>
-                                                        </div>
-                                                        
-                                                        {/* Tags List */}
-                                                        {itemTags[row.codigo]?.length > 0 && (
-                                                            <div className="flex flex-wrap gap-1 mt-0.5">
-                                                                {itemTags[row.codigo].map(tag => (
-                                                                    <span
-                                                                        key={tag}
-                                                                        className="px-1.5 py-0.5 text-[9px] font-black bg-slate-100 dark:bg-slate-800 text-slate-600 rounded border border-slate-200 dark:border-slate-700 flex items-center shadow-sm"
-                                                                    >
-                                                                        {tag}
-                                                                    </span>
+                                                                {mobileDepots.map((depot) => (
+                                                                    <div key={depot.key} className="grid grid-cols-[92px_1fr_1fr_1fr] min-h-[58px] border-b last:border-b-0 border-slate-100 dark:border-slate-800">
+                                                                        <div className={cn("flex items-center justify-center px-2 text-[11px] font-black uppercase text-center", depot.color, depot.text)}>
+                                                                            {depot.shortLabel}
+                                                                        </div>
+                                                                        <div className="flex flex-col items-center justify-center border-l border-slate-100 dark:border-slate-800">
+                                                                            <span className="text-[10px] font-bold uppercase text-slate-400">Est.</span>
+                                                                            <span className="text-lg font-black text-blue-600">{getDepotValue(row, depot.key, 'estoque')}</span>
+                                                                        </div>
+                                                                        <div className="flex flex-col items-center justify-center border-l border-slate-100 dark:border-slate-800">
+                                                                            <span className="text-[10px] font-bold uppercase text-slate-400">Pend.</span>
+                                                                            <span className="text-lg font-black text-orange-600">{getDepotValue(row, depot.key, 'pendencia')}</span>
+                                                                        </div>
+                                                                        <div className={cn("m-2 rounded-lg border bg-white dark:bg-slate-950 flex items-center justify-center font-black text-base", depot.border, depot.text)}>
+                                                                            {getDepotValue(row, depot.key, 'pedido')}
+                                                                        </div>
+                                                                    </div>
                                                                 ))}
-                                                            </div>
+                                                                <div className="p-3 flex gap-2 bg-slate-50 dark:bg-slate-950">
+                                                                    <button
+                                                                        onClick={() => startEdit(row)}
+                                                                        className="flex-1 h-10 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                                                                    >
+                                                                        <Pencil className="w-4 h-4" />
+                                                                        Editar
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => deleteRow(row.codigo)}
+                                                                        className="h-10 px-4 rounded-lg border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 font-black text-xs uppercase tracking-widest flex items-center justify-center"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            </motion.div>
                                                         )}
-
-                                                        {/* Action Hub (Only Read/Preview) */}
-                                                        <div className="flex items-center gap-1.5 mt-1">
-                                                            {/* Sketch Preview */}
-                                                            {sketches[row.codigo] && (
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setActiveSketchItem({ codigo: row.codigo, title: row.descricao });
-                                                                        setSketchModalOpen(true);
-                                                                    }}
-                                                                    className="w-7 h-7 rounded border border-amber-200 bg-amber-50 overflow-hidden shadow-sm hover:scale-115 transition-all"
-                                                                    title="Ver Post-it"
-                                                                >
-                                                                    <img src={sketches[row.codigo]} alt="Rascunho" className="w-full h-full object-contain" />
-                                                                </button>
-                                                            )}
-
-                                                            {/* Audio Preview */}
-                                                            {audios[row.codigo] && (
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setActiveAudioItem({ codigo: row.codigo, title: row.descricao });
-                                                                        setAudioPlayerOpen(true);
-                                                                    }}
-                                                                    className="p-1 rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-500 hover:bg-rose-100 hover:scale-115 transition-all border border-rose-100 dark:border-rose-800 shadow-sm"
-                                                                    title="Ouvir Nota de Voz"
-                                                                >
-                                                                    <Volume2 className="w-3 h-3" />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className={cn('px-2 py-1.5 text-right font-semibold text-slate-500 text-xs', bgNormal)}>
-                                                    {row.custo ? row.custo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}
-                                                </td>
-                                                {DEPOTS.map((depot) => (
-                                                    <React.Fragment key={depot.key}>
-                                                        <td className={cn('px-2 py-1.5 text-center font-bold text-slate-500 text-sm', DEPOT_STYLES[depot.key].body)}>{row[`estoque_${depot.key}`] || 0}</td>
-                                                        <td className={cn('px-2 py-1.5 text-center text-slate-400 text-sm', DEPOT_STYLES[depot.key].body)}>{row[`pendencia_${depot.key}`] || 0}</td>
-                                                        <td className={cn('px-2 py-1.5 text-center border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400', DEPOT_STYLES[depot.key].body)}>
-                                                            <div className="flex items-center justify-center mx-auto w-14 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-0.5 shadow-sm">
-                                                                <span className="text-base">{row[`pedido_${depot.key}`] || 0}</span>
-                                                            </div>
-                                                        </td>
-                                                    </React.Fragment>
-                                                ))}
-                                                <td className={cn('p-1', bgNormal)}>
-                                                    <div className="flex items-center justify-center gap-0.5">
-                                                        <button onClick={() => startEdit(row)} className="p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600" title="Editar">
-                                                            <Pencil className="w-3.5 h-3.5" />
-                                                        </button>
-                                                        <button onClick={() => deleteRow(row.codigo)} className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600" title="Apagar">
-                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
+                                                    </AnimatePresence>
+                                                </div>
                                             );
                                         })}
-                                    </tbody>
-                                </table>
-                            </div>
+                                    </div>
 
-                            <div className="flex-none border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-20 shadow-[0_-8px_15px_-3px_rgba(0,0,0,0.1)]">
-                                <div className="md:hidden p-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                                    <div className="grid grid-cols-4 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                        {mobileDepots.map((depot) => (
-                                            <div key={depot.key} className="border-r last:border-r-0 border-slate-200 dark:border-slate-800">
-                                                <div className={cn("h-10 flex items-center justify-center px-1 text-[10px] font-black uppercase text-center", depot.color, depot.text)}>
-                                                    {depot.shortLabel}
-                                                </div>
-                                                <div className="grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-950">
-                                                    <div className="py-2 text-center">
-                                                        <span className="block text-[9px] font-bold uppercase text-slate-400">Est.</span>
-                                                        <span className="text-xs font-black text-slate-800 dark:text-slate-100">{totals[depot.key].estoque}</span>
+                                    <div ref={tableContainerRef} className="hidden md:block flex-1 overflow-auto relative">
+                                        <table className="w-full min-w-[1390px] text-[13px] text-left whitespace-nowrap border-separate border-spacing-0">
+                                            <thead className="sticky top-0 z-20 text-[10px] font-black uppercase bg-white dark:bg-slate-900 shadow-sm text-slate-500 dark:text-slate-300">
+                                                <tr className="h-8">
+                                                    <th rowSpan={2} className="sticky left-0 top-0 z-40 px-2 py-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 min-w-[56px] align-middle">Foto</th>
+                                                    <th rowSpan={2} className="sticky left-[56px] top-0 z-40 px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 min-w-[250px] lg:min-w-[310px] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] align-middle">Identificação do produto</th>
+                                                    <th rowSpan={2} className="top-0 px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-right min-w-[82px] align-middle bg-white dark:bg-slate-900">Custo</th>
+                                                    {DEPOTS.map((depot) => (
+                                                        <th
+                                                            key={depot.key}
+                                                            className={cn('top-0 px-1.5 py-0 border-r border-slate-200 dark:border-slate-700 text-center tracking-[0.18em] align-middle', DEPOT_STYLES[depot.key].group)}
+                                                            colSpan={3}
+                                                        >
+                                                            <div className="p-1 text-center font-black">{depot.label}</div>
+                                                        </th>
+                                                    ))}
+                                                    <th className="p-1.5 w-16">Ações</th>
+                                                </tr>
+                                                <tr className="h-6 text-[8px] uppercase tracking-widest">
+                                                    {DEPOTS.map((depot) => (
+                                                        <React.Fragment key={depot.key}>
+                                                            <th className={cn('px-1.5 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center', DEPOT_STYLES[depot.key].group)}>Est.</th>
+                                                            <th className={cn('px-1.5 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center', DEPOT_STYLES[depot.key].group)}>Pend.</th>
+                                                            <th className={cn('px-1.5 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center', DEPOT_STYLES[depot.key].order)}>Pedido</th>
+                                                        </React.Fragment>
+                                                    ))}
+                                                    <th />
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {filteredRows.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={16} className="p-10 text-center text-slate-400 font-bold">
+                                                            Importe a base semanal para começar.
+                                                        </td>
+                                                    </tr>
+                                                ) : currentPageRows.map((row, index) => {
+                                                    const isEven = index % 2 === 0;
+                                                    const bgNormal = isEven ? 'bg-white dark:bg-slate-900' : 'bg-slate-50 dark:bg-slate-800';
+                                                    const photoUrl = getWheelPhotoUrl(row.descricao, row.codigo);
+                                                    const modelCode = row.descricao.split(' ')[0].toUpperCase();
+
+                                                    return (
+                                                        <tr key={row.codigo} className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors group">
+                                                            <td className={cn('sticky left-0 z-10 px-2 py-1 min-w-[56px]', bgNormal)}>
+                                                                <img
+                                                                    src={photoUrl}
+                                                                    alt={`Foto ${modelCode}`}
+                                                                    className="w-12 h-12 rounded object-cover border border-slate-200 dark:border-slate-700 shadow-sm"
+                                                                />
+                                                            </td>
+                                                            <td className={cn('sticky left-[56px] z-[5] px-2 py-1 min-w-[250px] lg:min-w-[310px] border-r border-slate-200 dark:border-slate-700/50 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]', bgNormal)}>
+                                                                <div className="flex flex-col gap-0.5">
+                                                                    <span className="text-slate-700 dark:text-slate-200 font-bold text-[15px] leading-tight">{row.descricao}</span>
+                                                                    <div className="flex items-center gap-1">
+                                                                        <span className="font-mono text-[11px] text-slate-400 dark:text-slate-500">{row.codigo}</span>
+                                                                        <span className={cn(
+                                                                            "px-1 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border",
+                                                                            row.fixa === false
+                                                                                ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+                                                                                : "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800"
+                                                                        )}>
+                                                                            {row.fixa === false ? 'Semanal' : 'Fixa'}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    {/* Tags List */}
+                                                                    {itemTags[row.codigo]?.length > 0 && (
+                                                                        <div className="flex flex-wrap gap-1">
+                                                                            {itemTags[row.codigo].map(tag => (
+                                                                                <span
+                                                                                    key={tag}
+                                                                                    className="px-1.5 py-0.5 text-[9px] font-black bg-slate-100 dark:bg-slate-800 text-slate-600 rounded border border-slate-200 dark:border-slate-700 flex items-center shadow-sm"
+                                                                                >
+                                                                                    {tag}
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Action Hub (Only Read/Preview) */}
+                                                                    {(sketches[row.codigo] || audios[row.codigo]) && (
+                                                                    <div className="flex items-center gap-1 mt-0.5">
+                                                                        {/* Sketch Preview */}
+                                                                        {sketches[row.codigo] && (
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setActiveSketchItem({ codigo: row.codigo, title: row.descricao });
+                                                                                    setSketchModalOpen(true);
+                                                                                }}
+                                                                                className="w-5 h-5 rounded border border-amber-200 bg-amber-50 overflow-hidden shadow-sm hover:scale-115 transition-all"
+                                                                                title="Ver Post-it"
+                                                                            >
+                                                                                <img src={sketches[row.codigo]} alt="Rascunho" className="w-full h-full object-contain" />
+                                                                            </button>
+                                                                        )}
+
+                                                                        {/* Audio Preview */}
+                                                                        {audios[row.codigo] && (
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setActiveAudioItem({ codigo: row.codigo, title: row.descricao });
+                                                                                    setAudioPlayerOpen(true);
+                                                                                }}
+                                                                                className="p-0.5 rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-500 hover:bg-rose-100 hover:scale-115 transition-all border border-rose-100 dark:border-rose-800 shadow-sm"
+                                                                                title="Ouvir Nota de Voz"
+                                                                            >
+                                                                                <Volume2 className="w-2.5 h-2.5" />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                            <td className={cn('px-2 py-1 text-right font-semibold text-slate-500 text-xs', bgNormal)}>
+                                                                {row.custo ? row.custo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}
+                                                            </td>
+                                                            {DEPOTS.map((depot) => (
+                                                                <React.Fragment key={depot.key}>
+                                                                    <td className={cn('px-1.5 py-1 text-center font-bold text-slate-500 text-[15px]', DEPOT_STYLES[depot.key].body)}>{row[`estoque_${depot.key}`] || 0}</td>
+                                                                    <td className={cn('px-1.5 py-1 text-center text-slate-400 text-[15px]', DEPOT_STYLES[depot.key].body)}>{row[`pendencia_${depot.key}`] || 0}</td>
+                                                                    <td className={cn('px-1.5 py-1 text-center border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400', DEPOT_STYLES[depot.key].body)}>
+                                                                        <div className="flex items-center justify-center mx-auto w-12 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-md py-0.5 shadow-sm">
+                                                                            <span className="text-[17px]">{row[`pedido_${depot.key}`] || 0}</span>
+                                                                        </div>
+                                                                    </td>
+                                                                </React.Fragment>
+                                                            ))}
+                                                            <td className={cn('p-1', bgNormal)}>
+                                                                <div className="flex items-center justify-center gap-0.5">
+                                                                    <button onClick={() => startEdit(row)} className="p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600" title="Editar">
+                                                                        <Pencil className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button onClick={() => deleteRow(row.codigo)} className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600" title="Apagar">
+                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div className="flex-none border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-20 shadow-[0_-8px_15px_-3px_rgba(0,0,0,0.1)]">
+                                        <div className="md:hidden p-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+                                            <div className="grid grid-cols-4 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                                {mobileDepots.map((depot) => (
+                                                    <div key={depot.key} className="border-r last:border-r-0 border-slate-200 dark:border-slate-800">
+                                                        <div className={cn("h-10 flex items-center justify-center px-1 text-[10px] font-black uppercase text-center", depot.color, depot.text)}>
+                                                            {depot.shortLabel}
+                                                        </div>
+                                                        <div className="grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-950">
+                                                            <div className="py-2 text-center">
+                                                                <span className="block text-[9px] font-bold uppercase text-slate-400">Est.</span>
+                                                                <span className="text-xs font-black text-slate-800 dark:text-slate-100">{totals[depot.key].estoque}</span>
+                                                            </div>
+                                                            <div className="py-2 text-center">
+                                                                <span className="block text-[9px] font-bold uppercase text-slate-400">Pend.</span>
+                                                                <span className="text-xs font-black text-orange-600">{totals[depot.key].pendencia}</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="py-2 text-center">
-                                                        <span className="block text-[9px] font-bold uppercase text-slate-400">Pend.</span>
-                                                        <span className="text-xs font-black text-orange-600">{totals[depot.key].pendencia}</span>
-                                                    </div>
-                                                </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
-                                    <button
-                                        onClick={clearVariableValues}
-                                        disabled={rows.length === 0}
-                                        className="mt-3 w-full h-10 bg-white dark:bg-slate-950 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 disabled:opacity-40 rounded-lg font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
-                                    >
-                                        <RotateCcw className="w-4 h-4" />
-                                        Zerar Valores
-                                    </button>
-                                </div>
+                                            <button
+                                                onClick={clearVariableValues}
+                                                disabled={rows.length === 0}
+                                                className="mt-3 w-full h-10 bg-white dark:bg-slate-950 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 disabled:opacity-40 rounded-lg font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
+                                            >
+                                                <RotateCcw className="w-4 h-4" />
+                                                Zerar Valores
+                                            </button>
+                                        </div>
 
-                                <div className="hidden md:flex px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 overflow-x-auto items-center justify-between gap-6">
-                                    <div className="flex items-start justify-start gap-6 min-w-max pb-1">
-                                        {DEPOTS.map((depot) => (
-                                            <div key={depot.key} className="flex flex-col gap-1 border-r last:border-r-0 border-slate-200 dark:border-slate-700 pr-6 last:pr-0">
-                                                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{depot.label}</span>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[10px] text-slate-500 uppercase">Est</span>
-                                                        <span className="text-base font-bold text-slate-800 dark:text-slate-100">{totals[depot.key].estoque}</span>
+                                        <div className="hidden md:flex px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 overflow-x-auto items-center justify-between gap-4">
+                                            <div className="flex items-center justify-start gap-4 min-w-max">
+                                                {DEPOTS.map((depot) => (
+                                                    <div key={depot.key} className="flex items-center gap-2 border-r last:border-r-0 border-slate-200 dark:border-slate-700 pr-4 last:pr-0">
+                                                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{depot.label}</span>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex items-baseline gap-1">
+                                                                <span className="text-[9px] text-slate-500 uppercase">Est</span>
+                                                                <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{totals[depot.key].estoque}</span>
+                                                            </div>
+                                                            <div className="flex items-baseline gap-1">
+                                                                <span className="text-[9px] text-slate-500 uppercase">Pnd</span>
+                                                                <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{totals[depot.key].pendencia}</span>
+                                                            </div>
+                                                            <div className="flex items-baseline gap-1 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                                                                <span className="text-[9px] text-amber-700 dark:text-amber-400 font-bold uppercase">Ped</span>
+                                                                <span className="text-sm font-black text-amber-800 dark:text-amber-300">{totals[depot.key].pedido}</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[10px] text-slate-500 uppercase">Pnd</span>
-                                                        <span className="text-base font-bold text-slate-800 dark:text-slate-100">{totals[depot.key].pendencia}</span>
-                                                    </div>
-                                                    <div className="flex flex-col bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
-                                                        <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold uppercase">Ped</span>
-                                                        <span className="text-lg font-black text-amber-800 dark:text-amber-300">{totals[depot.key].pedido}</span>
-                                                    </div>
-                                                </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
-                                    <button
-                                        onClick={clearVariableValues}
-                                        disabled={rows.length === 0}
-                                        className="shrink-0 h-11 px-4 bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-40 rounded-lg font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-sm active:scale-95 transition-all"
-                                    >
-                                        <RotateCcw className="w-4 h-4" />
-                                        Zerar Valores
-                                    </button>
-                                </div>
+                                            <button
+                                                onClick={clearVariableValues}
+                                                disabled={rows.length === 0}
+                                                className="shrink-0 h-9 px-3 bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-40 rounded-lg font-black text-[11px] uppercase tracking-widest flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+                                            >
+                                                <RotateCcw className="w-4 h-4" />
+                                                Zerar Valores
+                                            </button>
+                                        </div>
 
-                                <div className="p-3 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-900">
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                            Mostrando {firstVisibleItem} - {lastVisibleItem} de {filteredRows.length} rodas
-                                        </span>
+                                        <div className="px-3 py-1.5 flex flex-col sm:flex-row items-center justify-between gap-2 bg-white dark:bg-slate-900">
+                                            <div className="flex items-center gap-4">
+                                                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                                    Mostrando {firstVisibleItem} - {lastVisibleItem} de {filteredRows.length} rodas
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700 shadow-sm">
+                                                <button
+                                                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                                                    disabled={currentPage === 1}
+                                                    className="px-3 py-1 text-sm font-semibold rounded cursor-pointer transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600"
+                                                >
+                                                    Anterior
+                                                </button>
+                                                <div className="text-sm font-black text-amber-600 dark:text-amber-500 px-3 py-0.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded shadow-inner">
+                                                    {currentPage} <span className="text-slate-400 font-medium">/ {totalPages}</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                                                    disabled={currentPage === totalPages}
+                                                    className="px-3 py-1 text-sm font-semibold rounded cursor-pointer transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600"
+                                                >
+                                                    Próximo
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
-                                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700 shadow-sm">
-                                    <button
-                                        onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                                        disabled={currentPage === 1}
-                                        className="px-3 py-1.5 text-sm font-semibold rounded cursor-pointer transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600"
-                                    >
-                                        Anterior
-                                    </button>
-                                    <div className="text-sm font-black text-amber-600 dark:text-amber-500 px-3 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded shadow-inner">
-                                        {currentPage} <span className="text-slate-400 font-medium">/ {totalPages}</span>
-                                    </div>
-                                    <button
-                                        onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                                        disabled={currentPage === totalPages}
-                                        className="px-3 py-1.5 text-sm font-semibold rounded cursor-pointer transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600"
-                                    >
-                                        Próximo
-                                    </button>
                                 </div>
-                            </div>
-                        </div>
-                        </div>
-                    </main>
-                </section>
+                            </main>
+                        </section>
                     </div>
                 </div>
             )}
@@ -3139,14 +3203,14 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                     </p>
                                 </div>
                             </div>
-                            <button 
+                            <button
                                 onClick={() => {
                                     if (Object.keys(uploadSummaries).length > 0) {
                                         setShowUnsyncedWarning(true);
                                     } else {
                                         setIsUploadModalOpen(false);
                                     }
-                                }} 
+                                }}
                                 className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
                             >
                                 <X className="w-5 h-5" />
@@ -3295,66 +3359,109 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                         </div>
 
                         <div className="p-6">
-                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Exportação Geral</h3>
-                            <button
-                                onClick={exportCompleteTable}
-                                className="w-full text-left group flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-500 dark:hover:border-emerald-500 hover:shadow-lg transition-all mb-8"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                                        <Database className="w-5 h-5" />
+                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Tabelas</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                                <button
+                                    onClick={() => exportCompleteTable(true)}
+                                    className="cursor-pointer text-left group flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm transition-all active:scale-[0.99]"
+                                >
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">
+                                            <Printer className="w-5 h-5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h4 className="font-bold text-slate-800 dark:text-slate-100 transition-colors">Tabela para impressão</h4>
+                                            <p className="text-sm text-slate-500">Pedidos em branco para preenchimento manual.</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Tabela Completa (Geral)</h4>
-                                        <p className="text-sm text-slate-500">Baixar a planilha com todas as colunas de estoques, pendências e pedidos de todas as filiais.</p>
+                                    <div className="shrink-0 w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400 flex items-center justify-center group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
+                                        <Download className="w-4 h-4" />
                                     </div>
-                                </div>
-                            </button>
+                                </button>
 
-                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Pedidos por Fábrica</h3>
+                                <button
+                                    onClick={() => exportCompleteTable(false)}
+                                    className="cursor-pointer text-left group flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm transition-all active:scale-[0.99]"
+                                >
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">
+                                            <Database className="w-5 h-5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h4 className="font-bold text-slate-800 dark:text-slate-100 transition-colors">Tabela completa</h4>
+                                            <p className="text-sm text-slate-500">Tabela com estoques, pendências e pedidos preenchidos.</p>
+                                        </div>
+                                    </div>
+                                    <div className="shrink-0 w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400 flex items-center justify-center group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
+                                        <Download className="w-4 h-4" />
+                                    </div>
+                                </button>
+                            </div>
+
+                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Pedidos</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <button
                                     onClick={() => exportFactoryOrders('pr', 'MK')}
-                                    className="group flex flex-col p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-500 hover:shadow-md transition-all text-left"
+                                    className="cursor-pointer group flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm transition-all text-left active:scale-[0.99]"
                                 >
-                                    <div className="flex items-center justify-between w-full mb-3">
-                                        <span className="font-black text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">MK</span>
-                                        <Package className="w-4 h-4 text-slate-400 group-hover:text-indigo-500" />
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Package className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200" />
+                                            <span className="font-black text-slate-800 dark:text-slate-100 transition-colors">Pedidos MK</span>
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 leading-relaxed">Pedidos da MK.<br />Código, descrição e quantidade.</p>
                                     </div>
-                                    <p className="text-[11px] text-slate-500 leading-relaxed">Somente itens com pedidos &gt; 0.<br/>Colunas: Código, Descrição e Quantidade.</p>
+                                    <div className="shrink-0 w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400 flex items-center justify-center group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
+                                        <Download className="w-4 h-4" />
+                                    </div>
                                 </button>
 
                                 <button
                                     onClick={() => exportFactoryOrders('sc', 'Moleri')}
-                                    className="group flex flex-col p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-500 hover:shadow-md transition-all text-left"
+                                    className="cursor-pointer group flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm transition-all text-left active:scale-[0.99]"
                                 >
-                                    <div className="flex items-center justify-between w-full mb-3">
-                                        <span className="font-black text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Moleri</span>
-                                        <Package className="w-4 h-4 text-slate-400 group-hover:text-emerald-500" />
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Package className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200" />
+                                            <span className="font-black text-slate-800 dark:text-slate-100 transition-colors">Pedidos Moleri</span>
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 leading-relaxed">Pedidos da Moleri.<br />Código, descrição e quantidade.</p>
                                     </div>
-                                    <p className="text-[11px] text-slate-500 leading-relaxed">Somente itens com pedidos &gt; 0.<br/>Colunas: Código, Descrição e Quantidade.</p>
+                                    <div className="shrink-0 w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400 flex items-center justify-center group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
+                                        <Download className="w-4 h-4" />
+                                    </div>
                                 </button>
 
                                 <button
                                     onClick={() => exportFactoryOrders('cm', 'CM')}
-                                    className="group flex flex-col p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-amber-500 hover:shadow-md transition-all text-left"
+                                    className="cursor-pointer group flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm transition-all text-left active:scale-[0.99]"
                                 >
-                                    <div className="flex items-center justify-between w-full mb-3">
-                                        <span className="font-black text-slate-800 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">CM</span>
-                                        <Package className="w-4 h-4 text-slate-400 group-hover:text-amber-500" />
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Package className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200" />
+                                            <span className="font-black text-slate-800 dark:text-slate-100 transition-colors">Pedidos CM</span>
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 leading-relaxed">Pedidos da CM.<br />Código, descrição e quantidade.</p>
                                     </div>
-                                    <p className="text-[11px] text-slate-500 leading-relaxed">Somente itens com pedidos &gt; 0.<br/>Colunas: Código, Descrição e Quantidade.</p>
+                                    <div className="shrink-0 w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400 flex items-center justify-center group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
+                                        <Download className="w-4 h-4" />
+                                    </div>
                                 </button>
 
                                 <button
                                     onClick={() => exportFactoryOrders('rs', 'Olimpo')}
-                                    className="group flex flex-col p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-rose-500 hover:shadow-md transition-all text-left"
+                                    className="cursor-pointer group flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm transition-all text-left active:scale-[0.99]"
                                 >
-                                    <div className="flex items-center justify-between w-full mb-3">
-                                        <span className="font-black text-slate-800 dark:text-slate-100 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">Olimpo</span>
-                                        <Package className="w-4 h-4 text-slate-400 group-hover:text-rose-500" />
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Package className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200" />
+                                            <span className="font-black text-slate-800 dark:text-slate-100 transition-colors">Pedidos Olimpo</span>
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 leading-relaxed">Pedidos da Olimpo.<br />Código, descrição e quantidade.</p>
                                     </div>
-                                    <p className="text-[11px] text-slate-500 leading-relaxed">Somente itens com pedidos &gt; 0.<br/>Colunas: Código, Descrição e Quantidade.</p>
+                                    <div className="shrink-0 w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400 flex items-center justify-center group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
+                                        <Download className="w-4 h-4" />
+                                    </div>
                                 </button>
                             </div>
                         </div>
@@ -3383,44 +3490,40 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                             <nav className="flex-1 overflow-auto p-4 space-y-1">
                                 <button
                                     onClick={() => setActiveSettingsTab('vinculos')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
-                                        activeSettingsTab === 'vinculos' 
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeSettingsTab === 'vinculos'
+                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
                                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
-                                    }`}
+                                        }`}
                                 >
                                     <Settings className="w-4 h-4" />
                                     Vínculos de Códigos
                                 </button>
                                 <button
                                     onClick={() => setActiveSettingsTab('regras')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
-                                        activeSettingsTab === 'regras' 
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeSettingsTab === 'regras'
+                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
                                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
-                                    }`}
+                                        }`}
                                 >
                                     <Sliders className="w-4 h-4" />
                                     Padrões Globais
                                 </button>
                                 <button
                                     onClick={() => setActiveSettingsTab('tags')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
-                                        activeSettingsTab === 'tags' 
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeSettingsTab === 'tags'
+                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
                                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
-                                    }`}
+                                        }`}
                                 >
                                     <Tag className="w-4 h-4" />
                                     Gestão de Tags
                                 </button>
                                 <button
                                     onClick={() => setActiveSettingsTab('custo')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
-                                        activeSettingsTab === 'custo' 
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeSettingsTab === 'custo'
+                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
                                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
-                                    }`}
+                                        }`}
                                 >
                                     <TrendingUp className="w-4 h-4" />
                                     Custo dos Itens
@@ -3480,72 +3583,72 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                         {(Object.entries(codeMappings) as [string, string][])
                                                             .sort(([a], [b]) => a.localeCompare(b))
                                                             .map(([importedCode, fixedCode]) => (
-                                                            <tr key={importedCode} className="border-b last:border-b-0 border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                                                                <td className="p-4 font-mono font-bold text-slate-700 dark:text-slate-300">
-                                                                    <div className="bg-slate-100 dark:bg-slate-800 inline-block px-2 py-1 rounded">
-                                                                        {importedCode}
-                                                                    </div>
-                                                                </td>
-                                                                <td className="p-4">
-                                                                    <div className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                                                                        {fixedCode}
-                                                                    </div>
-                                                                    <div className="text-xs text-slate-500 mt-1 truncate max-w-[300px]" title={rows.find(r => r.codigo === fixedCode)?.descricao || 'Item não encontrado na base'}>
-                                                                        {rows.find(r => r.codigo === fixedCode)?.descricao || 'Item não encontrado na base'}
-                                                                    </div>
-                                                                </td>
-                                                                <td className="p-4">
-                                                                    <div className="flex items-center justify-end gap-2">
-                                                                        <button 
-                                                                            onClick={() => {
-                                                                                if(window.confirm('Para alterar este vínculo, é recomendado excluí-lo e refazer no próximo upload. Deseja excluir agora?')) {
-                                                                                    const newMappings = { ...codeMappings };
-                                                                                    delete newMappings[importedCode];
-                                                                                    persistCodeMappings(newMappings);
-                                                                                    if (
-                                                                                        exportCodeMappings[fixedCode]?.codigo === importedCode ||
-                                                                                        normalizeUploadCode(exportCodeMappings[fixedCode]?.codigo || '', replacementRules) === importedCode
-                                                                                    ) {
-                                                                                        const nextExportMappings = { ...exportCodeMappings };
-                                                                                        delete nextExportMappings[fixedCode];
-                                                                                        persistExportCodeMappings(nextExportMappings);
-                                                                                        deletePendenciaExportCodeMapping(fixedCode);
+                                                                <tr key={importedCode} className="border-b last:border-b-0 border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                                                    <td className="p-4 font-mono font-bold text-slate-700 dark:text-slate-300">
+                                                                        <div className="bg-slate-100 dark:bg-slate-800 inline-block px-2 py-1 rounded">
+                                                                            {importedCode}
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="p-4">
+                                                                        <div className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                                                                            {fixedCode}
+                                                                        </div>
+                                                                        <div className="text-xs text-slate-500 mt-1 truncate max-w-[300px]" title={rows.find(r => r.codigo === fixedCode)?.descricao || 'Item não encontrado na base'}>
+                                                                            {rows.find(r => r.codigo === fixedCode)?.descricao || 'Item não encontrado na base'}
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="p-4">
+                                                                        <div className="flex items-center justify-end gap-2">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    if (window.confirm('Para alterar este vínculo, é recomendado excluí-lo e refazer no próximo upload. Deseja excluir agora?')) {
+                                                                                        const newMappings = { ...codeMappings };
+                                                                                        delete newMappings[importedCode];
+                                                                                        persistCodeMappings(newMappings);
+                                                                                        if (
+                                                                                            exportCodeMappings[fixedCode]?.codigo === importedCode ||
+                                                                                            normalizeUploadCode(exportCodeMappings[fixedCode]?.codigo || '', replacementRules) === importedCode
+                                                                                        ) {
+                                                                                            const nextExportMappings = { ...exportCodeMappings };
+                                                                                            delete nextExportMappings[fixedCode];
+                                                                                            persistExportCodeMappings(nextExportMappings);
+                                                                                            deletePendenciaExportCodeMapping(fixedCode);
+                                                                                        }
+                                                                                        toast.success('Vínculo excluído com sucesso.');
                                                                                     }
-                                                                                    toast.success('Vínculo excluído com sucesso.');
-                                                                                }
-                                                                            }}
-                                                                            className="p-2 rounded-lg hover:bg-indigo-50 text-indigo-600 dark:hover:bg-indigo-900/30 transition-colors" 
-                                                                            title="Editar Vínculo"
-                                                                        >
-                                                                            <Pencil className="w-4 h-4" />
-                                                                        </button>
-                                                                        <button 
-                                                                            onClick={() => {
-                                                                                if(window.confirm('Excluir este vínculo? O código original voltará a aparecer nos itens não importados no próximo upload.')) {
-                                                                                    const newMappings = { ...codeMappings };
-                                                                                    delete newMappings[importedCode];
-                                                                                    persistCodeMappings(newMappings);
-                                                                                    if (
-                                                                                        exportCodeMappings[fixedCode]?.codigo === importedCode ||
-                                                                                        normalizeUploadCode(exportCodeMappings[fixedCode]?.codigo || '', replacementRules) === importedCode
-                                                                                    ) {
-                                                                                        const nextExportMappings = { ...exportCodeMappings };
-                                                                                        delete nextExportMappings[fixedCode];
-                                                                                        persistExportCodeMappings(nextExportMappings);
-                                                                                        deletePendenciaExportCodeMapping(fixedCode);
+                                                                                }}
+                                                                                className="p-2 rounded-lg hover:bg-indigo-50 text-indigo-600 dark:hover:bg-indigo-900/30 transition-colors"
+                                                                                title="Editar Vínculo"
+                                                                            >
+                                                                                <Pencil className="w-4 h-4" />
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    if (window.confirm('Excluir este vínculo? O código original voltará a aparecer nos itens não importados no próximo upload.')) {
+                                                                                        const newMappings = { ...codeMappings };
+                                                                                        delete newMappings[importedCode];
+                                                                                        persistCodeMappings(newMappings);
+                                                                                        if (
+                                                                                            exportCodeMappings[fixedCode]?.codigo === importedCode ||
+                                                                                            normalizeUploadCode(exportCodeMappings[fixedCode]?.codigo || '', replacementRules) === importedCode
+                                                                                        ) {
+                                                                                            const nextExportMappings = { ...exportCodeMappings };
+                                                                                            delete nextExportMappings[fixedCode];
+                                                                                            persistExportCodeMappings(nextExportMappings);
+                                                                                            deletePendenciaExportCodeMapping(fixedCode);
+                                                                                        }
+                                                                                        toast.success('Vínculo excluído com sucesso.');
                                                                                     }
-                                                                                    toast.success('Vínculo excluído com sucesso.');
-                                                                                }
-                                                                            }}
-                                                                            className="p-2 rounded-lg hover:bg-red-50 text-red-600 dark:hover:bg-red-900/30 transition-colors" 
-                                                                            title="Excluir Vínculo"
-                                                                        >
-                                                                            <Trash2 className="w-4 h-4" />
-                                                                        </button>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        ))}
+                                                                                }}
+                                                                                className="p-2 rounded-lg hover:bg-red-50 text-red-600 dark:hover:bg-red-900/30 transition-colors"
+                                                                                title="Excluir Vínculo"
+                                                                            >
+                                                                                <Trash2 className="w-4 h-4" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -3582,7 +3685,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                             <p className="text-xs text-slate-500 mb-3">
                                                                 Aplica-se em: {rule.targetPrefixes.length > 0 ? <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold">{rule.targetPrefixes.join(', ')}</span> : 'Todos os códigos (Condicional)'}
                                                             </p>
-                                                            
+
                                                             {rule.type === 'prefix_swap' && (
                                                                 <div className="flex items-center gap-2 text-sm font-mono bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-800 inline-flex">
                                                                     <span className="text-rose-500 font-bold">{rule.oldPrefix}</span>
@@ -3605,7 +3708,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                             )}
                                                         </div>
                                                         <div className="shrink-0 flex items-center">
-                                                            <button 
+                                                            <button
                                                                 onClick={() => toggleRuleActive(rule.id)}
                                                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${rule.active ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'}`}
                                                             >
@@ -3632,7 +3735,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                     </div>
                                     <div className="p-8 flex-1 overflow-y-auto">
                                         <div className="flex gap-2 mb-6 max-w-md">
-                                            <input 
+                                            <input
                                                 type="text"
                                                 placeholder="Nova etiqueta..."
                                                 value={newTagName}
@@ -3640,7 +3743,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                 onKeyDown={e => e.key === 'Enter' && handleAddTag()}
                                                 className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 transition-all uppercase"
                                             />
-                                            <button 
+                                            <button
                                                 onClick={handleAddTag}
                                                 className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
                                             >
@@ -3654,7 +3757,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                     <span className="text-sm font-black text-slate-600 dark:text-slate-300 tracking-wider">
                                                         {tag}
                                                     </span>
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleDeleteTag(tag)}
                                                         className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all active:scale-90"
                                                         title="Excluir etiqueta"
@@ -4093,7 +4196,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                     </motion.div>
                 </div>
             )}
-            
+
             <AnimatePresence>
                 {showSyncSuccess && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
@@ -4105,8 +4208,8 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                         >
                             {/* Colorful background glow */}
                             <div className="absolute inset-0 opacity-20 dark:opacity-10 pointer-events-none">
-                                <motion.div 
-                                    animate={{ rotate: 360 }} 
+                                <motion.div
+                                    animate={{ rotate: 360 }}
                                     transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                                     className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] bg-[conic-gradient(from_0deg,#4285F4,#34A853,#FBBC05,#EA4335,#4285F4)] blur-3xl"
                                 />
@@ -4120,7 +4223,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                 <Lottie animationData={cloudSyncAnimation} loop={false} />
                             </motion.div>
 
-                            <motion.h2 
+                            <motion.h2
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 1.7 }}
@@ -4128,13 +4231,13 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                             >
                                 Sincronizado!
                             </motion.h2>
-                            <motion.p 
+                            <motion.p
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 1.8 }}
                                 className="text-center text-slate-500 dark:text-slate-400 text-sm font-medium relative z-10"
                             >
-                                Os dados já estão na nuvem e visíveis para os vendedores.
+                                Os dados já estão na nuvem e visíveis.
                             </motion.p>
                         </motion.div>
                     </div>

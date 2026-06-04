@@ -299,7 +299,7 @@ export async function savePendenciaCompletaBaseRows(rows: PendenciaCompletaBaseR
         descricao: String(row.descricao).trim(),
         custo: Number(row.custo) || 0,
         ordem: Number(row.ordem ?? index),
-        ordem_origem: row.fixa === false ? 'temporaria' : 'fixa',
+        ordem_origem: row.ordem_origem || (row.fixa === false ? 'temporaria' : 'fixa'),
         updated_at: new Date().toISOString()
       }));
 
@@ -430,7 +430,8 @@ export async function archiveAndClearPedidos(
   metadata?: { 
     tags?: Record<string, string[]>, 
     sketches?: Record<string, string>, 
-    audios?: Record<string, string> 
+    audios?: Record<string, string>,
+    inventorySnapshot?: any[]
   }
 ) {
   try {
@@ -438,37 +439,71 @@ export async function archiveAndClearPedidos(
       return await localDb.archiveAndClearLocalPedidos(metadata);
     }
 
+    const factories = [
+      { name: 'MK', estoqueKey: 'est_mk', pendenciaKey: 'pend_mk' },
+      { name: 'MOLERI', estoqueKey: 'est_moleri', pendenciaKey: 'pend_moleri' },
+      { name: 'CM', estoqueKey: 'est_cm', pendenciaKey: 'pend_cm' },
+      { name: 'OLIMPO', estoqueKey: 'est_olimpo', pendenciaKey: 'pend_olimpo' }
+    ];
+
     // 1. Buscar dados atuais
     const { data: currentData, error: fetchError } = await supabase
       .from('pedidos_fabrica')
       .select('codigo, factory, quantidade')
 
     if (fetchError) throw fetchError;
-    if (!currentData || currentData.length === 0) return true;
 
-    // 2. Buscar descrições e preços para o histórico
-    const { data: stockData } = await supabase
+    // 2. Buscar descrições, preços, estoque e pendência para o histórico
+    const { data: cloudStockData } = await supabase
       .from('pendencias_estoque')
-      .select('codigo, descricao, preco');
+      .select('codigo, descricao, preco, quantidade, est_mk, pend_mk, est_moleri, pend_moleri, est_cm, pend_cm, est_olimpo, pend_olimpo');
+    const stockData = metadata?.inventorySnapshot || cloudStockData || [];
 
-    const stockMap = new Map(stockData?.map(s => [s.codigo, s]) || []);
+    if ((!currentData || currentData.length === 0) && (!stockData || stockData.length === 0)) return true;
+
+    const stockMap = new Map<string, any>(stockData?.map(s => [String(s.codigo).trim(), s]) || []);
+    const orderMap = new Map<string, number>(
+      currentData?.map(item => [`${String(item.codigo).trim()}__${String(item.factory).trim()}`, Number(item.quantidade) || 0]) || []
+    );
+    const codesToArchive = new Set<string>([
+      ...(currentData?.map(item => String(item.codigo).trim()) || []),
+      ...(stockData?.map(item => String(item.codigo).trim()) || [])
+    ]);
 
     // 3. Preparar dados para o histórico com metadados
     const now = new Date();
     const batchName = `Semana de ${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-    const historyData = currentData.map(item => {
-      const details = stockMap.get(item.codigo);
-      return {
-        ...item,
-        descricao: details?.descricao || 'N/A',
-        preco: details?.preco || 0,
-        lote_nome: batchName,
-        arquivado_em: new Date().toISOString(),
-        tags: metadata?.tags?.[item.codigo] || null,
-        sketch_data: metadata?.sketches?.[item.codigo] || null,
-        audio_data: metadata?.audios?.[item.codigo] || null
-      };
+    const historyData = Array.from(codesToArchive).flatMap(codigo => {
+      const details = stockMap.get(codigo);
+
+      return factories
+        .map(factory => {
+          const estoque = Number(details?.[factory.estoqueKey] ?? (factory.name === 'MK' ? details?.quantidade : 0)) || 0;
+          const pendencia = Number(details?.[factory.pendenciaKey]) || 0;
+          const quantidade = orderMap.get(`${codigo}__${factory.name}`) || 0;
+
+          const baseItem = {
+            codigo,
+            descricao: details?.descricao || 'N/A',
+            preco: details?.preco || 0,
+            lote_nome: batchName,
+            arquivado_em: new Date().toISOString(),
+            tags: metadata?.tags?.[codigo] || null,
+            sketch_data: metadata?.sketches?.[codigo] || null,
+            audio_data: metadata?.audios?.[codigo] || null
+          };
+
+          return [
+            { ...baseItem, factory: factory.name, quantidade },
+            { ...baseItem, factory: `${factory.name}_ESTOQUE`, quantidade: estoque },
+            { ...baseItem, factory: `${factory.name}_PENDENCIA`, quantidade: pendencia }
+          ];
+        })
+        .flat()
+        .filter(item => item.quantidade > 0 || item.tags || item.sketch_data || item.audio_data);
     });
+
+    if (historyData.length === 0) return true;
 
     // 3. Inserir no histórico
     const { error: historyError } = await supabase
@@ -480,27 +515,31 @@ export async function archiveAndClearPedidos(
       throw new Error(`Erro no arquivamento: ${historyError.message}`);
     }
 
-    const codigosParaLimpar = Array.from(new Set(currentData.map(d => d.codigo)));
+    const codigosParaLimpar = Array.from(new Set(currentData?.map(d => d.codigo) || []));
     console.log(`Limpando ${codigosParaLimpar.length} códigos das tabelas ativas...`);
 
     // 4. Limpar metadados ativos (Etiquetas, Rascunhos, Áudios)
     try {
-      await supabase.from('item_tags').delete().in('codigo', codigosParaLimpar);
-      await supabase.from('stock_sketches').delete().in('codigo', codigosParaLimpar);
-      await supabase.from('stock_audios').delete().in('codigo', codigosParaLimpar);
+      if (codigosParaLimpar.length > 0) {
+        await supabase.from('item_tags').delete().in('codigo', codigosParaLimpar);
+        await supabase.from('stock_sketches').delete().in('codigo', codigosParaLimpar);
+        await supabase.from('stock_audios').delete().in('codigo', codigosParaLimpar);
+      }
     } catch (e) {
       console.warn('Falha parcial ao limpar metadados:', e);
     }
 
     // 5. Limpar tabela principal de pedidos
-    const { error: deleteError } = await supabase
-      .from('pedidos_fabrica')
-      .delete()
-      .in('codigo', codigosParaLimpar);
+    if (codigosParaLimpar.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('pedidos_fabrica')
+        .delete()
+        .in('codigo', codigosParaLimpar);
 
-    if (deleteError) {
-      console.error('Erro ao deletar pedidos principais:', deleteError);
-      throw new Error(`Erro na limpeza: ${deleteError.message}`);
+      if (deleteError) {
+        console.error('Erro ao deletar pedidos principais:', deleteError);
+        throw new Error(`Erro na limpeza: ${deleteError.message}`);
+      }
     }
 
     return true;
@@ -514,23 +553,34 @@ export async function getHistoryBatches() {
   if (USE_LOCAL_DB) return localDb.getHistoryBatches();
 
   try {
-    const { data, error } = await supabase
-      .from('pedidos_fabrica_historico')
-      .select('lote_nome, arquivado_em')
-      // Note: No Postgres original, o distinct on seria ideal, mas no JS vamos agregar
-    
-    if (error) throw error;
-    
-    // Agrupar por lote_nome e pegar a data mais recente
-    const batches = data.reduce((acc: any[], curr) => {
-      const existing = acc.find(b => b.lote_nome === curr.lote_nome);
-      if (!existing) {
-        acc.push({ lote_nome: curr.lote_nome, arquivado_em: curr.arquivado_em });
-      }
-      return acc;
-    }, []);
+    const pageSize = 1000;
+    let page = 0;
+    let hasMore = true;
+    const batchMap = new Map<string, { lote_nome: string; arquivado_em: string }>();
 
-    return batches.sort((a, b) => new Date(b.arquivado_em).getTime() - new Date(a.arquivado_em).getTime());
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('pedidos_fabrica_historico')
+        .select('lote_nome, arquivado_em')
+        .order('arquivado_em', { ascending: false })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (error) throw error;
+
+      (data || []).forEach(curr => {
+        if (!batchMap.has(curr.lote_nome)) {
+          batchMap.set(curr.lote_nome, { lote_nome: curr.lote_nome, arquivado_em: curr.arquivado_em });
+        }
+      });
+
+      if (!data || data.length < pageSize) {
+        hasMore = false;
+      } else {
+        page++;
+      }
+    }
+
+    return Array.from(batchMap.values()).sort((a, b) => new Date(b.arquivado_em).getTime() - new Date(a.arquivado_em).getTime());
   } catch (err) {
     console.error('Erro ao buscar lotes de histórico:', err);
     return [];
@@ -541,13 +591,30 @@ export async function getHistoryItems(lote_nome: string) {
   if (USE_LOCAL_DB) return localDb.getHistoryItems(lote_nome);
 
   try {
-    const { data, error } = await supabase
-      .from('pedidos_fabrica_historico')
-      .select('*')
-      .eq('lote_nome', lote_nome);
-    
-    if (error) throw error;
-    return data || [];
+    const pageSize = 1000;
+    let page = 0;
+    let hasMore = true;
+    let allData: any[] = [];
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('pedidos_fabrica_historico')
+        .select('*')
+        .eq('lote_nome', lote_nome)
+        .order('codigo', { ascending: true })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (error) throw error;
+
+      allData = [...allData, ...(data || [])];
+      if (!data || data.length < pageSize) {
+        hasMore = false;
+      } else {
+        page++;
+      }
+    }
+
+    return allData;
   } catch (err) {
     console.error('Erro ao buscar itens do histórico:', err);
     return [];
@@ -593,20 +660,26 @@ export async function restoreHistoryBatch(lote_nome: string): Promise<{ success:
       const codigo = String(it.codigo || '').trim();
       const factory = String(it.factory || '').trim();
       if (!codigo || !factory) return;
+      if (!['MK', 'MOLERI', 'CM', 'OLIMPO'].includes(factory)) return;
+
+      const quantidade = Number(it.quantidade) || 0;
+      if (quantidade <= 0) return;
 
       restoredByKey.set(`${codigo}__${factory}`, {
         codigo,
         factory,
-        quantidade: Number(it.quantidade) || 0,
+        quantidade,
         updated_at: now
       });
     });
 
     const batchToInsert = Array.from(restoredByKey.values());
-    const { error: insertError } = await supabase
-      .from('pedidos_fabrica')
-      .upsert(batchToInsert, { onConflict: 'codigo, factory' });
-    if (insertError) throw insertError;
+    if (batchToInsert.length > 0) {
+      const { error: insertError } = await supabase
+        .from('pedidos_fabrica')
+        .upsert(batchToInsert, { onConflict: 'codigo, factory' });
+      if (insertError) throw insertError;
+    }
 
     return { success: true, items };
   } catch (err) {

@@ -74,27 +74,61 @@ export async function archiveAndClearLocalPedidos(
     metadata?: { 
         tags?: Record<string, string[]>, 
         sketches?: Record<string, string>, 
-        audios?: Record<string, string> 
+        audios?: Record<string, string>,
+        inventorySnapshot?: any[]
     }
 ) {
     const current = await loadLocalPedidosFabrica();
-    if (!current || current.length === 0) return true;
+    const stock = metadata?.inventorySnapshot || await getLocalPendenciasInventory();
+    if ((!current || current.length === 0) && (!stock || stock.length === 0)) return true;
 
     // 1. Simular o arquivamento no localStorage
     const history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
     const now = new Date();
     const batchName = `Semana de ${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-    
-    const historyData = current.map((item: any) => ({
-        ...item,
-        descricao: 'Item Local',
-        preco: 0,
-        lote_nome: batchName,
-        arquivado_em: new Date().toISOString(),
-        tags: metadata?.tags?.[item.codigo] || null,
-        sketch_data: metadata?.sketches?.[item.codigo] || null,
-        audio_data: metadata?.audios?.[item.codigo] || null
-    }));
+
+    const factories = [
+        { name: 'MK', estoqueKey: 'est_mk', pendenciaKey: 'pend_mk' },
+        { name: 'MOLERI', estoqueKey: 'est_moleri', pendenciaKey: 'pend_moleri' },
+        { name: 'CM', estoqueKey: 'est_cm', pendenciaKey: 'pend_cm' },
+        { name: 'OLIMPO', estoqueKey: 'est_olimpo', pendenciaKey: 'pend_olimpo' }
+    ];
+    const stockMap = new Map<string, any>((stock || []).map((item: any) => [String(item.codigo).trim(), item]));
+    const orderMap = new Map<string, number>((current || []).map((item: any) => [`${String(item.codigo).trim()}__${String(item.factory).trim()}`, Number(item.quantidade) || 0]));
+    const codesToArchive = new Set<string>([
+        ...((current || []).map((item: any) => String(item.codigo).trim())),
+        ...((stock || []).map((item: any) => String(item.codigo).trim()))
+    ]);
+
+    const historyData = Array.from(codesToArchive).flatMap((codigo) => {
+        const details: any = stockMap.get(codigo);
+
+        return factories
+            .map((factory) => {
+                const estoque = Number(details?.[factory.estoqueKey] ?? (factory.name === 'MK' ? details?.quantidade : 0)) || 0;
+                const pendencia = Number(details?.[factory.pendenciaKey]) || 0;
+                const quantidade = orderMap.get(`${codigo}__${factory.name}`) || 0;
+
+                const baseItem = {
+                    codigo,
+                    descricao: details?.descricao || 'Item Local',
+                    preco: details?.preco || 0,
+                    lote_nome: batchName,
+                    arquivado_em: new Date().toISOString(),
+                    tags: metadata?.tags?.[codigo] || null,
+                    sketch_data: metadata?.sketches?.[codigo] || null,
+                    audio_data: metadata?.audios?.[codigo] || null
+                };
+
+                return [
+                    { ...baseItem, factory: factory.name, quantidade },
+                    { ...baseItem, factory: `${factory.name}_ESTOQUE`, quantidade: estoque },
+                    { ...baseItem, factory: `${factory.name}_PENDENCIA`, quantidade: pendencia }
+                ];
+            })
+            .flat()
+            .filter((item) => item.quantidade > 0 || item.tags || item.sketch_data || item.audio_data);
+    });
 
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify([...history, ...historyData]));
 
@@ -136,12 +170,15 @@ export async function restoreHistoryBatch(lote_nome: string): Promise<{ success:
         localStorage.setItem(TAGS_STORAGE_KEY, JSON.stringify(tagsToRestore));
     }
 
-    const restored = items.map((it: any) => ({
-        codigo: it.codigo,
-        factory: it.factory,
-        quantidade: it.quantidade,
-        updated_at: new Date().toISOString()
-    }));
+    const restored = items
+        .filter((it: any) => ['MK', 'MOLERI', 'CM', 'OLIMPO'].includes(String(it.factory || '').trim()))
+        .filter((it: any) => Number(it.quantidade) > 0)
+        .map((it: any) => ({
+            codigo: it.codigo,
+            factory: it.factory,
+            quantidade: it.quantidade,
+            updated_at: new Date().toISOString()
+        }));
 
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(restored));
     return { success: true, items };
@@ -182,4 +219,3 @@ export async function saveLocalItemCosts(costsMap: Record<string, number>) {
     localStorage.setItem(COSTS_STORAGE_KEY, JSON.stringify(costsMap));
     return true;
 }
-

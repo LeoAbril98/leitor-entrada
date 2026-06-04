@@ -28,6 +28,23 @@ interface HistoryModuleProps {
     onBack: () => void;
 }
 
+const historyFactories = ['MK', 'MOLERI', 'CM', 'OLIMPO'] as const;
+
+const formatHistoryNumber = (value: unknown) => {
+    const number = Number(value) || 0;
+    return number > 0 ? number : '-';
+};
+
+const parseHistoryFactory = (factory: string) => {
+    if (factory.endsWith('_ESTOQUE')) {
+        return { factory: factory.replace('_ESTOQUE', ''), metric: 'estoque' as const };
+    }
+    if (factory.endsWith('_PENDENCIA')) {
+        return { factory: factory.replace('_PENDENCIA', ''), metric: 'pendencia' as const };
+    }
+    return { factory, metric: 'pedido' as const };
+};
+
 export const HistoryModule: React.FC<HistoryModuleProps> = ({ onBack }) => {
     const [batches, setBatches] = useState<any[]>([]);
     const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
@@ -120,11 +137,17 @@ export const HistoryModule: React.FC<HistoryModuleProps> = ({ onBack }) => {
                     sketch_data: item.sketch_data,
                     hasAudio: !!item.audio_data,
                     audio_data: item.audio_data,
-                    MK: 0, MOLERI: 0, CM: 0, OLIMPO: 0
+                    MK: { estoque: 0, pendencia: 0, pedido: 0 },
+                    MOLERI: { estoque: 0, pendencia: 0, pedido: 0 },
+                    CM: { estoque: 0, pendencia: 0, pedido: 0 },
+                    OLIMPO: { estoque: 0, pendencia: 0, pedido: 0 }
                 });
             }
             const current = map.get(item.codigo);
-            current[item.factory] = item.quantidade;
+            const parsed = parseHistoryFactory(String(item.factory || ''));
+            if (historyFactories.includes(parsed.factory as typeof historyFactories[number])) {
+                current[parsed.factory][parsed.metric] = Number(item.quantidade) || 0;
+            }
             // Atualizar metadados caso estejam vindo em linhas separadas (embora o normal seja vir em todas por código)
             if (item.tags) current.tags = item.tags;
             if (item.sketch_data) {
@@ -142,6 +165,23 @@ export const HistoryModule: React.FC<HistoryModuleProps> = ({ onBack }) => {
             it.descricao.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [batchItems, searchTerm]);
+
+    const renderFactorySnapshot = (snapshot: { estoque?: number; pendencia?: number; pedido?: number }) => (
+        <div className="inline-grid grid-cols-3 min-w-[132px] overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-[10px]">
+            <div className="px-2 py-1.5 text-center">
+                <span className="block font-black text-blue-600">Est.</span>
+                <span className="block mt-0.5 font-black text-slate-600 dark:text-slate-300">{formatHistoryNumber(snapshot?.estoque)}</span>
+            </div>
+            <div className="px-2 py-1.5 text-center border-x border-slate-100 dark:border-slate-800">
+                <span className="block font-black text-orange-600">Pend.</span>
+                <span className="block mt-0.5 font-black text-slate-600 dark:text-slate-300">{formatHistoryNumber(snapshot?.pendencia)}</span>
+            </div>
+            <div className="px-2 py-1.5 text-center">
+                <span className="block font-black text-emerald-600">Ped.</span>
+                <span className="block mt-0.5 font-black text-slate-600 dark:text-slate-300">{formatHistoryNumber(snapshot?.pedido)}</span>
+            </div>
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8">
@@ -302,10 +342,10 @@ export const HistoryModule: React.FC<HistoryModuleProps> = ({ onBack }) => {
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-5 text-center text-sm font-black text-slate-600 dark:text-slate-400">{item.MK || '-'}</td>
-                                                    <td className="px-6 py-5 text-center text-sm font-black text-slate-600 dark:text-slate-400">{item.MOLERI || '-'}</td>
-                                                    <td className="px-6 py-5 text-center text-sm font-black text-slate-600 dark:text-slate-400">{item.CM || '-'}</td>
-                                                    <td className="px-6 py-5 text-center text-sm font-black text-slate-600 dark:text-slate-400">{item.OLIMPO || '-'}</td>
+                                                    <td className="px-6 py-5 text-center">{renderFactorySnapshot(item.MK)}</td>
+                                                    <td className="px-6 py-5 text-center">{renderFactorySnapshot(item.MOLERI)}</td>
+                                                    <td className="px-6 py-5 text-center">{renderFactorySnapshot(item.CM)}</td>
+                                                    <td className="px-6 py-5 text-center">{renderFactorySnapshot(item.OLIMPO)}</td>
                                                     <td className="px-6 py-5">
                                                         <div className="flex items-center justify-center gap-2">
                                                             {item.hasSketch && (

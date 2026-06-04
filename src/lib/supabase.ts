@@ -889,14 +889,25 @@ export async function getPendenciaImportCodeMappings(): Promise<Record<string, s
   if (USE_LOCAL_DB) return {};
 
   try {
-    const { data, error } = await supabase
-      .from('pendencia_codigo_import_mappings')
-      .select('codigo_importado, codigo_base');
+    let allData: PendenciaImportCodeMapping[] = [];
+    let page = 0;
+    let hasMore = true;
+    const pageSize = 1000;
 
-    if (error) throw error;
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('pendencia_codigo_import_mappings')
+        .select('codigo_importado, codigo_base')
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (error) throw error;
+      allData = [...allData, ...(data || [])];
+      hasMore = (data || []).length === pageSize;
+      page++;
+    }
 
     const mappings: Record<string, string> = {};
-    data?.forEach((row: PendenciaImportCodeMapping) => {
+    allData.forEach((row: PendenciaImportCodeMapping) => {
       mappings[row.codigo_importado] = row.codigo_base;
     });
 
@@ -915,7 +926,7 @@ export async function savePendenciaImportCodeMappings(
 
   try {
     const entries = Object.entries(mappings)
-      .filter(([codigo_importado, codigo_base]) => codigo_importado && codigo_base)
+      .filter(([codigo_importado, codigo_base]) => codigo_importado && codigo_base && codigo_importado !== codigo_base)
       .map(([codigo_importado, codigo_base]) => ({
         codigo_importado,
         codigo_base,
@@ -975,14 +986,25 @@ export async function getPendenciaExportCodeMappings(): Promise<Record<string, {
   if (USE_LOCAL_DB) return {};
 
   try {
-    const { data, error } = await supabase
-      .from('pendencia_codigo_export_mappings')
-      .select('codigo_base, codigo_original, descricao_original');
+    let allData: PendenciaExportCodeMapping[] = [];
+    let page = 0;
+    let hasMore = true;
+    const pageSize = 1000;
 
-    if (error) throw error;
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('pendencia_codigo_export_mappings')
+        .select('codigo_base, codigo_original, descricao_original')
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (error) throw error;
+      allData = [...allData, ...(data || [])];
+      hasMore = (data || []).length === pageSize;
+      page++;
+    }
 
     const mappings: Record<string, { codigo: string; descricao?: string }> = {};
-    data?.forEach((row: PendenciaExportCodeMapping) => {
+    allData.forEach((row: PendenciaExportCodeMapping) => {
       mappings[row.codigo_base] = {
         codigo: row.codigo_original,
         descricao: row.descricao_original || undefined

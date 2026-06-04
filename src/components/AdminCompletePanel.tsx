@@ -902,11 +902,18 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
     const persistCodeMappings = async (
         nextMappings: Record<string, string>,
-        descriptions: Record<string, string | undefined> = {}
+        descriptions: Record<string, string | undefined> = {},
+        importedCodesToSync?: string[]
     ) => {
         setCodeMappings(nextMappings);
         localStorage.setItem(CODE_MAPPING_STORAGE_KEY, JSON.stringify(nextMappings));
-        const success = await savePendenciaImportCodeMappings(nextMappings, descriptions);
+        const mappingsToSync = importedCodesToSync
+            ? importedCodesToSync.reduce<Record<string, string>>((acc, importedCode) => {
+                if (nextMappings[importedCode]) acc[importedCode] = nextMappings[importedCode];
+                return acc;
+            }, {})
+            : nextMappings;
+        const success = await savePendenciaImportCodeMappings(mappingsToSync, descriptions);
         if (!success) console.warn('Falha ao sincronizar vínculos de importação com o Supabase.');
         return success;
     };
@@ -1581,7 +1588,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
                 const savedImportMappings = await persistCodeMappings(nextMappings, {
                     [item.codigo]: item.descricao === '-' ? undefined : item.descricao
-                });
+                }, [item.codigo]);
                 if (!savedImportMappings) {
                     toast.error('Vínculo salvo localmente, mas falhou ao salvar a memória fixa na nuvem.');
                 }
@@ -1626,6 +1633,11 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         const saved = await persistRows(importReport.pendingRows);
         if (!saved) {
             toast.error('Erro ao salvar o upload na nuvem.');
+            return;
+        }
+        const savedExportMappings = await persistExportCodeMappings(mergeExportCodeMappings(exportCodeMappings, importReport.exportCodeMappings));
+        if (!savedExportMappings) {
+            toast.error('Upload salvo, mas falhou ao salvar os códigos originais para exportação.');
             return;
         }
         setLastUploads((current) => ({ ...current, [importReport.uploadKey]: importReport.fileName }));

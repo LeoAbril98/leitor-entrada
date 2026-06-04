@@ -13,6 +13,7 @@ export interface StockItem {
   est_olimpo?: number;
   pend_olimpo?: number;
   preco?: number;
+  fixa?: boolean;
 }
 
 export type Origin = 'DEVOLUÇÃO' | 'SC' | 'RS' | 'CM';

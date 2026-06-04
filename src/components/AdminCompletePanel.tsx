@@ -46,14 +46,17 @@ import {
     addGlobalTag,
     deleteGlobalTag,
     syncPendenciasToCloud,
-    clearPendenciasInventory,
+    getPendenciasInventory,
     getPendenciaCompletaBaseRows,
     savePendenciaCompletaBaseRows,
     getPendenciaExportCodeMappings,
     savePendenciaExportCodeMappings,
     deletePendenciaExportCodeMapping,
+    clearAllPendenciaExportCodeMappings,
     getItemTags, 
     saveItemTags,
+    getItemCosts,
+    saveItemCosts,
     saveCloudSketch,
     deleteCloudSketch,
     saveCloudAudio,
@@ -61,7 +64,6 @@ import {
     getCloudAudio,
     getAllCloudSketches,
     getAllCloudAudios,
-    clearAllPedidosFabrica,
     archiveAndClearPedidos
 } from '../lib/supabase';
 import {
@@ -90,6 +92,7 @@ interface CompleteWheelRow {
     custo: number;
     ordem: number;
     ordemOrigem?: 'importada';
+    fixa: boolean;
     pedido_pr: number;
     estoque_pr: number;
     pendencia_pr: number;
@@ -149,7 +152,6 @@ interface UploadSummary {
     quantidadeTotal: number;
 }
 
-const STORAGE_KEY = '@MK_PENDENCIA_COMPLETA_ROWS';
 const UPLOAD_SUMMARY_STORAGE_KEY = '@MK_PENDENCIA_COMPLETA_UPLOAD_SUMMARY';
 const CODE_MAPPING_STORAGE_KEY = '@MK_PENDENCIA_COMPLETA_CODE_MAPPINGS';
 const EXPORT_CODE_MAPPING_STORAGE_KEY = '@MK_PENDENCIA_COMPLETA_EXPORT_CODE_MAPPINGS';
@@ -193,9 +195,9 @@ const DEPOT_STYLES: Record<DepotKey, { group: string; order: string; body: strin
 
 const REPLACEMENT_RULES_STORAGE_KEY = '@MK_COMPLETA_REPLACEMENT_RULES';
 
-export type ReplacementRuleType = 'prefix_swap' | 'suffix_replace' | 'remove_char' | 'remove_asterisk';
+type ReplacementRuleType = 'prefix_swap' | 'suffix_replace' | 'remove_char' | 'remove_asterisk';
 
-export interface ReplacementRule {
+interface ReplacementRule {
     id: string;
     description: string;
     type: ReplacementRuleType;
@@ -208,7 +210,7 @@ export interface ReplacementRule {
     charToRemove?: string;
 }
 
-export const DEFAULT_REPLACEMENT_RULES: ReplacementRule[] = [
+const DEFAULT_REPLACEMENT_RULES: ReplacementRule[] = [
     {
         id: 'remove-asterisk',
         description: 'Remover asterisco (*) de códigos que começam com C ou R',
@@ -220,7 +222,7 @@ export const DEFAULT_REPLACEMENT_RULES: ReplacementRule[] = [
         id: 'c-to-e',
         description: 'Trocar prefixo C por E',
         type: 'prefix_swap',
-        active: true,
+        active: false,
         targetPrefixes: ['C55', 'C56', 'C58', 'C63', 'C64', 'C87', 'C90'],
         oldPrefix: 'C',
         newPrefix: 'E'
@@ -229,7 +231,7 @@ export const DEFAULT_REPLACEMENT_RULES: ReplacementRule[] = [
         id: 'c56-lbd-to-bd',
         description: 'Corrigir sufixo LBD para BD',
         type: 'suffix_replace',
-        active: true,
+        active: false,
         targetPrefixes: ['E56', 'C56'],
         oldSuffix: 'LBD',
         newSuffix: 'BD'
@@ -238,7 +240,7 @@ export const DEFAULT_REPLACEMENT_RULES: ReplacementRule[] = [
         id: 'c56-bd-to-d',
         description: 'Corrigir sufixo BD para D',
         type: 'suffix_replace',
-        active: true,
+        active: false,
         targetPrefixes: ['E56', 'C56'],
         oldSuffix: 'BD',
         newSuffix: 'D'
@@ -260,6 +262,8 @@ const UPLOAD_SLOTS: UploadSlot[] = DEPOTS.flatMap(({ key, label }) => [
 
 const getUploadKey = (slot: UploadSlot) => `${slot.metric}_${slot.depot}`;
 const getUploadField = (slot: UploadSlot) => `${slot.metric}_${slot.depot}` as keyof CompleteWheelRow;
+const WEEKLY_BASE_INSERT_AFTER = 'GAUCHA1510P4P25';
+const WEEKLY_BASE_INSERT_BEFORE = 'F51860B4A38HG';
 
 const emptyRow = (): CompleteWheelRow => ({
     codigo: '',
@@ -267,6 +271,7 @@ const emptyRow = (): CompleteWheelRow => ({
     custo: 0,
     ordem: 0,
     ordemOrigem: undefined,
+    fixa: true,
     pedido_pr: 0,
     estoque_pr: 0,
     pendencia_pr: 0,
@@ -312,6 +317,8 @@ const parseNumber = (value: unknown) => {
 
 const formatNumber = (value: number) => value.toLocaleString('pt-BR');
 
+const normalizeCodeKey = (value: unknown) => String(value || '').replace(/\s+/g, '').toUpperCase();
+
 const normalizeUploadCode = (codigo: string, rules: ReplacementRule[] = DEFAULT_REPLACEMENT_RULES) => {
     let normalized = codigo.trim().toUpperCase();
     const activeRules = rules.filter(r => r.active);
@@ -346,7 +353,7 @@ const normalizeUploadCode = (codigo: string, rules: ReplacementRule[] = DEFAULT_
     return normalized;
 };
 
-const getFallbackOriginalExportCode = (codigo: string) => {
+const getFallbackOriginalExportCode = (codigo: string, descricao = '') => {
     const normalized = codigo.trim().toUpperCase();
     const prefix = normalized.slice(0, 3);
     const eToCPrefixes = ['E55', 'E56', 'E58', 'E63', 'E64', 'E87', 'E90'];
@@ -356,16 +363,11 @@ const getFallbackOriginalExportCode = (codigo: string) => {
         fallback = `C${normalized.slice(1)}`;
     }
 
-    if (fallback.startsWith('C56') && /D$/.test(fallback) && !/BD$/.test(fallback)) {
-        fallback = `${fallback.slice(0, -1)}BD`;
-    }
-
-    if (/^[CR]/.test(fallback) && !fallback.endsWith('*')) {
-        fallback = `${fallback}*`;
-    }
+    // Reverse all global replacement rules to restore original code
+    fallback = revertReplacementRules(fallback);
 
     return fallback || codigo;
-};
+};;
 
 const findValue = (row: Record<string, unknown>, aliases: string[]) => {
     const normalizedAliases = aliases.map(normalize);
@@ -377,10 +379,18 @@ const getColumnValue = (row: Record<string, unknown>, index: number) => Object.v
 
 const readWorkbookRows = async (file: File): Promise<Record<string, unknown>[]> => {
     const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: 'array' });
+    const workbook = XLSX.read(buffer, { type: 'array', raw: true });
     const sheetName = workbook.SheetNames.find((name) => normalize(name) === 'PRINCIPAL') || workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    return XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+    return XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '', raw: true });
+};
+
+const readWorkbookAs2DArray = async (file: File): Promise<unknown[][]> => {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array', raw: true });
+    const sheetName = workbook.SheetNames.find((name) => normalize(name) === 'PRINCIPAL') || workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    return XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '', raw: true });
 };
 
 const compressImage = (file: File, maxWidth = 800, maxHeight = 800, quality = 0.7): Promise<Blob> => {
@@ -420,19 +430,6 @@ const compressImage = (file: File, maxWidth = 800, maxHeight = 800, quality = 0.
         };
         reader.onerror = reject;
     });
-};
-
-const loadStoredRows = (): CompleteWheelRow[] => {
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (!stored) return [];
-        const parsed = JSON.parse(stored);
-        return Array.isArray(parsed)
-            ? parsed.map((row, index) => ({ ...emptyRow(), ...row, ordem: Number(row.ordem ?? index) }))
-            : [];
-    } catch {
-        return [];
-    }
 };
 
 const loadUploadSummaries = (): Record<string, UploadSummary> => {
@@ -478,6 +475,29 @@ const loadExportCodeMappings = (): Record<string, ExportMapping> => {
     }
 };
 
+const mergeExportCodeMappings = (...sources: Record<string, ExportMapping>[]) => (
+    sources.reduce<Record<string, ExportMapping>>((acc, source) => {
+        Object.entries(source || {}).forEach(([fixedCode, mapping]) => {
+            if (!mapping?.codigo) return;
+            const current = acc[fixedCode];
+            
+            // Prioritize original codes that are different from the normalized/fixed base code.
+            // A no-op mapping (where original code equals fixed base code) should never overwrite
+            // a real mapped original code that is already registered.
+            let finalCodigo = mapping.codigo;
+            if (mapping.codigo === fixedCode && current?.codigo && current.codigo !== fixedCode) {
+                finalCodigo = current.codigo;
+            }
+            
+            acc[fixedCode] = {
+                codigo: finalCodigo,
+                descricao: mapping.descricao || current?.descricao
+            };
+        });
+        return acc;
+    }, {})
+);
+
 const loadReplacementRules = (): ReplacementRule[] => {
     try {
         const stored = localStorage.getItem(REPLACEMENT_RULES_STORAGE_KEY);
@@ -488,6 +508,50 @@ const loadReplacementRules = (): ReplacementRule[] => {
     } catch {
         return DEFAULT_REPLACEMENT_RULES;
     }
+};
+
+// Helper to reverse the global replacement rules applied during import.
+const revertReplacementRules = (codigo: string): string => {
+    let result = codigo;
+    let activeRules = DEFAULT_REPLACEMENT_RULES.filter(r => r.active);
+    try {
+        const stored = localStorage.getItem(REPLACEMENT_RULES_STORAGE_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                activeRules = parsed.filter((r: any) => r.active);
+            }
+        }
+    } catch {
+        // Fallback to defaults
+    }
+    // Process in reverse order to undo transformations correctly.
+    for (let i = activeRules.length - 1; i >= 0; i--) {
+        const rule = activeRules[i];
+        const matchesPrefix = rule.targetPrefixes.length === 0 || rule.targetPrefixes.some(p => result.startsWith(p));
+        if (!matchesPrefix) continue;
+        switch (rule.type) {
+            case 'remove_asterisk':
+                if (/^[CR]/.test(result) && !result.endsWith('*')) {
+                    result = `${result}*`;
+                }
+                break;
+            case 'prefix_swap':
+                if (rule.oldPrefix && rule.newPrefix && result.startsWith(rule.newPrefix)) {
+                    result = rule.oldPrefix + result.slice(rule.newPrefix.length);
+                }
+                break;
+            case 'suffix_replace':
+                if (rule.oldSuffix && rule.newSuffix && result.endsWith(rule.newSuffix)) {
+                    result = result.slice(0, -rule.newSuffix.length) + rule.oldSuffix;
+                }
+                break;
+            // remove_char cannot be reliably reversed; leave as is.
+            default:
+                break;
+        }
+    }
+    return result;
 };
 
 const loadCatalogOrder = async () => {
@@ -509,7 +573,7 @@ const loadCatalogOrder = async () => {
 
 export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, onViewHistory }) => {
     const [view, setView] = useState<'dashboard' | 'table'>('dashboard');
-    const [rows, setRows] = useState<CompleteWheelRow[]>(loadStoredRows);
+    const [rows, setRows] = useState<CompleteWheelRow[]>([]);
     const [catalogOrder, setCatalogOrder] = useState<Map<string, number>>(new Map());
     const [query, setQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -522,7 +586,9 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [isSyncingCloud, setIsSyncingCloud] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-    const [activeSettingsTab, setActiveSettingsTab] = useState<'vinculos' | 'regras' | 'tags'>('vinculos');
+    const [activeSettingsTab, setActiveSettingsTab] = useState<'vinculos' | 'regras' | 'tags' | 'custo'>('vinculos');
+    const [itemCosts, setItemCosts] = useState<Record<string, number>>({});
+    const [itemCostsSearchQuery, setItemCostsSearchQuery] = useState('');
     const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
     const [isPhotoUploading, setIsPhotoUploading] = useState(false);
     const [importReport, setImportReport] = useState<ImportReport | null>(null);
@@ -532,6 +598,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const [replacementRules, setReplacementRules] = useState<ReplacementRule[]>(loadReplacementRules);
     const [linkDrafts, setLinkDrafts] = useState<Record<string, string>>({});
     const [linkTargetItem, setLinkTargetItem] = useState<MissingImportItem | null>(null);
+    const [isLinkingCode, setIsLinkingCode] = useState(false);
     const [linkSearch, setLinkSearch] = useState('');
     const [addTargetItem, setAddTargetItem] = useState<MissingImportItem | null>(null);
     const [resetUploadSlot, setResetUploadSlot] = useState<UploadSlot | null>(null);
@@ -570,6 +637,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const [activeAudioItem, setActiveAudioItem] = useState<{ codigo: string, title: string } | null>(null);
 
     const baseInputRef = useRef<HTMLInputElement | null>(null);
+    const costFileInputRef = useRef<HTMLInputElement | null>(null);
     const tableContainerRef = useRef<HTMLDivElement | null>(null);
 
     // Lógicas de Carregamento
@@ -580,11 +648,32 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
     const loadExportMappings = async () => {
         const cloudMappings = await getPendenciaExportCodeMappings();
-        if (Object.keys(cloudMappings).length === 0) return;
+        const localExportMappings = loadExportCodeMappings();
+        const localImportMappings = loadCodeMappings();
+        const inferredExportMappings = Object.entries(localImportMappings).reduce<Record<string, ExportMapping>>((acc, [importedCode, fixedCode]) => {
+            if (!localExportMappings[fixedCode] && !cloudMappings[fixedCode]) {
+                acc[fixedCode] = { codigo: importedCode };
+            }
+            return acc;
+        }, {});
+        const nextExportMappings = mergeExportCodeMappings(localExportMappings, inferredExportMappings, cloudMappings);
+        if (Object.keys(nextExportMappings).length === 0) return;
 
         setExportCodeMappings((current) => {
-            const next = { ...current, ...cloudMappings };
+            const next = mergeExportCodeMappings(current, nextExportMappings);
             localStorage.setItem(EXPORT_CODE_MAPPING_STORAGE_KEY, JSON.stringify(next));
+            return next;
+        });
+        savePendenciaExportCodeMappings(nextExportMappings);
+
+        setCodeMappings((current) => {
+            const reverseMappings = Object.entries(nextExportMappings).reduce<Record<string, string>>((acc, [fixedCode, mapping]) => {
+                const importedCode = normalizeUploadCode(mapping.codigo || '', replacementRules);
+                if (importedCode && fixedCode) acc[importedCode] = fixedCode;
+                return acc;
+            }, {});
+            const next = { ...current, ...reverseMappings };
+            localStorage.setItem(CODE_MAPPING_STORAGE_KEY, JSON.stringify(next));
             return next;
         });
     };
@@ -629,10 +718,16 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         setAudios(urls);
     };
 
+    const loadItemCosts = async () => {
+        const costs = await getItemCosts();
+        setItemCosts(costs);
+    };
+
     useEffect(() => {
         loadCatalogOrder().then(setCatalogOrder);
         getGlobalTags().then(setGlobalTags);
         loadItemTags();
+        loadItemCosts();
         loadExportMappings();
         loadSketches();
         loadAudios();
@@ -642,19 +737,44 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         let isMounted = true;
 
         const loadBaseRowsFromCloud = async () => {
-            if (rows.length > 0) return;
+            const [cloudRows, costs] = await Promise.all([
+                getPendenciaCompletaBaseRows(),
+                getItemCosts()
+            ]);
+            if (!isMounted) return;
 
-            const cloudRows = await getPendenciaCompletaBaseRows();
-            if (!isMounted || cloudRows.length === 0) return;
+            setItemCosts(costs);
 
-            const baseRows = cloudRows.map((row, index) => ({
-                ...emptyRow(),
-                codigo: row.codigo,
-                descricao: row.descricao,
-                custo: Number(row.custo) || 0,
-                ordem: Number(row.ordem ?? index),
-                ordemOrigem: row.ordem_origem === 'importada' ? 'importada' as const : undefined
-            }));
+            if (cloudRows.length === 0) {
+                setRows([]);
+                return;
+            }
+
+            const stockRows = await getPendenciasInventory();
+            const stockByCode = new Map(stockRows.map((row: any) => [normalizeCodeKey(row.codigo), row]));
+
+            const baseRows = cloudRows.map((row, index) => {
+                const stockRow = stockByCode.get(normalizeCodeKey(row.codigo)) || {};
+                const persistentCusto = costs[row.codigo] !== undefined ? costs[row.codigo] : (Number(row.custo ?? stockRow.preco) || 0);
+
+                return {
+                    ...emptyRow(),
+                    codigo: row.codigo,
+                    descricao: row.descricao,
+                    custo: persistentCusto,
+                    ordem: Number(row.ordem ?? index),
+                    ordemOrigem: row.ordem_origem === 'importada' ? 'importada' as const : undefined,
+                    fixa: row.ordem_origem !== 'temporaria',
+                    estoque_pr: Number(stockRow.est_mk ?? stockRow.quantidade) || 0,
+                    pendencia_pr: Number(stockRow.pend_mk) || 0,
+                    estoque_sc: Number(stockRow.est_moleri) || 0,
+                    pendencia_sc: Number(stockRow.pend_moleri) || 0,
+                    estoque_cm: Number(stockRow.est_cm) || 0,
+                    pendencia_cm: Number(stockRow.pend_cm) || 0,
+                    estoque_rs: Number(stockRow.est_olimpo) || 0,
+                    pendencia_rs: Number(stockRow.pend_olimpo) || 0
+                };
+            });
 
             const pedidos = await loadPedidosFabrica();
             const orderByCode = new Map<string, Partial<Record<DepotKey, number>>>();
@@ -682,38 +802,10 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             });
 
             setRows(rowsWithOrders);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(rowsWithOrders));
-            toast.success('Base fixa carregada da nuvem.', { duration: 2000 });
+            toast.success('Tabela carregada da nuvem.', { duration: 2000 });
         };
 
         loadBaseRowsFromCloud();
-
-        return () => {
-            isMounted = false;
-        };
-    }, []);
-
-    useEffect(() => {
-        let isMounted = true;
-
-        const migrateLocalBaseToCloud = async () => {
-            if (rows.length === 0) return;
-
-            const cloudRows = await getPendenciaCompletaBaseRows();
-            if (!isMounted || cloudRows.length > 0) return;
-
-            const success = await savePendenciaCompletaBaseRows(rows.map((row, index) => ({
-                codigo: row.codigo,
-                descricao: row.descricao,
-                custo: row.custo,
-                ordem: row.ordem ?? index,
-                ordem_origem: row.ordemOrigem || null
-            })));
-
-            if (success) toast.success('Base fixa enviada para a nuvem.', { duration: 2000 });
-        };
-
-        migrateLocalBaseToCloud();
 
         return () => {
             isMounted = false;
@@ -752,7 +844,6 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                     };
                 });
 
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRows));
                 return nextRows;
             });
         };
@@ -766,15 +857,16 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
     const persistRows = (nextRows: CompleteWheelRow[]) => {
         setRows(nextRows);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextRows));
-        savePendenciaCompletaBaseRows(nextRows.map((row, index) => ({
+        return savePendenciaCompletaBaseRows(nextRows.map((row, index) => ({
             codigo: row.codigo,
             descricao: row.descricao,
             custo: row.custo,
             ordem: row.ordem ?? index,
-            ordem_origem: row.ordemOrigem || null
+            ordem_origem: row.ordemOrigem || null,
+            fixa: row.fixa !== false
         }))).then((success) => {
-            if (!success) console.warn('Falha ao sincronizar base fixa da Pendência Completa.');
+            if (!success) console.warn('Falha ao sincronizar tabela da Pendência Completa.');
+            return success;
         });
     };
 
@@ -786,6 +878,15 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const persistCodeMappings = (nextMappings: Record<string, string>) => {
         setCodeMappings(nextMappings);
         localStorage.setItem(CODE_MAPPING_STORAGE_KEY, JSON.stringify(nextMappings));
+    };
+
+    const handleClearAllCodeMappings = async () => {
+        if (!window.confirm('ATENÇÃO: Isso irá excluir TODOS os vínculos de códigos salvos no sistema. O sistema deixará de associar os códigos alternativos nos próximos uploads.\n\nDeseja continuar?')) return;
+        
+        persistCodeMappings({});
+        persistExportCodeMappings({});
+        await clearAllPendenciaExportCodeMappings();
+        toast.success('Todos os vínculos de códigos foram excluídos.');
     };
 
     const persistExportCodeMappings = (nextMappings: Record<string, ExportMapping>) => {
@@ -874,11 +975,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             return true;
         });
 
-        const getOrder = (row: CompleteWheelRow) => (
-            row.ordemOrigem === 'importada'
-                ? row.ordem
-                : catalogOrder.get(row.codigo) ?? row.ordem
-        );
+        const getOrder = (row: CompleteWheelRow) => row.ordem;
 
         return [...baseRows].sort((left, right) => getOrder(left) - getOrder(right));
     }, [catalogOrder, query, rows, filterLinha, filterAro, filterFuracao, filterModelo, filterAcabamento, filterFactoryOrders, filterHasTags, filterHasSketch, filterHasAudio, itemTags, sketches, audios]);
@@ -983,31 +1080,199 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const currentPageRows = filteredRows.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     const firstVisibleItem = filteredRows.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
     const lastVisibleItem = Math.min(currentPage * itemsPerPage, filteredRows.length);
-    const linkSearchResults = useMemo(() => {
-        const terms = String(linkSearch || '')
+    const getCodeLinkSuggestions = (search: string, limit?: number) => {
+        const terms = String(search || '')
             .split(/\s+/)
             .map(normalizeDescriptionSearch)
             .filter(Boolean);
-        if (terms.length === 0) return rows.slice(0, 80);
+        if (terms.length === 0) return limit ? rows.slice(0, limit) : rows;
 
-        return rows
-            .filter((row) => {
-                const haystack = normalizeDescriptionSearch(row.descricao);
-                return terms.every((term) => haystack.includes(term));
-            })
-            .slice(0, 80);
-    }, [linkSearch, rows]);
+        const matches = rows.filter((row) => {
+            const haystack = `${normalizeDescriptionSearch(row.codigo)} ${normalizeDescriptionSearch(row.descricao)}`;
+            return terms.every((term) => haystack.includes(term));
+        });
+
+        return limit ? matches.slice(0, limit) : matches;
+    };
+    const linkSearchResults = useMemo(() => getCodeLinkSuggestions(linkSearch, 80), [linkSearch, rows]);
+    const linkSuggestionCounts = useMemo(() => {
+        if (!importReport) return {};
+
+        return importReport.missingItems.reduce<Record<string, number>>((acc, item) => {
+            const search = item.descricao === '-' ? item.codigo : item.descricao;
+            acc[item.codigo] = getCodeLinkSuggestions(search).length;
+            return acc;
+        }, {});
+    }, [importReport?.missingItems, rows]);
+
+    const handleUpdateCost = async (codigo: string, value: string) => {
+        const numericVal = parseNumber(value);
+        const nextCosts = { ...itemCosts, [codigo]: numericVal };
+        setItemCosts(nextCosts);
+        
+        await saveItemCosts(nextCosts);
+        
+        setRows(currentRows => currentRows.map(row => 
+            row.codigo === codigo ? { ...row, custo: numericVal } : row
+        ));
+    };
+
+    const handleDeleteCost = async (codigo: string) => {
+        if (!window.confirm(`Excluir o custo associado ao código ${codigo}?`)) return;
+        const nextCosts = { ...itemCosts };
+        delete nextCosts[codigo];
+        setItemCosts(nextCosts);
+        await saveItemCosts(nextCosts);
+        
+        setRows(currentRows => currentRows.map(row => 
+            row.codigo === codigo ? { ...row, custo: 0 } : row
+        ));
+        toast.success(`Custo do código ${codigo} removido.`);
+    };
+
+    const importCostsFile = async (file: File) => {
+        const toastId = toast.loading('Lendo planilha de custos...');
+        try {
+            const rows2d = await readWorkbookAs2DArray(file);
+            if (rows2d.length === 0) {
+                toast.error('A planilha está vazia.', { id: toastId });
+                return;
+            }
+
+            let headerRowIndex = -1;
+            let codeColIndex = -1;
+            let costColIndex = -1;
+
+            const codeAliases = ['PRODUTO', 'PRODUTOS', 'CODIGO', 'CÓDIGO', 'COD', 'CÓD', 'ITEM', 'PCE_ITEM', 'REFERENCIA', 'REFERÊNCIA'];
+            const costAliases = [
+                'CUSTO', 'PRECO', 'PREÇO', 'VALOR', 
+                'VALOR UNITARIO', 'VALOR UNITÁRIO', 
+                'VLR UNITARIO', 'VLR UNITÁRIO', 
+                'VLR UNITARI', 'VLR UNITÁRI',
+                'CUSTO UNITARIO', 'CUSTO UNITÁRIO'
+            ];
+
+            // Scan first 30 rows to detect headers
+            for (let i = 0; i < Math.min(rows2d.length, 30); i++) {
+                const row = rows2d[i];
+                if (!Array.isArray(row)) continue;
+
+                let foundCodeIndex = -1;
+                let foundCostIndex = -1;
+
+                for (let j = 0; j < row.length; j++) {
+                    const cellVal = normalize(String(row[j] || ''));
+                    if (!cellVal) continue;
+
+                    if (foundCodeIndex === -1 && codeAliases.some(alias => normalize(alias) === cellVal || cellVal.includes(normalize(alias)))) {
+                        foundCodeIndex = j;
+                    }
+                    if (foundCostIndex === -1 && costAliases.some(alias => normalize(alias) === cellVal || cellVal.includes(normalize(alias)))) {
+                        foundCostIndex = j;
+                    }
+                }
+
+                if (foundCodeIndex !== -1 && foundCostIndex !== -1) {
+                    headerRowIndex = i;
+                    codeColIndex = foundCodeIndex;
+                    costColIndex = foundCostIndex;
+                    break;
+                }
+            }
+
+            // Fallback: If no headers found, check if column F (index 5) has codes and column W (index 22) has data
+            if (headerRowIndex === -1) {
+                for (let i = 0; i < Math.min(rows2d.length, 15); i++) {
+                    const row = rows2d[i];
+                    if (row && row[5] && String(row[5]).trim()) {
+                        headerRowIndex = i;
+                        codeColIndex = 5;
+                        costColIndex = 22;
+                        break;
+                    }
+                }
+            }
+
+            if (codeColIndex === -1 || costColIndex === -1 || headerRowIndex === -1) {
+                toast.error('Não foi possível identificar as colunas de Código e Custo na planilha.', { id: toastId });
+                return;
+            }
+
+            const nextCosts = { ...itemCosts };
+            let importedCount = 0;
+            const startIdx = headerRowIndex + 1;
+
+            for (let i = startIdx; i < rows2d.length; i++) {
+                const row = rows2d[i];
+                if (!row || !Array.isArray(row)) continue;
+
+                const rawCodigo = String(row[codeColIndex] || '').trim();
+                if (!rawCodigo || rawCodigo === 'Produto' || rawCodigo === 'CODIGO') continue;
+
+                const rawCusto = row[costColIndex];
+                const custo = parseNumber(rawCusto);
+
+                const codigo = normalizeUploadCode(rawCodigo, replacementRules);
+                const mappedCodigo = codeMappings[codigo] || codigo;
+
+                nextCosts[mappedCodigo] = custo;
+                importedCount++;
+            }
+
+            if (importedCount === 0) {
+                toast.error('Nenhum custo válido encontrado na planilha.', { id: toastId });
+                return;
+            }
+
+            setItemCosts(nextCosts);
+            const saved = await saveItemCosts(nextCosts);
+            if (!saved) {
+                toast.error('Erro de sincronização: Custos salvos localmente, mas falhou ao salvar na nuvem. Verifique se a tabela "item_costs" foi criada no Supabase.', { duration: 6000 });
+            }
+
+            // Also update any matching rows in current dashboard rows
+            setRows((currentRows) => {
+                const updatedRows = currentRows.map((row) => {
+                    const persistentCusto = nextCosts[row.codigo];
+                    if (persistentCusto !== undefined) {
+                        return { ...row, custo: persistentCusto };
+                    }
+                    return row;
+                });
+
+                savePendenciaCompletaBaseRows(updatedRows.map((row, index) => ({
+                    codigo: row.codigo,
+                    descricao: row.descricao,
+                    custo: row.custo,
+                    ordem: row.ordem ?? index,
+                    ordem_origem: row.ordemOrigem || null,
+                    fixa: row.fixa !== false
+                })));
+
+                return updatedRows;
+            });
+
+            toast.success(`${importedCount} custos importados e atualizados com sucesso.`, { id: toastId });
+        } catch (error) {
+            console.error(error);
+            toast.error('Erro ao ler a planilha de custos.', { id: toastId });
+        } finally {
+            if (costFileInputRef.current) costFileInputRef.current.value = '';
+        }
+    };
 
     const importBaseFile = async (file: File) => {
-        const toastId = toast.loading('Importando base fixa...');
+        const toastId = toast.loading('Importando base semanal...');
         try {
             const sheetRows = await readWorkbookRows(file);
             const mapped = sheetRows
                 .map((sheetRow, index) => {
-                    const codigo = String(findValue(sheetRow, ['CODIGO', 'CÓDIGO', 'COD', 'CÓD']) || '').trim();
+                    const codigo = String(findValue(sheetRow, ['PRODUTO', 'PCE_ITEM', 'CODIGO', 'CÓDIGO', 'COD', 'CÓD']) || '').trim();
                     const descricao = String(findValue(sheetRow, ['DESCRICAO', 'DESCRIÇÃO', 'CATALOGO', 'CATÁLOGO']) || '').trim();
-                    const custo = parseNumber(findValue(sheetRow, ['CUSTO', 'PRECO', 'PREÇO', 'PRECO FABRICA', 'PREÇO FÁBRICA']));
-                    return { ...emptyRow(), codigo, descricao, custo, ordem: index, ordemOrigem: 'importada' as const };
+                    const quantidade = parseNumber(findValue(sheetRow, ['QUANTIDADE', 'QTDE', 'QTD']));
+                    const sheetCusto = parseNumber(findValue(sheetRow, ['CUSTO', 'PRECO', 'PREÇO', 'PRECO FABRICA', 'PREÇO FÁBRICA']));
+                    const finalCusto = itemCosts[codigo] !== undefined ? itemCosts[codigo] : sheetCusto;
+                    return { ...emptyRow(), codigo, descricao, custo: finalCusto, estoque_pr: quantidade, ordem: index, ordemOrigem: 'importada' as const, fixa: false };
                 })
                 .filter((row) => row.codigo && row.descricao);
 
@@ -1016,19 +1281,46 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                 return;
             }
 
-            const currentByCode = new Map(rows.map((row) => [row.codigo, row]));
-            const merged = mapped.map((baseRow) => ({
-                ...baseRow,
-                ...Object.fromEntries(
-                    Object.entries(currentByCode.get(baseRow.codigo) || {}).filter(([key]) => key.startsWith('pedido_') || key.startsWith('estoque_') || key.startsWith('pendencia_'))
-                )
-            }));
+            const currentByCode = new Map<string, CompleteWheelRow>(rows.map((row) => [row.codigo, row]));
+            const preservedRows = rows.filter((row) => row.fixa !== false);
+            const fixedCodes = new Set(preservedRows.map((row) => row.codigo));
+            const mergedRows = mapped.filter((baseRow) => !fixedCodes.has(baseRow.codigo)).map((baseRow) => {
+                const current = currentByCode.get(baseRow.codigo);
+                return {
+                    ...baseRow,
+                    fixa: false,
+                    ...Object.fromEntries(
+                        Object.entries(current || {}).filter(([key]) => key.startsWith('pedido_') || key.startsWith('estoque_') || key.startsWith('pendencia_'))
+                    ),
+                    estoque_pr: baseRow.estoque_pr
+                };
+            });
+            const insertIndex = (() => {
+                const afterIndex = preservedRows.findIndex((row) => normalizeCodeKey(row.codigo) === normalizeCodeKey(WEEKLY_BASE_INSERT_AFTER));
+                if (afterIndex >= 0) return afterIndex + 1;
 
-            persistRows(merged);
-            toast.success(`${mapped.length} rodas salvas na base fixa.`, { id: toastId });
+                const beforeIndex = preservedRows.findIndex((row) => normalizeCodeKey(row.codigo) === normalizeCodeKey(WEEKLY_BASE_INSERT_BEFORE));
+                if (beforeIndex >= 0) return beforeIndex;
+
+                return preservedRows.length;
+            })();
+            const merged = [
+                ...preservedRows.slice(0, insertIndex),
+                ...mergedRows,
+                ...preservedRows.slice(insertIndex)
+            ].map((row, index) => ({ ...row, ordem: index }));
+
+            const saved = await persistRows(merged);
+            if (!saved) {
+                toast.error('Erro ao salvar a base semanal na nuvem.', { id: toastId });
+                return;
+            }
+
+            await syncPendenciasToCloud(rowsToStockItems(merged), 'BaseSemanal_Completa');
+            toast.success(`${mergedRows.length} rodas semanais importadas entre ${WEEKLY_BASE_INSERT_AFTER} e ${WEEKLY_BASE_INSERT_BEFORE}.`, { id: toastId });
         } catch (error) {
             console.error(error);
-            toast.error('Erro ao ler a planilha da base fixa.', { id: toastId });
+            toast.error('Erro ao ler a planilha da base semanal.', { id: toastId });
         } finally {
             if (baseInputRef.current) baseInputRef.current.value = '';
         }
@@ -1036,38 +1328,58 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
     const importMetricFile = async (file: File, slot: UploadSlot) => {
         if (rows.length === 0) {
-            toast.error('Importe a base fixa antes de carregar estoque ou pendência.');
+            toast.error('Importe a base semanal ou adicione uma roda antes de carregar estoque ou pendência.');
             return;
         }
 
         const toastId = toast.loading(`Lendo ${slot.label}...`);
         try {
             const sheetRows = await readWorkbookRows(file);
-            const quantities = new Map<string, { descricao: string; quantidade: number; codigoOriginal?: string }>();
+            const quantities = new Map<string, { descricao: string; quantidade: number; custo: number; codigoOriginal?: string }>();
             const uploadExportCodeMappings: Record<string, ExportMapping> = {};
+            const isPrStockUpload = slot.metric === 'estoque' && slot.depot === 'pr';
+            const rowCodes = new Set(rows.map((row) => isPrStockUpload ? normalizeCodeKey(row.codigo) : row.codigo));
 
             sheetRows.forEach((sheetRow) => {
+                const isStockUpload = slot.metric === 'estoque';
+                const productCode = String(findValue(sheetRow, ['PRODUTO', 'PRODUTOS', 'PRDUTOS']) || '').trim();
                 const rawSourceCodigo = String(
-                    findValue(sheetRow, ['PCE_ITEM', 'PRODUTO', 'CODIGO', 'CÓDIGO', 'COD', 'CÓD', 'ITEM', 'REFERENCIA', 'REFERÊNCIA'])
+                    (isPrStockUpload ? productCode : '')
+                    || findValue(sheetRow, ['PCE_ITEM', 'CODIGO', 'CÓDIGO', 'COD', 'CÓD', 'ITEM', 'REFERENCIA', 'REFERÊNCIA'])
                     || getColumnValue(sheetRow, 0)
                     || ''
                 ).trim();
-                const sourceCodigo = normalizeUploadCode(rawSourceCodigo, replacementRules);
-                const codigo = codeMappings[sourceCodigo] || sourceCodigo;
+                const sourceCodigo = isPrStockUpload
+                    ? normalizeCodeKey(rawSourceCodigo)
+                    : normalizeUploadCode(rawSourceCodigo, replacementRules);
+                const codigo = isPrStockUpload
+                    ? sourceCodigo
+                    : (codeMappings[sourceCodigo] || sourceCodigo);
                 const descricao = String(
-                    findValue(sheetRow, ['NOME_ITEM', 'DESCRICAO', 'DESCRIÇÃO', 'DESCRICAO PRODUTO', 'DESCRIÇÃO PRODUTO', 'NOME', 'PRODUTO DESCRICAO', 'PRODUTO DESCRIÇÃO'])
+                    findValue(sheetRow, ['NOME_ITEM', 'DESCRICAO', 'DESCRIÇÃO', 'DESCPRODUTO', 'DESC PRODUTO', 'DESCRICAO PRODUTO', 'DESCRIÇÃO PRODUTO', 'NOME', 'PRODUTO DESCRICAO', 'PRODUTO DESCRIÇÃO'])
                     || getColumnValue(sheetRow, 1)
                     || ''
                 ).trim();
                 const qty = parseNumber(
-                    findValue(sheetRow, ['QUANTIDADE_PEDIDOS', 'QUANTIDADE', 'QTDE', 'QTD', 'SALDO', 'ESTOQUE', 'ESTOQUE DISPONIVEL', 'ESTOQUE DISPONÍVEL', 'PENDENCIA', 'PENDÊNCIA'])
-                    ?? getColumnValue(sheetRow, 2)
+                    isPrStockUpload
+                        ? findValue(sheetRow, ['QTDE'])
+                        : (
+                            findValue(sheetRow, ['QUANTIDADE_PEDIDOS', 'QUANTIDADE', 'QTDE', 'QTD', 'QTDE DISPONIVEL', 'QTDE DISPONÍVEL', 'SALDO', 'ESTOQUE', 'ESTOQUE DISPONIVEL', 'ESTOQUE DISPONÍVEL', 'PENDENCIA', 'PENDÊNCIA'])
+                            ?? getColumnValue(sheetRow, 2)
+                        )
                 );
+                const custo = isPrStockUpload
+                    ? 0
+                    : parseNumber(findValue(sheetRow, ['VLR UNITARIO', 'VLR UNITÁRIO', 'VALOR UNITARIO', 'VALOR UNITÁRIO', 'PRECO', 'PREÇO', 'CUSTO']));
                 if (!sourceCodigo) return;
-                if ((rawSourceCodigo && rawSourceCodigo !== codigo) || descricao) {
+                // Only register an export mapping if the raw code from the sheet is different from the normalized/fixed base code
+                if (rawSourceCodigo && rawSourceCodigo !== codigo) {
                     const currentMapping = uploadExportCodeMappings[codigo];
+                    const existingCode = currentMapping?.codigo;
+                    // Prefer keeping the original code that has the most differences (e.g. starts with C or ends with *)
+                    const finalCode = (existingCode && existingCode !== codigo) ? existingCode : rawSourceCodigo;
                     uploadExportCodeMappings[codigo] = {
-                        codigo: currentMapping?.codigo || rawSourceCodigo || sourceCodigo,
+                        codigo: finalCode,
                         descricao: currentMapping?.descricao || descricao || undefined
                     };
                 }
@@ -1076,30 +1388,37 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                 quantities.set(codigo, {
                     descricao: current?.descricao || descricao || (codigo !== sourceCodigo ? `Vínculo: ${sourceCodigo}` : ''),
                     quantidade: (current?.quantidade || 0) + qty,
+                    custo: current?.custo || custo,
                     codigoOriginal: current?.codigoOriginal || rawSourceCodigo || sourceCodigo
                 });
             });
 
             const field = getUploadField(slot);
-            const rowCodes = new Set(rows.map((row) => row.codigo));
-            const missingItems = Array.from(quantities.entries())
-                .filter(([codigo]) => !rowCodes.has(codigo))
-                .map(([codigo, item]) => ({
-                    codigo,
-                    codigoOriginal: item.codigoOriginal,
-                    descricao: item.descricao || '-',
-                    quantidade: item.quantidade
-                }));
+            const missingItems = isPrStockUpload
+                ? []
+                : Array.from(quantities.entries())
+                    .filter(([codigo]) => !rowCodes.has(codigo))
+                    .map(([codigo, item]) => ({
+                        codigo,
+                        codigoOriginal: item.codigoOriginal,
+                        descricao: item.descricao || '-',
+                        quantidade: item.quantidade
+                    }));
             let matched = 0;
             let importedQuantity = 0;
             const nextRows = rows.map((row) => {
-                const item = quantities.get(row.codigo);
+                const lookupCode = isPrStockUpload ? normalizeCodeKey(row.codigo) : row.codigo;
+                const item = quantities.get(lookupCode);
                 if (item === undefined) return row;
                 matched += 1;
                 importedQuantity += item.quantidade;
-                return { ...row, [field]: item.quantidade };
+                return {
+                    ...row,
+                    [field]: item.quantidade,
+                    custo: isPrStockUpload ? row.custo : (item.custo || row.custo)
+                };
             });
-            const missingQuantity = missingItems.reduce((sum, item) => sum + item.quantidade, 0);
+            const missingQuantity = isPrStockUpload ? 0 : missingItems.reduce((sum, item) => sum + item.quantidade, 0);
 
             setImportReport({
                 label: slot.label,
@@ -1122,7 +1441,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     };
 
     const startEdit = (row?: CompleteWheelRow) => {
-        setDraft(row ? { ...row } : emptyRow());
+        setDraft(row ? { ...row } : { ...emptyRow(), fixa: true });
         setEditingCode(row?.codigo || 'new');
     };
 
@@ -1141,6 +1460,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             descricao: item.descricao === '-' ? item.codigo : item.descricao,
             ordem: importReport.pendingRows.length,
             ordemOrigem: 'importada' as const,
+            fixa: false,
             [importReport.field]: item.quantidade
         } as CompleteWheelRow;
 
@@ -1151,16 +1471,18 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             quantidadeNaoImportada: Math.max(0, importReport.quantidadeNaoImportada - item.quantidade),
             missingItems: importReport.missingItems.filter((missingItem) => missingItem.codigo !== item.codigo),
             pendingRows: [...importReport.pendingRows, newRow],
-            exportCodeMappings: {
-                ...importReport.exportCodeMappings,
-                [newRow.codigo]: {
-                    codigo: item.codigoOriginal || item.codigo,
-                    descricao: item.descricao === '-' ? undefined : item.descricao
+            exportCodeMappings: mergeExportCodeMappings(
+                importReport.exportCodeMappings,
+                {
+                    [newRow.codigo]: {
+                        codigo: item.codigoOriginal || item.codigo,
+                        descricao: item.descricao === '-' ? undefined : item.descricao
+                    }
                 }
-            }
+            )
         });
         setAddTargetItem(null);
-        toast.success(`${item.codigo} adicionado à base fixa pendente.`);
+        toast.success(`${item.codigo} adicionado como roda semanal pendente.`);
     };
 
     const linkMissingItemToExistingCode = (item: MissingImportItem, targetCodigoInput?: string) => {
@@ -1169,50 +1491,50 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         const targetCodigo = (targetCodigoInput || linkDrafts[item.codigo] || '').trim();
         const targetRow = importReport.pendingRows.find((row) => row.codigo === targetCodigo);
         if (!targetRow) {
-            toast.error('Informe um código existente da base fixa para vincular.');
+            toast.error('Informe um código existente da tabela para vincular.');
             return;
         }
 
-        const nextRows = importReport.pendingRows.map((row) => (
-            row.codigo === targetCodigo
-                ? { ...row, [importReport.field]: Number(row[importReport.field] || 0) + item.quantidade }
-                : row
-        ));
-        const nextMappings = { ...codeMappings, [item.codigo]: targetCodigo };
-        const nextExportMappings = {
-            ...exportCodeMappings,
-            ...importReport.exportCodeMappings,
-            [targetCodigo]: {
-                codigo: item.codigoOriginal || item.codigo,
-                descricao: item.descricao === '-' ? undefined : item.descricao
-            }
-        };
+        setIsLinkingCode(true);
+        window.setTimeout(() => {
+            try {
+                const nextRows = importReport.pendingRows.map((row) => (
+                    row.codigo === targetCodigo
+                        ? { ...row, [importReport.field]: Number(row[importReport.field] || 0) + item.quantidade }
+                        : row
+                ));
+                const nextMappings = { ...codeMappings, [item.codigo]: targetCodigo };
+                const targetExportMapping = {
+                    [targetCodigo]: {
+                        codigo: item.codigoOriginal || item.codigo,
+                        descricao: item.descricao === '-' ? undefined : item.descricao
+                    }
+                };
+                const nextExportMappings = mergeExportCodeMappings(exportCodeMappings, importReport.exportCodeMappings, targetExportMapping);
 
-        persistCodeMappings(nextMappings);
-        persistExportCodeMappings(nextExportMappings);
-        setImportReport({
-            ...importReport,
-            totalImportado: importReport.totalImportado + 1,
-            quantidadeImportada: importReport.quantidadeImportada + item.quantidade,
-            quantidadeNaoImportada: Math.max(0, importReport.quantidadeNaoImportada - item.quantidade),
-            missingItems: importReport.missingItems.filter((missingItem) => missingItem.codigo !== item.codigo),
-            pendingRows: nextRows,
-            exportCodeMappings: {
-                ...importReport.exportCodeMappings,
-                [targetCodigo]: {
-                    codigo: item.codigoOriginal || item.codigo,
-                    descricao: item.descricao === '-' ? undefined : item.descricao
-                }
+                persistCodeMappings(nextMappings);
+                persistExportCodeMappings(nextExportMappings);
+                setImportReport({
+                    ...importReport,
+                    totalImportado: importReport.totalImportado + 1,
+                    quantidadeImportada: importReport.quantidadeImportada + item.quantidade,
+                    quantidadeNaoImportada: Math.max(0, importReport.quantidadeNaoImportada - item.quantidade),
+                    missingItems: importReport.missingItems.filter((missingItem) => missingItem.codigo !== item.codigo),
+                    pendingRows: nextRows,
+                    exportCodeMappings: mergeExportCodeMappings(importReport.exportCodeMappings, targetExportMapping)
+                });
+                setLinkDrafts((current) => {
+                    const next = { ...current };
+                    delete next[item.codigo];
+                    return next;
+                });
+                setLinkTargetItem(null);
+                setLinkSearch('');
+                toast.success(`${item.codigo} vinculado ao código ${targetCodigo}.`);
+            } finally {
+                setIsLinkingCode(false);
             }
-        });
-        setLinkDrafts((current) => {
-            const next = { ...current };
-            delete next[item.codigo];
-            return next;
-        });
-        setLinkTargetItem(null);
-        setLinkSearch('');
-        toast.success(`${item.codigo} vinculado ao código ${targetCodigo}.`);
+        }, 80);
     };
 
     const cancelPendingUpload = () => {
@@ -1224,10 +1546,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         if (!importReport) return;
 
         persistRows(importReport.pendingRows);
-        persistExportCodeMappings({
-            ...exportCodeMappings,
-            ...importReport.exportCodeMappings
-        });
+        persistExportCodeMappings(mergeExportCodeMappings(exportCodeMappings, importReport.exportCodeMappings));
         setLastUploads((current) => ({ ...current, [importReport.uploadKey]: importReport.fileName }));
         persistUploadSummaries({
             ...uploadSummaries,
@@ -1343,7 +1662,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             return;
         }
 
-        const normalizedDraft = { ...draft, codigo, descricao, custo: Number(draft.custo) || 0 };
+        const normalizedDraft = { ...draft, codigo, descricao, custo: Number(draft.custo) || 0, fixa: draft.fixa !== false };
         const exists = rows.some((row) => row.codigo === codigo);
         if (editingCode === 'new' && exists) {
             toast.error('Já existe uma roda com esse código.');
@@ -1351,8 +1670,13 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         }
 
         const nextRows = editingCode === 'new'
-            ? [...rows, { ...normalizedDraft, ordem: rows.length }]
+            ? [...rows, { ...normalizedDraft, ordem: rows.length, fixa: normalizedDraft.fixa !== false }]
             : rows.map((row) => (row.codigo === editingCode ? normalizedDraft : row));
+
+        // Update persistent costs
+        const nextCosts = { ...itemCosts, [codigo]: normalizedDraft.custo };
+        setItemCosts(nextCosts);
+        saveItemCosts(nextCosts);
 
         persistRows(nextRows);
         setEditingCode(null);
@@ -1360,35 +1684,59 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     };
 
     const deleteRow = (codigo: string) => {
-        if (!window.confirm('Apagar este item da base fixa?')) return;
+        if (!window.confirm('Apagar este item da tabela?')) return;
         persistRows(rows.filter((row) => row.codigo !== codigo));
         toast.success('Item removido da base.');
     };
 
+    const rowsToStockItems = (sourceRows: CompleteWheelRow[]) => {
+        const getOrder = (row: CompleteWheelRow) => row.ordem;
+
+        return [...sourceRows]
+            .sort((left, right) => getOrder(left) - getOrder(right))
+            .map(row => ({
+                codigo: row.codigo,
+                descricao: row.descricao,
+                local: 'SISTEMA',
+                quantidade: row.estoque_pr || 0,
+                preco: row.custo || 0,
+                fixa: row.fixa !== false,
+                est_mk: row.estoque_pr || 0,
+                pend_mk: row.pendencia_pr || 0,
+                est_moleri: row.estoque_sc || 0,
+                pend_moleri: row.pendencia_sc || 0,
+                est_cm: row.estoque_cm || 0,
+                pend_cm: row.pendencia_cm || 0,
+                est_olimpo: row.estoque_rs || 0,
+                pend_olimpo: row.pendencia_rs || 0,
+            }));
+    };
+
     const clearVariableValues = async () => {
-        if (!window.confirm('ATENÇÃO: isso vai arquivar os pedidos atuais no histórico, zerar pedidos, estoques e pendências do Painel Completo, além de limpar áudios, rascunhos e tags. A base fixa de rodas continuará salva.\n\nDeseja continuar?')) return;
+        if (!window.confirm('ATENÇÃO: isso vai arquivar os pedidos atuais no histórico, zerar pedidos, estoques e pendências do Painel Completo, remover as rodas semanais da tela atual e limpar áudios, rascunhos e tags. A base semanal continuará salva no banco até você importar uma nova base.\n\nDeseja continuar?')) return;
         
         const toastId = toast.loading('Limpando dados e arquivos...');
         try {
-            const nextRows = rows.map((row) => ({
-                ...row,
-                estoque_pr: 0,
-                pendencia_pr: 0,
-                pedido_pr: 0,
-                estoque_sc: 0,
-                pendencia_sc: 0,
-                pedido_sc: 0,
-                estoque_cm: 0,
-                pendencia_cm: 0,
-                pedido_cm: 0,
-                estoque_rs: 0,
-                pendencia_rs: 0,
-                pedido_rs: 0
-            }));
-            persistRows(nextRows);
+            const nextRows = rows
+                .filter((row) => row.fixa !== false)
+                .map((row) => ({
+                    ...row,
+                    estoque_pr: 0,
+                    pendencia_pr: 0,
+                    pedido_pr: 0,
+                    estoque_sc: 0,
+                    pendencia_sc: 0,
+                    pedido_sc: 0,
+                    estoque_cm: 0,
+                    pendencia_cm: 0,
+                    pedido_cm: 0,
+                    estoque_rs: 0,
+                    pendencia_rs: 0,
+                    pedido_rs: 0
+                }));
+            setRows(nextRows);
             setLastUploads({});
             persistUploadSummaries({});
-            const inventoryCleared = await clearPendenciasInventory();
 
             const audioKeys = Array.from(new Set([...await getAllAudioKeys(), ...Object.keys(audios)]));
             const audioHistory: Record<string, string> = {};
@@ -1410,7 +1758,6 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                 sketches: sketches,
                 audios: audioHistory
             });
-
             // Apagar rascunhos locais e na nuvem
             for (const codigo of Object.keys(sketches)) {
                 await deleteSketch(codigo);
@@ -1437,12 +1784,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             }
             setItemTags({});
 
-            toast.success(
-                inventoryCleared
-                    ? 'Pedidos arquivados. Painel Completo e Pendência zerados com sucesso!'
-                    : 'Pedidos arquivados, mas houve falha ao limpar a base da Pendência.',
-                { id: toastId }
-            );
+            toast.success('Pedidos arquivados. Rodas semanais removidas da tela e mantidas no banco.', { id: toastId });
         } catch (error) {
             console.error('Erro ao zerar valores e anexos:', error);
             toast.error('Erro parcial ao limpar anexos. Tente novamente.', { id: toastId });
@@ -1456,29 +1798,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         setShowSyncSuccess(true);
         
         try {
-            const getOrder = (row: CompleteWheelRow) => (
-                row.ordemOrigem === 'importada'
-                    ? row.ordem
-                    : catalogOrder.get(row.codigo) ?? row.ordem
-            );
-            const orderedRows = [...rows].sort((left, right) => getOrder(left) - getOrder(right));
-
-            const stockItems = orderedRows.map(row => ({
-                codigo: row.codigo,
-                descricao: row.descricao,
-                local: 'SISTEMA',
-                preco: row.custo || 0,
-                est_mk: row.estoque_pr || 0,
-                pend_mk: row.pendencia_pr || 0,
-                est_moleri: row.estoque_sc || 0,
-                pend_moleri: row.pendencia_sc || 0,
-                est_cm: row.estoque_cm || 0,
-                pend_cm: row.pendencia_cm || 0,
-                est_olimpo: row.estoque_rs || 0,
-                pend_olimpo: row.pendencia_rs || 0,
-            }));
-
-            await syncPendenciasToCloud(stockItems, 'BaseFixa_Completa');
+            await syncPendenciasToCloud(rowsToStockItems(rows), 'BaseFixa_Completa');
             
             setTimeout(() => {
                 setShowSyncSuccess(false);
@@ -1559,11 +1879,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             });
 
             // Adicionar Dados
-            const getOrder = (row: CompleteWheelRow) => (
-                row.ordemOrigem === 'importada'
-                    ? row.ordem
-                    : catalogOrder.get(row.codigo) ?? row.ordem
-            );
+            const getOrder = (row: CompleteWheelRow) => row.ordem;
             const orderedRows = [...rows].sort((left, right) => getOrder(left) - getOrder(right));
 
             orderedRows.forEach((item) => {
@@ -1680,14 +1996,11 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         const toastId = toast.loading(`Gerando pedidos da ${factoryName}...`);
         try {
             const cloudMappings = await getPendenciaExportCodeMappings();
-            const latestExportMappings = {
-                ...exportCodeMappings,
-                ...loadExportCodeMappings(),
-                ...cloudMappings
-            };
+            const latestExportMappings = mergeExportCodeMappings(exportCodeMappings, loadExportCodeMappings(), cloudMappings);
             if (Object.keys(cloudMappings).length > 0) {
                 setExportCodeMappings(latestExportMappings);
                 localStorage.setItem(EXPORT_CODE_MAPPING_STORAGE_KEY, JSON.stringify(latestExportMappings));
+                savePendenciaExportCodeMappings(latestExportMappings);
             }
             const manualReverseMappings = (Object.entries(codeMappings) as [string, string][]).reduce<Record<string, string>>((acc, [sourceCode, fixedCode]) => {
                 if (!acc[fixedCode]) acc[fixedCode] = sourceCode;
@@ -1696,7 +2009,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             const getExportInfo = (row: CompleteWheelRow) => {
                 const mapping = latestExportMappings[row.codigo];
                 return {
-                    codigo: mapping?.codigo || manualReverseMappings[row.codigo] || getFallbackOriginalExportCode(row.codigo),
+                    codigo: mapping?.codigo || manualReverseMappings[row.codigo] || getFallbackOriginalExportCode(row.codigo, row.descricao),
                     descricao: mapping?.descricao || row.descricao
                 };
             };
@@ -1931,29 +2244,29 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                     </div>
                 </div>
             ) : (
-                <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-950 p-4 md:p-6 transition-colors">
+                <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-950 px-4 py-3 transition-colors">
                     <div className="w-full max-w-[96rem] mx-auto flex-1 flex flex-col min-h-0">
-                <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 mb-6">
-                    <div className="flex items-center gap-4">
+                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-3">
                         <button
                             onClick={() => setView('dashboard')}
-                            className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-200 transition-all shadow-sm active:scale-95"
+                            className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-200 transition-all shadow-sm active:scale-95"
                             title="Voltar ao Dashboard"
                         >
-                            <ArrowLeft className="w-5 h-5" />
+                            <ArrowLeft className="w-4 h-4" />
                         </button>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <Database className="w-7 h-7 text-indigo-500" />
+                            <h1 className="text-xl md:text-2xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 leading-tight">
+                                <Database className="w-5 h-5 text-indigo-500" />
                                 Pendência Completa
                             </h1>
-                            <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">
-                                Base fixa de rodas com importação dos estoques e pendências por depósito.
+                            <p className="text-slate-500 dark:text-slate-400 font-medium text-xs mt-0.5">
+                                Tabela de rodas com base semanal e itens fixos adicionados manualmente.
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5">
                         <input
                             ref={baseInputRef}
                             type="file"
@@ -1966,32 +2279,32 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                         />
                         <button
                             onClick={() => baseInputRef.current?.click()}
-                            className="h-11 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+                            className="h-9 px-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
                         >
-                            <Upload className="w-4 h-4" />
+                            <Upload className="w-3.5 h-3.5" />
                             Importar Base
                         </button>
                         <button
                             onClick={() => setIsUploadModalOpen(true)}
                             disabled={rows.length === 0}
-                            className="h-11 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-40 rounded-lg font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+                            className="h-9 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-40 rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
                         >
-                            <FileSpreadsheet className="w-4 h-4" />
+                            <FileSpreadsheet className="w-3.5 h-3.5" />
                             Uploads
                         </button>
                         <button
                             onClick={() => startEdit()}
-                            className="h-11 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-lg font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+                            className="h-9 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
                         >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-3.5 h-3.5" />
                             Adicionar
                         </button>
                         <button
                             onClick={() => setIsExportModalOpen(true)}
                             disabled={rows.length === 0}
-                            className="h-11 px-4 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40 rounded-lg font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+                            className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40 rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
                         >
-                            <FileSpreadsheet className="w-4 h-4" />
+                            <FileSpreadsheet className="w-3.5 h-3.5" />
                             Exportar
                         </button>
                     </div>
@@ -2000,37 +2313,37 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                 <section className="flex-1 flex flex-col min-h-0">
                     <main className="flex-1 flex flex-col min-h-0">
                         <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden shadow-sm">
-                            <div className="p-3 border-b border-slate-200 dark:border-slate-800">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                                    <div className="flex items-center gap-2">
-                                        <div className="relative w-full md:max-w-md">
-                                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <div className="p-2 border-b border-slate-200 dark:border-slate-800">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="relative w-full sm:max-w-xs md:max-w-sm">
+                                            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
                                                 value={query}
                                                 onChange={(event) => setQuery(event.target.value)}
                                                 placeholder="Buscar por código ou descrição"
-                                                className="w-full h-10 pl-9 pr-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm outline-none focus:border-indigo-500"
+                                                className="w-full h-9 pl-8 pr-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-indigo-500"
                                             />
                                         </div>
 
                                         <button
                                             onClick={() => setShowFilters(!showFilters)}
                                             className={cn(
-                                                "px-2.5 py-2 text-sm font-bold rounded-lg border transition-colors flex items-center gap-1.5 h-10",
+                                                "px-2.5 py-1 text-xs font-bold rounded-lg border transition-colors flex items-center gap-1 h-9",
                                                 showFilters ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700" : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                                             )}
                                         >
-                                            <Filter className="w-4 h-4" /> Filtros
+                                            <Filter className="w-3.5 h-3.5" /> Filtros
                                         </button>
 
                                         {(filterLinha || filterAro || filterFuracao || filterModelo || filterAcabamento || query) && (
-                                            <button onClick={() => { setFilterLinha(""); setFilterAro(""); setFilterFuracao(""); setFilterModelo(""); setFilterAcabamento(""); setQuery(""); }} className="px-2.5 py-2 text-xs uppercase tracking-tighter font-black text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-900/40 h-10">
+                                            <button onClick={() => { setFilterLinha(""); setFilterAro(""); setFilterFuracao(""); setFilterModelo(""); setFilterAcabamento(""); setQuery(""); }} className="px-2 py-1 text-[10px] uppercase tracking-wider font-black text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-900/40 h-9">
                                                 Limpar
                                             </button>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-4">
-                                    <span className="text-xs font-bold text-slate-500">
+                                    <div className="flex items-center gap-3">
+                                    <span className="text-[11px] font-bold text-slate-500">
                                         {filteredRows.length} de {rows.length} itens
                                     </span>
                                 </div>
@@ -2123,7 +2436,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                             <div className="md:hidden flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 px-3 py-3 space-y-3">
                                 {filteredRows.length === 0 ? (
                                     <div className="px-4 py-10 text-center text-sm font-bold text-slate-400">
-                                        Importe a base fixa para começar.
+                                        Importe a base semanal para começar.
                                     </div>
                                 ) : currentPageRows.map((row) => {
                                     const photoUrl = getWheelPhotoUrl(row.descricao, row.codigo);
@@ -2245,24 +2558,24 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                             </div>
 
                             <div ref={tableContainerRef} className="hidden md:block flex-1 overflow-auto relative">
-                                <table className="w-full min-w-[1480px] text-[15px] text-left whitespace-nowrap border-separate border-spacing-0">
-                                    <thead className="sticky top-0 z-20 text-xs font-black uppercase bg-white dark:bg-slate-900 shadow-sm text-slate-500 dark:text-slate-300">
-                                        <tr className="h-10">
-                                            <th rowSpan={2} className="sticky left-0 top-0 z-40 px-4 py-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 min-w-[100px] align-middle">Foto</th>
-                                            <th rowSpan={2} className="sticky left-[100px] top-0 z-40 px-4 py-0 border-b border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 min-w-[320px] lg:min-w-[420px] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] align-middle">Identificação do produto</th>
-                                            <th rowSpan={2} className="top-0 px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-right min-w-[100px] align-middle bg-white dark:bg-slate-900">Custo</th>
+                                <table className="w-full min-w-[1480px] text-[13px] text-left whitespace-nowrap border-separate border-spacing-0">
+                                    <thead className="sticky top-0 z-20 text-[11px] font-black uppercase bg-white dark:bg-slate-900 shadow-sm text-slate-500 dark:text-slate-300">
+                                        <tr className="h-9">
+                                            <th rowSpan={2} className="sticky left-0 top-0 z-40 px-3 py-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 min-w-[72px] align-middle">Foto</th>
+                                            <th rowSpan={2} className="sticky left-[72px] top-0 z-40 px-3 py-0 border-b border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 min-w-[280px] lg:min-w-[360px] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] align-middle">Identificação do produto</th>
+                                            <th rowSpan={2} className="top-0 px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-right min-w-[90px] align-middle bg-white dark:bg-slate-900">Custo</th>
                                             {DEPOTS.map((depot) => (
                                                 <th
                                                     key={depot.key}
                                                     className={cn('top-0 px-2 py-0 border-r border-slate-200 dark:border-slate-700 text-center tracking-[0.2em] align-middle', DEPOT_STYLES[depot.key].group)}
                                                     colSpan={3}
                                                 >
-                                                    <div className="p-2 text-center font-black">{depot.label}</div>
+                                                    <div className="p-1.5 text-center font-black">{depot.label}</div>
                                                 </th>
                                             ))}
-                                            <th className="p-3 w-24">Ações</th>
+                                            <th className="p-2 w-20">Ações</th>
                                         </tr>
-                                        <tr className="h-8 text-[10px] uppercase tracking-widest">
+                                        <tr className="h-7 text-[9px] uppercase tracking-widest">
                                             {DEPOTS.map((depot) => (
                                                 <React.Fragment key={depot.key}>
                                                     <th className={cn('px-2 py-0 border-b border-r border-slate-200 dark:border-slate-700 text-center', DEPOT_STYLES[depot.key].group)}>Est.</th>
@@ -2277,7 +2590,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                         {filteredRows.length === 0 ? (
                                             <tr>
                                                 <td colSpan={16} className="p-10 text-center text-slate-400 font-bold">
-                                                    Importe a base fixa para começar.
+                                                    Importe a base semanal para começar.
                                                 </td>
                                             </tr>
                                         ) : currentPageRows.map((row, index) => {
@@ -2288,25 +2601,35 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
                                             return (
                                             <tr key={row.codigo} className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors group">
-                                                <td className={cn('sticky left-0 z-10 px-4 py-3 min-w-[100px]', bgNormal)}>
+                                                <td className={cn('sticky left-0 z-10 px-3 py-1.5 min-w-[72px]', bgNormal)}>
                                                     <img
                                                         src={photoUrl}
                                                         alt={`Foto ${modelCode}`}
-                                                        className="w-16 h-16 rounded-md object-cover border border-slate-200 dark:border-slate-700 shadow-sm"
+                                                        className="w-12 h-12 rounded object-cover border border-slate-200 dark:border-slate-700 shadow-sm"
                                                     />
                                                 </td>
-                                                <td className={cn('sticky left-[100px] z-[5] px-4 py-3 min-w-[320px] lg:min-w-[420px] border-r border-slate-200 dark:border-slate-700/50 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]', bgNormal)}>
+                                                <td className={cn('sticky left-[72px] z-[5] px-3 py-1.5 min-w-[280px] lg:min-w-[360px] border-r border-slate-200 dark:border-slate-700/50 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]', bgNormal)}>
                                                     <div className="flex flex-col gap-1">
-                                                        <span className="text-slate-700 dark:text-slate-200 font-bold text-base">{row.descricao}</span>
-                                                        <span className="font-mono text-[11px] text-slate-400 dark:text-slate-500">{row.codigo}</span>
+                                                        <span className="text-slate-700 dark:text-slate-200 font-bold text-sm leading-snug">{row.descricao}</span>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{row.codigo}</span>
+                                                            <span className={cn(
+                                                                "px-1 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border",
+                                                                row.fixa === false
+                                                                    ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+                                                                    : "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800"
+                                                            )}>
+                                                                {row.fixa === false ? 'Semanal' : 'Fixa'}
+                                                            </span>
+                                                        </div>
                                                         
                                                         {/* Tags List */}
                                                         {itemTags[row.codigo]?.length > 0 && (
-                                                            <div className="flex flex-wrap gap-1.5 mt-1">
+                                                            <div className="flex flex-wrap gap-1 mt-0.5">
                                                                 {itemTags[row.codigo].map(tag => (
                                                                     <span
                                                                         key={tag}
-                                                                        className="px-2 py-0.5 text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-600 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center shadow-sm"
+                                                                        className="px-1.5 py-0.5 text-[9px] font-black bg-slate-100 dark:bg-slate-800 text-slate-600 rounded border border-slate-200 dark:border-slate-700 flex items-center shadow-sm"
                                                                     >
                                                                         {tag}
                                                                     </span>
@@ -2315,7 +2638,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                         )}
 
                                                         {/* Action Hub (Only Read/Preview) */}
-                                                        <div className="flex items-center gap-2 mt-2">
+                                                        <div className="flex items-center gap-1.5 mt-1">
                                                             {/* Sketch Preview */}
                                                             {sketches[row.codigo] && (
                                                                 <button
@@ -2324,7 +2647,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                                         setActiveSketchItem({ codigo: row.codigo, title: row.descricao });
                                                                         setSketchModalOpen(true);
                                                                     }}
-                                                                    className="w-8 h-8 rounded border-2 border-amber-200 bg-amber-50 overflow-hidden shadow-sm hover:scale-110 transition-all"
+                                                                    className="w-7 h-7 rounded border border-amber-200 bg-amber-50 overflow-hidden shadow-sm hover:scale-115 transition-all"
                                                                     title="Ver Post-it"
                                                                 >
                                                                     <img src={sketches[row.codigo]} alt="Rascunho" className="w-full h-full object-contain" />
@@ -2339,36 +2662,36 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                                         setActiveAudioItem({ codigo: row.codigo, title: row.descricao });
                                                                         setAudioPlayerOpen(true);
                                                                     }}
-                                                                    className="p-1.5 rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-500 hover:bg-rose-100 hover:scale-110 transition-all border border-rose-100 dark:border-rose-800 shadow-sm"
+                                                                    className="p-1 rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-500 hover:bg-rose-100 hover:scale-115 transition-all border border-rose-100 dark:border-rose-800 shadow-sm"
                                                                     title="Ouvir Nota de Voz"
                                                                 >
-                                                                    <Volume2 className="w-4 h-4" />
+                                                                    <Volume2 className="w-3 h-3" />
                                                                 </button>
                                                             )}
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className={cn('px-2 py-3 text-right font-bold text-slate-500', bgNormal)}>
+                                                <td className={cn('px-2 py-1.5 text-right font-semibold text-slate-500 text-xs', bgNormal)}>
                                                     {row.custo ? row.custo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}
                                                 </td>
                                                 {DEPOTS.map((depot) => (
                                                     <React.Fragment key={depot.key}>
-                                                        <td className={cn('px-2 py-3 text-center font-bold text-slate-500 text-base', DEPOT_STYLES[depot.key].body)}>{row[`estoque_${depot.key}`] || 0}</td>
-                                                        <td className={cn('px-2 py-3 text-center text-slate-400 text-base', DEPOT_STYLES[depot.key].body)}>{row[`pendencia_${depot.key}`] || 0}</td>
-                                                        <td className={cn('px-2 py-3 text-center border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400', DEPOT_STYLES[depot.key].body)}>
-                                                            <div className="flex items-center justify-center mx-auto w-16 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-1.5 shadow-sm">
-                                                                <span className="text-xl">{row[`pedido_${depot.key}`] || 0}</span>
+                                                        <td className={cn('px-2 py-1.5 text-center font-bold text-slate-500 text-sm', DEPOT_STYLES[depot.key].body)}>{row[`estoque_${depot.key}`] || 0}</td>
+                                                        <td className={cn('px-2 py-1.5 text-center text-slate-400 text-sm', DEPOT_STYLES[depot.key].body)}>{row[`pendencia_${depot.key}`] || 0}</td>
+                                                        <td className={cn('px-2 py-1.5 text-center border-x border-slate-200 dark:border-slate-700 font-black text-red-600 dark:text-red-400', DEPOT_STYLES[depot.key].body)}>
+                                                            <div className="flex items-center justify-center mx-auto w-14 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-600 rounded-lg py-0.5 shadow-sm">
+                                                                <span className="text-base">{row[`pedido_${depot.key}`] || 0}</span>
                                                             </div>
                                                         </td>
                                                     </React.Fragment>
                                                 ))}
-                                                <td className={cn('p-2', bgNormal)}>
-                                                    <div className="flex items-center justify-center gap-1">
-                                                        <button onClick={() => startEdit(row)} className="p-2 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600" title="Editar">
-                                                            <Pencil className="w-4 h-4" />
+                                                <td className={cn('p-1', bgNormal)}>
+                                                    <div className="flex items-center justify-center gap-0.5">
+                                                        <button onClick={() => startEdit(row)} className="p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600" title="Editar">
+                                                            <Pencil className="w-3.5 h-3.5" />
                                                         </button>
-                                                        <button onClick={() => deleteRow(row.codigo)} className="p-2 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600" title="Apagar">
-                                                            <Trash2 className="w-4 h-4" />
+                                                        <button onClick={() => deleteRow(row.codigo)} className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600" title="Apagar">
+                                                            <Trash2 className="w-3.5 h-3.5" />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -2535,7 +2858,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
                                 {importReport.missingItems.length === 0 ? (
                                     <div className="rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/30 p-6 text-center text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                                        Todos os códigos do arquivo foram encontrados na base fixa.
+                                        Todos os códigos do arquivo foram encontrados na tabela.
                                     </div>
                                 ) : (
                                     <div className="max-h-80 overflow-auto rounded-lg border border-slate-200 dark:border-slate-800">
@@ -2564,7 +2887,9 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                                 className="w-full h-9 px-3 flex items-center justify-center gap-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800 text-xs font-bold text-indigo-600 dark:text-indigo-400 transition-colors shadow-sm"
                                                             >
                                                                 <Search className="w-3.5 h-3.5" />
-                                                                {linkDrafts[item.codigo] ? `Vinculado: ${linkDrafts[item.codigo]}` : 'Vincular código'}
+                                                                {linkDrafts[item.codigo]
+                                                                    ? `Vinculado: ${linkDrafts[item.codigo]}`
+                                                                    : `Vincular código (${linkSuggestionCounts[item.codigo] || 0})`}
                                                             </button>
                                                         </td>
                                                         <td className="p-3 text-center">
@@ -2650,10 +2975,10 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                         <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4">
                             <div>
                                 <h2 className="text-lg font-black text-slate-800 dark:text-slate-100">
-                                    Adicionar à base fixa
+                                    Adicionar à tabela
                                 </h2>
                                 <p className="mt-1 text-xs text-slate-500">
-                                    Confirme apenas se esse item realmente deve existir na tabela fixa.
+                                    Confirme apenas se esse item realmente deve entrar na tabela.
                                 </p>
                             </div>
                             <button onClick={() => setAddTargetItem(null)} className="p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800">
@@ -2663,7 +2988,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
                         <div className="p-5 space-y-4">
                             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
-                                Ao clicar em adicionar, este item será incluído na prévia da tabela fixa com a quantidade deste upload. Depois, ao clicar em <strong>Confirmar upload</strong>, ele será salvo na lista principal e poderá ser usado nos próximos uploads.
+                                Ao clicar em adicionar, este item será incluído na prévia da tabela como roda semanal com a quantidade deste upload. Depois, ao clicar em <strong>Confirmar upload</strong>, ele será salvo na lista principal e poderá ser usado nos próximos uploads.
                             </div>
 
                             <div className="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -2693,7 +3018,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                 onClick={() => addMissingItemToFixedList(addTargetItem)}
                                 className="h-11 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest"
                             >
-                                Adicionar à base fixa
+                                Adicionar à tabela
                             </button>
                         </div>
                     </motion.div>
@@ -2728,7 +3053,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                     autoFocus
                                     value={linkSearch}
                                     onChange={(event) => setLinkSearch(event.target.value)}
-                                    placeholder="Buscar pela descrição da base fixa"
+                                    placeholder="Buscar pela descrição da tabela"
                                     className="w-full h-11 pl-9 pr-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm outline-none focus:border-indigo-500"
                                 />
                             </div>
@@ -2756,7 +3081,8 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                 <td className="p-3 text-center">
                                                     <button
                                                         onClick={() => linkMissingItemToExistingCode(linkTargetItem, row.codigo)}
-                                                        className="h-9 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-widest"
+                                                        disabled={isLinkingCode}
+                                                        className="h-9 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-widest disabled:cursor-wait disabled:opacity-60"
                                                     >
                                                         Usar
                                                     </button>
@@ -2767,6 +3093,27 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                 </table>
                             </div>
                         </div>
+                    </motion.div>
+                </div>
+            )}
+
+            {isLinkingCode && (
+                <div className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/70 p-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.94, y: 12 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                        className="w-full max-w-sm rounded-lg border border-indigo-200 bg-white p-6 text-center shadow-2xl dark:border-indigo-900 dark:bg-slate-900"
+                    >
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-300">
+                            <Loader2 className="h-7 w-7 animate-spin" />
+                        </div>
+                        <h3 className="mt-4 text-lg font-black text-slate-800 dark:text-slate-100">
+                            Vinculando código
+                        </h3>
+                        <p className="mt-2 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                            Aplicando a sugestão, salvando o código original e atualizando a prévia do upload.
+                        </p>
                     </motion.div>
                 </div>
             )}
@@ -3067,6 +3414,17 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                     <Tag className="w-4 h-4" />
                                     Gestão de Tags
                                 </button>
+                                <button
+                                    onClick={() => setActiveSettingsTab('custo')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
+                                        activeSettingsTab === 'custo' 
+                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
+                                    }`}
+                                >
+                                    <TrendingUp className="w-4 h-4" />
+                                    Custo dos Itens
+                                </button>
                             </nav>
                         </div>
 
@@ -3080,13 +3438,24 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
                             {activeSettingsTab === 'vinculos' && (
                                 <div className="flex-1 flex flex-col h-full">
-                                    <div className="p-8 border-b border-slate-200 dark:border-slate-800 shrink-0">
-                                        <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">
-                                            Vínculos de Códigos
-                                        </h3>
-                                        <p className="mt-2 text-sm text-slate-500 max-w-2xl">
-                                            Gerencie os códigos importados das planilhas que foram vinculados manualmente à sua base fixa. Isso permite que o sistema identifique automaticamente itens com nomes ou códigos diferentes nos próximos uploads.
-                                        </p>
+                                    <div className="p-8 border-b border-slate-200 dark:border-slate-800 shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                        <div>
+                                            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">
+                                                Vínculos de Códigos
+                                            </h3>
+                                            <p className="mt-2 text-sm text-slate-500 max-w-2xl">
+                                                Gerencie os códigos importados das planilhas que foram vinculados manualmente à sua tabela. Isso permite que o sistema identifique automaticamente itens com nomes ou códigos diferentes nos próximos uploads.
+                                            </p>
+                                        </div>
+                                        {Object.keys(codeMappings).length > 0 && (
+                                            <button
+                                                onClick={handleClearAllCodeMappings}
+                                                className="shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 font-bold text-sm rounded-xl transition-all shadow-sm active:scale-95"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                                Limpar Todos
+                                            </button>
+                                        )}
                                     </div>
                                     <div className="p-8 flex-1 min-h-0 flex flex-col">
                                         {Object.keys(codeMappings).length === 0 ? (
@@ -3103,7 +3472,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                     <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 text-[10px] uppercase tracking-widest text-slate-500 border-b border-slate-200 dark:border-slate-800">
                                                         <tr>
                                                             <th className="p-4 font-black">Código da Planilha</th>
-                                                            <th className="p-4 font-black">Vinculado a (Base Fixa)</th>
+                                                            <th className="p-4 font-black">Vinculado a (Tabela)</th>
                                                             <th className="p-4 text-right w-32 font-black">Ações</th>
                                                         </tr>
                                                     </thead>
@@ -3301,6 +3670,129 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                     </div>
                                 </div>
                             )}
+
+                            {activeSettingsTab === 'custo' && (
+                                <div className="flex-1 flex flex-col h-full bg-white dark:bg-slate-900">
+                                    <div className="p-8 border-b border-slate-200 dark:border-slate-800 shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/50 dark:bg-slate-950/20">
+                                        <div>
+                                            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-3">
+                                                <TrendingUp className="w-6 h-6 text-indigo-500" />
+                                                Gerenciamento de Custos
+                                            </h3>
+                                            <p className="mt-2 text-sm text-slate-500 max-w-2xl">
+                                                Cadastre e edite custos de itens da base. Os custos cadastrados aqui persistirão mesmo após as limpezas de estoques e pedidos ("Zerar Semana").
+                                            </p>
+                                        </div>
+                                        <div className="flex gap-2 shrink-0">
+                                            <button
+                                                onClick={() => costFileInputRef.current?.click()}
+                                                className="flex items-center justify-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                                            >
+                                                <Upload className="w-4 h-4" />
+                                                Importar Planilha
+                                            </button>
+                                            <input
+                                                type="file"
+                                                ref={costFileInputRef}
+                                                accept=".xlsx,.xls,.xlsm,.csv"
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) importCostsFile(file);
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="p-8 flex-1 min-h-0 flex flex-col">
+                                        <div className="mb-6">
+                                            <input
+                                                type="text"
+                                                placeholder="Buscar por código ou descrição..."
+                                                value={itemCostsSearchQuery}
+                                                onChange={(e) => setItemCostsSearchQuery(e.target.value)}
+                                                className="w-full max-w-md px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 transition-all"
+                                            />
+                                        </div>
+
+                                        {Object.keys(itemCosts).length === 0 ? (
+                                            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50">
+                                                <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4 text-slate-400">
+                                                    <TrendingUp className="w-8 h-8" />
+                                                </div>
+                                                <p className="text-slate-600 dark:text-slate-300 font-black text-lg">Nenhum custo cadastrado.</p>
+                                                <p className="text-sm text-slate-500 mt-2 max-w-md">Importe uma planilha de custos ou defina custos diretamente nos itens da tabela principal para vê-los aqui.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="flex-1 min-h-0 overflow-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative">
+                                                <table className="w-full text-sm text-left">
+                                                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 text-[10px] uppercase tracking-widest text-slate-500 border-b border-slate-200 dark:border-slate-800">
+                                                        <tr>
+                                                            <th className="p-4 font-black">Código</th>
+                                                            <th className="p-4 font-black">Descrição</th>
+                                                            <th className="p-4 font-black w-48">Custo (R$)</th>
+                                                            <th className="p-4 text-right w-24 font-black">Ações</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {Object.entries(itemCosts)
+                                                            .filter(([codigo]) => {
+                                                                const desc = rows.find(r => r.codigo === codigo)?.descricao || '';
+                                                                const normQuery = normalize(itemCostsSearchQuery);
+                                                                return normalize(codigo).includes(normQuery) || normalize(desc).includes(normQuery);
+                                                            })
+                                                            .sort(([a], [b]) => a.localeCompare(b))
+                                                            .map(([codigo, custo]) => {
+                                                                const matchingRow = rows.find(r => r.codigo === codigo);
+                                                                return (
+                                                                    <tr key={codigo} className="border-b last:border-b-0 border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                                                        <td className="p-4 font-mono font-bold text-slate-700 dark:text-slate-300">
+                                                                            <div className="bg-slate-100 dark:bg-slate-800 inline-block px-2 py-1 rounded">
+                                                                                {codigo}
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="p-4 text-slate-600 dark:text-slate-400 font-medium">
+                                                                            {matchingRow?.descricao || <span className="text-slate-400 italic">Não cadastrado na base ativa</span>}
+                                                                        </td>
+                                                                        <td className="p-4">
+                                                                            <div className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 focus-within:border-indigo-500 transition-colors bg-white dark:bg-slate-900">
+                                                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">R$</span>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    step="0.01"
+                                                                                    min="0"
+                                                                                    defaultValue={custo}
+                                                                                    onBlur={(e) => handleUpdateCost(codigo, e.target.value)}
+                                                                                    onKeyDown={(e) => {
+                                                                                        if (e.key === 'Enter') {
+                                                                                            handleUpdateCost(codigo, e.currentTarget.value);
+                                                                                            e.currentTarget.blur();
+                                                                                        }
+                                                                                    }}
+                                                                                    className="w-full pl-9 pr-3 py-1.5 bg-transparent text-sm font-bold outline-none text-slate-800 dark:text-slate-100"
+                                                                                />
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="p-4">
+                                                                            <div className="flex items-center justify-end gap-2">
+                                                                                <button
+                                                                                    onClick={() => handleDeleteCost(codigo)}
+                                                                                    className="p-2 rounded-lg hover:bg-red-50 text-red-600 dark:hover:bg-red-900/30 transition-colors cursor-pointer"
+                                                                                    title="Excluir Custo"
+                                                                                >
+                                                                                    <Trash2 className="w-4 h-4" />
+                                                                                </button>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
                 </div>
@@ -3485,6 +3977,38 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                         className="w-full h-11 px-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:border-indigo-500"
                                     />
                                 </label>
+                                <div className="md:col-span-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 py-3">
+                                    <div>
+                                        <span className="block text-xs font-black uppercase text-slate-500 dark:text-slate-300">Tipo da roda</span>
+                                        <span className="block text-xs text-slate-400">Semana sai no zerar; fixa permanece até você excluir.</span>
+                                    </div>
+                                    <div className="mt-3 grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setDraft((current) => ({ ...current, fixa: false }))}
+                                            className={cn(
+                                                "h-10 rounded-lg border text-xs font-black uppercase tracking-widest transition-colors",
+                                                draft.fixa === false
+                                                    ? "bg-amber-500 text-white border-amber-500"
+                                                    : "bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                            )}
+                                        >
+                                            Semana
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setDraft((current) => ({ ...current, fixa: true }))}
+                                            className={cn(
+                                                "h-10 rounded-lg border text-xs font-black uppercase tracking-widest transition-colors",
+                                                draft.fixa !== false
+                                                    ? "bg-indigo-600 text-white border-indigo-600"
+                                                    : "bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                            )}
+                                        >
+                                            Fixa
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div className="p-5 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">

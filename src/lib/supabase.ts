@@ -125,6 +125,33 @@ export async function getPendenciasInventory() {
         hasMore = false
       }
     }
+    const baseRows = await getPendenciaCompletaBaseRows();
+
+    if (baseRows && baseRows.length > 0) {
+      const stockByCode = new Map(allData.map((item) => [String(item.codigo || '').trim(), item]));
+
+      return baseRows.map((row: any) => {
+        const codigo = String(row.codigo || '').trim();
+        const stockRow = stockByCode.get(codigo) || {};
+
+        return {
+          codigo,
+          descricao: String(row.descricao || stockRow.descricao || '').trim(),
+          local: row.ordem_origem === 'temporaria' ? 'TEMPORARIA' : (stockRow.local || 'SISTEMA'),
+          quantidade: Number(stockRow.quantidade) || 0,
+          est_mk: Number(stockRow.est_mk) || 0,
+          pend_mk: Number(stockRow.pend_mk) || 0,
+          est_moleri: Number(stockRow.est_moleri) || 0,
+          pend_moleri: Number(stockRow.pend_moleri) || 0,
+          est_cm: Number(stockRow.est_cm) || 0,
+          pend_cm: Number(stockRow.pend_cm) || 0,
+          est_olimpo: Number(stockRow.est_olimpo) || 0,
+          pend_olimpo: Number(stockRow.pend_olimpo) || 0,
+          preco: Number(row.custo ?? stockRow.preco) || 0
+        };
+      });
+    }
+
     return allData;
   } catch (error) {
     console.warn('Erro ao buscar estoque de pendências:', error);
@@ -154,7 +181,7 @@ export async function syncPendenciasToCloud(data: import('../types').StockItem[]
     if (invError) throw invError;
     const inventario_id = invData.id;
 
-    // 2. Limpar APENAS a tabela de pendências (o robô fica em outra tabela)
+    // 2. Recriar APENAS a tabela de pendências (o robô fica em outra tabela)
     await supabase.from('pendencias_estoque').delete().neq('codigo', 'dummy_val');
 
     // 3. Batch insert
@@ -163,7 +190,7 @@ export async function syncPendenciasToCloud(data: import('../types').StockItem[]
       const batch = data.slice(i, i + batchSize).map(item => ({
         codigo: item.codigo,
         descricao: item.descricao,
-        local: item.local,
+        local: item.fixa === false ? 'TEMPORARIA' : item.local,
         quantidade: item.quantidade || 0,
         est_mk: item.est_mk || 0,
         pend_mk: item.pend_mk || 0,
@@ -198,15 +225,22 @@ export async function clearPendenciasInventory() {
       return true;
     }
 
-    const { error } = await supabase
+    const { error: pendenciasError } = await supabase
       .from('pendencias_estoque')
       .delete()
-      .neq('codigo', 'dummy_val');
+      .eq('local', 'TEMPORARIA');
 
-    if (error) throw error;
+    if (pendenciasError) throw pendenciasError;
+
+    const { error: completaError } = await supabase
+      .from('pendencia_completa_base_fixa')
+      .delete()
+      .eq('ordem_origem', 'temporaria');
+
+    if (completaError) throw completaError;
     return true;
   } catch (error) {
-    console.error('Erro ao limpar estoque de pendências:', error);
+    console.error('Erro ao limpar rodas temporárias de pendências:', error);
     return false;
   }
 }
@@ -217,19 +251,37 @@ export interface PendenciaCompletaBaseRow {
   custo?: number | null;
   ordem?: number | null;
   ordem_origem?: string | null;
+  fixa?: boolean | null;
 }
 
 export async function getPendenciaCompletaBaseRows(): Promise<PendenciaCompletaBaseRow[]> {
   if (USE_LOCAL_DB) return [];
 
   try {
-    const { data, error } = await supabase
-      .from('pendencia_completa_base_fixa')
-      .select('codigo, descricao, custo, ordem, ordem_origem')
-      .order('ordem', { ascending: true });
+    let allData: PendenciaCompletaBaseRow[] = [];
+    let hasMore = true;
+    let page = 0;
+    const pageSize = 1000;
 
-    if (error) throw error;
-    return data || [];
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('pendencia_completa_base_fixa')
+        .select('codigo, descricao, custo, ordem, ordem_origem')
+        .order('ordem', { ascending: true })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        allData = [...allData, ...data];
+        page++;
+        hasMore = data.length === pageSize;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    return allData;
   } catch (error) {
     console.error('Erro ao buscar base fixa da Pendência Completa:', error);
     return [];
@@ -247,7 +299,7 @@ export async function savePendenciaCompletaBaseRows(rows: PendenciaCompletaBaseR
         descricao: String(row.descricao).trim(),
         custo: Number(row.custo) || 0,
         ordem: Number(row.ordem ?? index),
-        ordem_origem: row.ordem_origem || null,
+        ordem_origem: row.fixa === false ? 'temporaria' : 'fixa',
         updated_at: new Date().toISOString()
       }));
 
@@ -697,6 +749,57 @@ export async function saveItemTags(tagsMap: Record<string, string[]>) {
   }
 }
 
+/**
+ * Funções para Custos de Itens
+ */
+export async function getItemCosts(): Promise<Record<string, number>> {
+  if (USE_LOCAL_DB) {
+    return await localDb.getLocalItemCosts();
+  }
+  
+  try {
+    const { data, error } = await supabase.from('item_costs').select('codigo, custo');
+    if (error) throw error;
+
+    const costsMap: Record<string, number> = {};
+    data?.forEach(row => {
+      costsMap[row.codigo] = Number(row.custo) || 0;
+    });
+    return costsMap;
+  } catch (err: any) {
+    console.warn('Erro ao buscar custos do Supabase (caindo para LocalStorage):', err);
+    return await localDb.getLocalItemCosts();
+  }
+}
+
+export async function saveItemCosts(costsMap: Record<string, number>) {
+  // Sempre salva cópia no LocalStorage
+  await localDb.saveLocalItemCosts(costsMap);
+
+  if (USE_LOCAL_DB) {
+    return true;
+  }
+
+  try {
+    const entries = Object.entries(costsMap).map(([codigo, custo]) => ({
+      codigo,
+      custo: Number(custo) || 0,
+      updated_at: new Date().toISOString()
+    }));
+
+    if (entries.length === 0) return true;
+
+    const { error } = await supabase.from('item_costs').upsert(entries, { onConflict: 'codigo' });
+    if (error) throw error;
+
+    return true;
+  } catch (err: any) {
+    console.warn('Erro ao salvar custos no Supabase:', err);
+    return false;
+  }
+}
+
+
 export interface PendenciaExportCodeMapping {
   codigo_base: string;
   codigo_original: string;
@@ -770,6 +873,23 @@ export async function deletePendenciaExportCodeMapping(codigoBase: string) {
     return true;
   } catch (err) {
     console.error('Erro ao excluir vínculo de exportação:', err);
+    return false;
+  }
+}
+
+export async function clearAllPendenciaExportCodeMappings() {
+  if (USE_LOCAL_DB) return true;
+
+  try {
+    const { error } = await supabase
+      .from('pendencia_codigo_export_mappings')
+      .delete()
+      .neq('codigo_base', '__dummy__');
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Erro ao limpar todos os vínculos de exportação:', err);
     return false;
   }
 }

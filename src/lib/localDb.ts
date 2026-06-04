@@ -164,3 +164,22 @@ export async function saveLocalItemTags(tagsMap: Record<string, string[]>) {
     localStorage.setItem(TAGS_STORAGE_KEY, JSON.stringify(tagsMap));
     return true;
 }
+
+const COSTS_STORAGE_KEY = 'dev_item_costs';
+
+export async function getLocalItemCosts(): Promise<Record<string, number>> {
+    const saved = localStorage.getItem(COSTS_STORAGE_KEY);
+    if (!saved) return {};
+    try {
+        return JSON.parse(saved);
+    } catch (e) {
+        console.error('Erro ao ler custos do localStorage');
+        return {};
+    }
+}
+
+export async function saveLocalItemCosts(costsMap: Record<string, number>) {
+    localStorage.setItem(COSTS_STORAGE_KEY, JSON.stringify(costsMap));
+    return true;
+}
+

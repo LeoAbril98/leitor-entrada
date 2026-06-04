@@ -52,6 +52,10 @@ import {
     getPendenciasInventory,
     getPendenciaCompletaBaseRows,
     savePendenciaCompletaBaseRows,
+    getPendenciaImportCodeMappings,
+    savePendenciaImportCodeMappings,
+    deletePendenciaImportCodeMapping,
+    clearAllPendenciaImportCodeMappings,
     getPendenciaExportCodeMappings,
     savePendenciaExportCodeMappings,
     deletePendenciaExportCodeMapping,
@@ -673,17 +677,20 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         setItemTags(tags);
     };
 
+    const loadSavedCodeMappings = async () => {
+        const cloudImportMappings = await getPendenciaImportCodeMappings();
+        const localImportMappings = loadCodeMappings();
+        const next = { ...localImportMappings, ...cloudImportMappings };
+        if (Object.keys(next).length === 0) return;
+
+        setCodeMappings(next);
+        localStorage.setItem(CODE_MAPPING_STORAGE_KEY, JSON.stringify(next));
+    };
+
     const loadExportMappings = async () => {
         const cloudMappings = await getPendenciaExportCodeMappings();
         const localExportMappings = loadExportCodeMappings();
-        const localImportMappings = loadCodeMappings();
-        const inferredExportMappings = Object.entries(localImportMappings).reduce<Record<string, ExportMapping>>((acc, [importedCode, fixedCode]) => {
-            if (!localExportMappings[fixedCode] && !cloudMappings[fixedCode]) {
-                acc[fixedCode] = { codigo: importedCode };
-            }
-            return acc;
-        }, {});
-        const nextExportMappings = mergeExportCodeMappings(localExportMappings, inferredExportMappings, cloudMappings);
+        const nextExportMappings = mergeExportCodeMappings(localExportMappings, cloudMappings);
         if (Object.keys(nextExportMappings).length === 0) return;
 
         setExportCodeMappings((current) => {
@@ -692,17 +699,6 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             return next;
         });
         savePendenciaExportCodeMappings(nextExportMappings);
-
-        setCodeMappings((current) => {
-            const reverseMappings = Object.entries(nextExportMappings).reduce<Record<string, string>>((acc, [fixedCode, mapping]) => {
-                const importedCode = normalizeUploadCode(mapping.codigo || '', replacementRules);
-                if (importedCode && fixedCode) acc[importedCode] = fixedCode;
-                return acc;
-            }, {});
-            const next = { ...current, ...reverseMappings };
-            localStorage.setItem(CODE_MAPPING_STORAGE_KEY, JSON.stringify(next));
-            return next;
-        });
     };
 
     const loadSketches = async () => {
@@ -755,6 +751,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         getGlobalTags().then(setGlobalTags);
         loadItemTags();
         loadItemCosts();
+        loadSavedCodeMappings();
         loadExportMappings();
         loadSketches();
         loadAudios();
@@ -903,26 +900,67 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         localStorage.setItem(UPLOAD_SUMMARY_STORAGE_KEY, JSON.stringify(nextSummaries));
     };
 
-    const persistCodeMappings = (nextMappings: Record<string, string>) => {
+    const persistCodeMappings = async (
+        nextMappings: Record<string, string>,
+        descriptions: Record<string, string | undefined> = {}
+    ) => {
         setCodeMappings(nextMappings);
         localStorage.setItem(CODE_MAPPING_STORAGE_KEY, JSON.stringify(nextMappings));
+        const success = await savePendenciaImportCodeMappings(nextMappings, descriptions);
+        if (!success) console.warn('Falha ao sincronizar vínculos de importação com o Supabase.');
+        return success;
     };
 
     const handleClearAllCodeMappings = async () => {
         if (!window.confirm('ATENÇÃO: Isso irá excluir TODOS os vínculos de códigos salvos no sistema. O sistema deixará de associar os códigos alternativos nos próximos uploads.\n\nDeseja continuar?')) return;
 
-        persistCodeMappings({});
-        persistExportCodeMappings({});
-        await clearAllPendenciaExportCodeMappings();
+        setCodeMappings({});
+        localStorage.setItem(CODE_MAPPING_STORAGE_KEY, JSON.stringify({}));
+        setExportCodeMappings({});
+        localStorage.setItem(EXPORT_CODE_MAPPING_STORAGE_KEY, JSON.stringify({}));
+        const importSuccess = await clearAllPendenciaImportCodeMappings();
+        const exportSuccess = await clearAllPendenciaExportCodeMappings();
+        if (!importSuccess || !exportSuccess) {
+            toast.error('Erro ao excluir vínculos na nuvem.');
+            return;
+        }
         toast.success('Todos os vínculos de códigos foram excluídos.');
     };
 
-    const persistExportCodeMappings = (nextMappings: Record<string, ExportMapping>) => {
+    const persistExportCodeMappings = async (nextMappings: Record<string, ExportMapping>) => {
         setExportCodeMappings(nextMappings);
         localStorage.setItem(EXPORT_CODE_MAPPING_STORAGE_KEY, JSON.stringify(nextMappings));
-        savePendenciaExportCodeMappings(nextMappings).then((success) => {
-            if (!success) console.warn('Falha ao sincronizar vínculos de exportação com o Supabase.');
-        });
+        const success = await savePendenciaExportCodeMappings(nextMappings);
+        if (!success) console.warn('Falha ao sincronizar vínculos de exportação com o Supabase.');
+        return success;
+    };
+
+    const deleteCodeMapping = async (importedCode: string, fixedCode: string) => {
+        const newMappings = { ...codeMappings };
+        delete newMappings[importedCode];
+
+        setCodeMappings(newMappings);
+        localStorage.setItem(CODE_MAPPING_STORAGE_KEY, JSON.stringify(newMappings));
+        const importDeleted = await deletePendenciaImportCodeMapping(importedCode);
+
+        let exportDeleted = true;
+        if (
+            exportCodeMappings[fixedCode]?.codigo === importedCode ||
+            normalizeUploadCode(exportCodeMappings[fixedCode]?.codigo || '', replacementRules) === importedCode
+        ) {
+            const nextExportMappings = { ...exportCodeMappings };
+            delete nextExportMappings[fixedCode];
+            setExportCodeMappings(nextExportMappings);
+            localStorage.setItem(EXPORT_CODE_MAPPING_STORAGE_KEY, JSON.stringify(nextExportMappings));
+            exportDeleted = await deletePendenciaExportCodeMapping(fixedCode);
+        }
+
+        if (!importDeleted || !exportDeleted) {
+            toast.error('Vínculo removido localmente, mas falhou ao remover da nuvem.');
+            return;
+        }
+
+        toast.success('Vínculo excluído com sucesso.');
     };
 
     const persistReplacementRules = (newRules: ReplacementRule[]) => {
@@ -1525,7 +1563,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         }
 
         setIsLinkingCode(true);
-        window.setTimeout(() => {
+        window.setTimeout(async () => {
             try {
                 const nextRows = importReport.pendingRows.map((row) => (
                     row.codigo === targetCodigo
@@ -1541,8 +1579,17 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                 };
                 const nextExportMappings = mergeExportCodeMappings(exportCodeMappings, importReport.exportCodeMappings, targetExportMapping);
 
-                persistCodeMappings(nextMappings);
-                persistExportCodeMappings(nextExportMappings);
+                const savedImportMappings = await persistCodeMappings(nextMappings, {
+                    [item.codigo]: item.descricao === '-' ? undefined : item.descricao
+                });
+                if (!savedImportMappings) {
+                    toast.error('Vínculo salvo localmente, mas falhou ao salvar a memória fixa na nuvem.');
+                }
+                const savedExportMappings = await persistExportCodeMappings(nextExportMappings);
+                if (!savedExportMappings) {
+                    toast.error('Vínculo salvo localmente, mas falhou ao salvar na nuvem.');
+                    return;
+                }
                 setImportReport({
                     ...importReport,
                     totalImportado: importReport.totalImportado + 1,
@@ -1559,7 +1606,9 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                 });
                 setLinkTargetItem(null);
                 setLinkSearch('');
-                toast.success(`${item.codigo} vinculado ao código ${targetCodigo}.`);
+                if (savedImportMappings) {
+                    toast.success(`${item.codigo} vinculado ao código ${targetCodigo}.`);
+                }
             } finally {
                 setIsLinkingCode(false);
             }
@@ -1579,7 +1628,6 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             toast.error('Erro ao salvar o upload na nuvem.');
             return;
         }
-        persistExportCodeMappings(mergeExportCodeMappings(exportCodeMappings, importReport.exportCodeMappings));
         setLastUploads((current) => ({ ...current, [importReport.uploadKey]: importReport.fileName }));
         persistUploadSummaries({
             ...uploadSummaries,
@@ -3600,21 +3648,9 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                                     <td className="p-4">
                                                                         <div className="flex items-center justify-end gap-2">
                                                                             <button
-                                                                                onClick={() => {
+                                                                                onClick={async () => {
                                                                                     if (window.confirm('Para alterar este vínculo, é recomendado excluí-lo e refazer no próximo upload. Deseja excluir agora?')) {
-                                                                                        const newMappings = { ...codeMappings };
-                                                                                        delete newMappings[importedCode];
-                                                                                        persistCodeMappings(newMappings);
-                                                                                        if (
-                                                                                            exportCodeMappings[fixedCode]?.codigo === importedCode ||
-                                                                                            normalizeUploadCode(exportCodeMappings[fixedCode]?.codigo || '', replacementRules) === importedCode
-                                                                                        ) {
-                                                                                            const nextExportMappings = { ...exportCodeMappings };
-                                                                                            delete nextExportMappings[fixedCode];
-                                                                                            persistExportCodeMappings(nextExportMappings);
-                                                                                            deletePendenciaExportCodeMapping(fixedCode);
-                                                                                        }
-                                                                                        toast.success('Vínculo excluído com sucesso.');
+                                                                                        await deleteCodeMapping(importedCode, fixedCode);
                                                                                     }
                                                                                 }}
                                                                                 className="p-2 rounded-lg hover:bg-indigo-50 text-indigo-600 dark:hover:bg-indigo-900/30 transition-colors"
@@ -3623,21 +3659,9 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                                                 <Pencil className="w-4 h-4" />
                                                                             </button>
                                                                             <button
-                                                                                onClick={() => {
+                                                                                onClick={async () => {
                                                                                     if (window.confirm('Excluir este vínculo? O código original voltará a aparecer nos itens não importados no próximo upload.')) {
-                                                                                        const newMappings = { ...codeMappings };
-                                                                                        delete newMappings[importedCode];
-                                                                                        persistCodeMappings(newMappings);
-                                                                                        if (
-                                                                                            exportCodeMappings[fixedCode]?.codigo === importedCode ||
-                                                                                            normalizeUploadCode(exportCodeMappings[fixedCode]?.codigo || '', replacementRules) === importedCode
-                                                                                        ) {
-                                                                                            const nextExportMappings = { ...exportCodeMappings };
-                                                                                            delete nextExportMappings[fixedCode];
-                                                                                            persistExportCodeMappings(nextExportMappings);
-                                                                                            deletePendenciaExportCodeMapping(fixedCode);
-                                                                                        }
-                                                                                        toast.success('Vínculo excluído com sucesso.');
+                                                                                        await deleteCodeMapping(importedCode, fixedCode);
                                                                                     }
                                                                                 }}
                                                                                 className="p-2 rounded-lg hover:bg-red-50 text-red-600 dark:hover:bg-red-900/30 transition-colors"

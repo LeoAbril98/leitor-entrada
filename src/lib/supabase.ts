@@ -879,6 +879,98 @@ export interface PendenciaExportCodeMapping {
   descricao_original?: string | null;
 }
 
+export interface PendenciaImportCodeMapping {
+  codigo_importado: string;
+  codigo_base: string;
+  descricao_importada?: string | null;
+}
+
+export async function getPendenciaImportCodeMappings(): Promise<Record<string, string>> {
+  if (USE_LOCAL_DB) return {};
+
+  try {
+    const { data, error } = await supabase
+      .from('pendencia_codigo_import_mappings')
+      .select('codigo_importado, codigo_base');
+
+    if (error) throw error;
+
+    const mappings: Record<string, string> = {};
+    data?.forEach((row: PendenciaImportCodeMapping) => {
+      mappings[row.codigo_importado] = row.codigo_base;
+    });
+
+    return mappings;
+  } catch (err) {
+    console.error('Erro ao buscar vínculos de importação:', err);
+    return {};
+  }
+}
+
+export async function savePendenciaImportCodeMappings(
+  mappings: Record<string, string>,
+  descriptions: Record<string, string | undefined> = {}
+) {
+  if (USE_LOCAL_DB) return true;
+
+  try {
+    const entries = Object.entries(mappings)
+      .filter(([codigo_importado, codigo_base]) => codigo_importado && codigo_base)
+      .map(([codigo_importado, codigo_base]) => ({
+        codigo_importado,
+        codigo_base,
+        descricao_importada: descriptions[codigo_importado] || null,
+        updated_at: new Date().toISOString()
+      }));
+
+    if (entries.length === 0) return true;
+
+    const { error } = await supabase
+      .from('pendencia_codigo_import_mappings')
+      .upsert(entries, { onConflict: 'codigo_importado' });
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Erro ao salvar vínculos de importação:', err);
+    return false;
+  }
+}
+
+export async function deletePendenciaImportCodeMapping(codigoImportado: string) {
+  if (USE_LOCAL_DB) return true;
+
+  try {
+    const { error } = await supabase
+      .from('pendencia_codigo_import_mappings')
+      .delete()
+      .eq('codigo_importado', codigoImportado);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Erro ao excluir vínculo de importação:', err);
+    return false;
+  }
+}
+
+export async function clearAllPendenciaImportCodeMappings() {
+  if (USE_LOCAL_DB) return true;
+
+  try {
+    const { error } = await supabase
+      .from('pendencia_codigo_import_mappings')
+      .delete()
+      .neq('codigo_importado', '__dummy__');
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Erro ao limpar todos os vínculos de importação:', err);
+    return false;
+  }
+}
+
 export async function getPendenciaExportCodeMappings(): Promise<Record<string, { codigo: string; descricao?: string }>> {
   if (USE_LOCAL_DB) return {};
 

@@ -1337,6 +1337,10 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const importBaseFile = async (file: File) => {
         const toastId = toast.loading('Importando base semanal...');
         try {
+            const latestItemCosts = await getItemCosts();
+            if (Object.keys(latestItemCosts).length > 0) {
+                setItemCosts(latestItemCosts);
+            }
             const sheetRows = await readWorkbookRows(file);
             const mapped = sheetRows
                 .map((sheetRow, index) => {
@@ -1344,7 +1348,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                     const descricao = String(findValue(sheetRow, ['DESCRICAO', 'DESCRIÇÃO', 'CATALOGO', 'CATÁLOGO']) || '').trim();
                     const quantidade = parseNumber(findValue(sheetRow, ['QUANTIDADE', 'QTDE', 'QTD']));
                     const sheetCusto = parseNumber(findValue(sheetRow, ['CUSTO', 'PRECO', 'PREÇO', 'PRECO FABRICA', 'PREÇO FÁBRICA']));
-                    const finalCusto = itemCosts[codigo] !== undefined ? itemCosts[codigo] : sheetCusto;
+                    const finalCusto = latestItemCosts[codigo] !== undefined ? latestItemCosts[codigo] : sheetCusto;
                     return { ...emptyRow(), codigo, descricao, custo: finalCusto, estoque_pr: quantidade, ordem: index, ordemOrigem: 'importada' as const, fixa: false };
                 })
                 .filter((row) => row.codigo && row.descricao);

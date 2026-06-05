@@ -831,11 +831,25 @@ export async function getItemCosts(): Promise<Record<string, number>> {
   }
   
   try {
-    const { data, error } = await supabase.from('item_costs').select('codigo, custo');
-    if (error) throw error;
+    let allData: { codigo: string; custo: number | null }[] = [];
+    let page = 0;
+    let hasMore = true;
+    const pageSize = 1000;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('item_costs')
+        .select('codigo, custo')
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (error) throw error;
+      allData = [...allData, ...(data || [])];
+      hasMore = (data || []).length === pageSize;
+      page++;
+    }
 
     const costsMap: Record<string, number> = {};
-    data?.forEach(row => {
+    allData.forEach(row => {
       costsMap[row.codigo] = Number(row.custo) || 0;
     });
     return costsMap;

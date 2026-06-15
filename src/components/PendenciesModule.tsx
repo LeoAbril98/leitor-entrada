@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
-import { ArrowLeft, ClipboardList, Pencil, Search, Filter, Trash2, Archive, X, FileSpreadsheet, Plus, Tag, PenTool, Mic, Volume2, Play, Square, AlertTriangle, Upload, CloudUpload } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Pencil, Search, Filter, Trash2, Archive, X, FileSpreadsheet, Plus, Tag, PenTool, Mic, Volume2, Play, Square, AlertTriangle, Upload, CloudUpload, Wifi, WifiOff, RefreshCw, History, Copy, Download, HardDrive } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
     getInventory, 
@@ -44,7 +44,12 @@ import {
     mergePendingPedidosIntoState,
     queuePendingPedido,
     removePendingPedido,
-    clearPendingPedidos
+    clearPendingPedidos,
+    loadPedidoSyncLog,
+    addPedidoSyncLog,
+    clearPedidoSyncLog,
+    PedidoSyncLogEntry,
+    PendingPedido
 } from '../lib/offlinePedidoQueue';
 
 interface PendenciesModuleProps {
@@ -61,6 +66,11 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     const emptyFactoryPendencies: Record<FactoryName, number> = { MK: 0, MOLERI: 0, CM: 0, OLIMPO: 0 };
     const [pendencies, setPendencies] = useState<Record<string, Record<FactoryName, number>>>({});
     const [pendingSyncCount, setPendingSyncCount] = useState(0);
+    const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
+    const [isSyncingPedidos, setIsSyncingPedidos] = useState(false);
+    const [syncLog, setSyncLog] = useState<PedidoSyncLogEntry[]>([]);
+    const [isLocalPendenciesModalOpen, setIsLocalPendenciesModalOpen] = useState(false);
+    const [localPendingRows, setLocalPendingRows] = useState<PendingPedido[]>([]);
 
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -281,13 +291,24 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
         setIsModalOpen(true);
     };
 
+    const recordSyncLog = async (entry: Omit<PedidoSyncLogEntry, 'id' | 'created_at'>) => {
+        setSyncLog(await addPedidoSyncLog(entry));
+    };
+
     const handleConfirmQty = async (newQty: number): Promise<boolean> => {
         if (!modalConfig.item) return false;
         const { codigo } = modalConfig.item;
         const { factory } = modalConfig;
 
-        queuePendingPedido(codigo, factory, newQty);
-        setPendingSyncCount(getPendingPedidoCount());
+        await queuePendingPedido(codigo, factory, newQty);
+        setPendingSyncCount(await getPendingPedidoCount());
+        await recordSyncLog({
+            codigo,
+            factory,
+            quantidade: newQty,
+            status: 'pending',
+            message: 'Salvo neste aparelho'
+        });
 
         setPendencies(prev => {
             const itemPendencies = prev[codigo] || emptyFactoryPendencies;
@@ -307,11 +328,25 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
 
         const success = await upsertPedidoFabrica(codigo, factory, newQty);
         if (success) {
-            removePendingPedido(codigo, factory);
-            setPendingSyncCount(getPendingPedidoCount());
+            await removePendingPedido(codigo, factory);
+            setPendingSyncCount(await getPendingPedidoCount());
+            await recordSyncLog({
+                codigo,
+                factory,
+                quantidade: newQty,
+                status: 'synced',
+                message: 'Enviado para a nuvem'
+            });
             return true;
         }
 
+        await recordSyncLog({
+            codigo,
+            factory,
+            quantidade: newQty,
+            status: 'failed',
+            message: 'Falha no envio, ficou pendente'
+        });
         toast.error(`Falha ao enviar para a nuvem. Alteração salva neste aparelho e pendente de sincronização.`, { duration: 6000 });
         return true;
     };
@@ -321,7 +356,8 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     };
 
     const syncPendingPedidos = async (showSuccessToast = false) => {
-        const pendingRows = loadPendingPedidos();
+        if (isSyncingPedidos) return 0;
+        const pendingRows = await loadPendingPedidos();
         if (pendingRows.length === 0) {
             setPendingSyncCount(0);
             return 0;
@@ -332,23 +368,126 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
             return 0;
         }
 
+        setIsSyncingPedidos(true);
         let syncedCount = 0;
-        for (const row of pendingRows) {
-            const success = await upsertPedidoFabrica(row.codigo, row.factory, row.quantidade);
-            if (success) {
-                removePendingPedido(row.codigo, row.factory);
-                syncedCount += 1;
+        try {
+            for (const row of pendingRows) {
+                const success = await upsertPedidoFabrica(row.codigo, row.factory, row.quantidade);
+                if (success) {
+                    await removePendingPedido(row.codigo, row.factory);
+                    syncedCount += 1;
+                    await recordSyncLog({
+                        codigo: row.codigo,
+                        factory: row.factory,
+                        quantidade: row.quantidade,
+                        status: 'synced',
+                        message: 'Enviado para a nuvem'
+                    });
+                } else {
+                    await recordSyncLog({
+                        codigo: row.codigo,
+                        factory: row.factory,
+                        quantidade: row.quantidade,
+                        status: 'failed',
+                        message: 'Tentativa de sincronizacao falhou'
+                    });
+                }
             }
+
+            const remainingCount = await getPendingPedidoCount();
+            setPendingSyncCount(remainingCount);
+
+            if (syncedCount > 0 && remainingCount === 0 && showSuccessToast) {
+                toast.success('Alterações enviadas para a nuvem com sucesso.', { duration: 4000 });
+            } else if (remainingCount > 0 && showSuccessToast) {
+                toast.error(`${remainingCount} alteração${remainingCount > 1 ? 'es' : ''} ainda pendente${remainingCount > 1 ? 's' : ''}.`, { duration: 5000 });
+            }
+
+            return syncedCount;
+        } finally {
+            setIsSyncingPedidos(false);
+        }
+    };
+
+    const handleManualSync = async () => {
+        const pendingRows = await loadPendingPedidos();
+        if (pendingRows.length === 0) {
+            toast.success('Tudo sincronizado. Nenhuma alteração pendente.', { duration: 3000 });
+            return;
+        }
+        if (!USE_LOCAL_DB && !isOnline) {
+            toast.error('Sem internet. As alterações continuam salvas neste aparelho.', { duration: 5000 });
+            return;
+        }
+        toast.loading('Sincronizando alterações pendentes...', { id: 'pedidos-sync' });
+        const syncedCount = await syncPendingPedidos(false);
+        const remainingCount = await getPendingPedidoCount();
+        if (remainingCount === 0) {
+            toast.success(`${syncedCount} alteração${syncedCount !== 1 ? 'es' : ''} enviada${syncedCount !== 1 ? 's' : ''} para a nuvem.`, { id: 'pedidos-sync', duration: 4000 });
+        } else {
+            toast.error(`${remainingCount} alteração${remainingCount > 1 ? 'es' : ''} ainda pendente${remainingCount > 1 ? 's' : ''}.`, { id: 'pedidos-sync', duration: 5000 });
+        }
+        if (isLocalPendenciesModalOpen) {
+            setLocalPendingRows(await loadPendingPedidos());
+        }
+    };
+
+    const refreshLocalPendenciesReport = async () => {
+        const rows = await loadPendingPedidos();
+        setLocalPendingRows(rows);
+        setPendingSyncCount(rows.length);
+        return rows;
+    };
+
+    const openLocalPendenciesReport = async () => {
+        await refreshLocalPendenciesReport();
+        setIsLocalPendenciesModalOpen(true);
+    };
+
+    const formatPendingReport = (rows: PendingPedido[]) => {
+        if (rows.length === 0) {
+            return 'Tudo sincronizado. Nenhuma alteração salva apenas neste aparelho.';
         }
 
-        const remainingCount = getPendingPedidoCount();
-        setPendingSyncCount(remainingCount);
+        const generatedAt = new Date().toLocaleString('pt-BR');
+        const lines = rows.map((row) => {
+            const savedAt = new Date(row.updated_at).toLocaleString('pt-BR');
+            return `- ${row.codigo} | ${row.factory} | quantidade ${row.quantidade} | salvo em ${savedAt}`;
+        });
 
-        if (syncedCount > 0 && remainingCount === 0 && showSuccessToast) {
-            toast.success('Alterações enviadas para a nuvem com sucesso.', { duration: 4000 });
+        return [
+            `Pendências locais - ${generatedAt}`,
+            `Total: ${rows.length}`,
+            '',
+            ...lines
+        ].join('\n');
+    };
+
+    const copyLocalPendenciesReport = async () => {
+        const rows = await refreshLocalPendenciesReport();
+        const report = formatPendingReport(rows);
+
+        try {
+            await navigator.clipboard.writeText(report);
+            toast.success('Relatório copiado.');
+        } catch (error) {
+            console.error('Erro ao copiar relatório:', error);
+            toast.error('Não foi possível copiar o relatório.');
         }
+    };
 
-        return syncedCount;
+    const downloadLocalPendenciesBackup = async () => {
+        const rows = await refreshLocalPendenciesReport();
+        const backup = {
+            generated_at: new Date().toISOString(),
+            device_status: isOnline ? 'online' : 'offline',
+            pending_count: rows.length,
+            pending_rows: rows
+        };
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' });
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        saveAs(blob, `pendencias-locais-${stamp}.json`);
+        toast.success('Backup JSON gerado.');
     };
 
     const executeClearWeek = async () => {
@@ -362,8 +501,10 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                 setPendencies({});
                 setStock([]);
                 setLastUploadDate(null);
-                clearPendingPedidos();
+                await clearPendingPedidos();
+                await clearPedidoSyncLog();
                 setPendingSyncCount(0);
+                setSyncLog([]);
                 localStorage.removeItem('inventory_cache');
                 setIsClearWeekModalOpen(false);
                 toast.success("Lista, estoque e pendência arquivados/zerados com sucesso! Pronto para nova semana.", { id: loadingToast });
@@ -857,6 +998,29 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
         pendencia: filteredStock.reduce((acc, item) => acc + getFactoryValue(item, factory.pendKey), 0),
         pedido: filteredStock.reduce((acc, item) => acc + getFactoryOrder(item, factory.key), 0)
     }));
+    const syncStatus = isSyncingPedidos
+        ? {
+            label: 'Sincronizando',
+            className: 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+            icon: <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+        }
+        : !isOnline
+            ? {
+                label: pendingSyncCount > 0 ? `Offline - ${pendingSyncCount} pendente${pendingSyncCount > 1 ? 's' : ''}` : 'Offline',
+                className: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+                icon: <WifiOff className="w-3.5 h-3.5" />
+            }
+            : pendingSyncCount > 0
+                ? {
+                    label: `${pendingSyncCount} pendente${pendingSyncCount > 1 ? 's' : ''}`,
+                    className: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+                    icon: <AlertTriangle className="w-3.5 h-3.5" />
+                }
+                : {
+                    label: 'Online - sincronizado',
+                    className: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+                    icon: <Wifi className="w-3.5 h-3.5" />
+                };
 
     useEffect(() => {
         // Verificar se é o primeiro acesso à versão 2.0 (Cloud)
@@ -864,10 +1028,11 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
         if (!hasSeenWelcome) {
             setIsWelcomeModalOpen(true);
         }
+        loadPedidoSyncLog().then(setSyncLog);
 
         const fetchData = async () => {
             try {
-                const pendingAtStartup = getPendingPedidoCount();
+                const pendingAtStartup = await getPendingPedidoCount();
                 setPendingSyncCount(pendingAtStartup);
                 if (pendingAtStartup > 0) {
                     toast('Existem alterações salvas neste aparelho aguardando sincronização.', { duration: 4000 });
@@ -889,9 +1054,9 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                         loadedPendencies[row.codigo][row.factory as FactoryName] = row.quantidade;
                     });
                 }
-                loadedPendencies = mergePendingPedidosIntoState(loadedPendencies, emptyFactoryPendencies);
+                loadedPendencies = await mergePendingPedidosIntoState(loadedPendencies, emptyFactoryPendencies);
                 setPendencies(loadedPendencies);
-                setPendingSyncCount(getPendingPedidoCount());
+                setPendingSyncCount(await getPendingPedidoCount());
 
                 // 2. Tentar buscar inventário base das PENDÊNCIAS na Nuvem
                 const inventoryData = await getPendenciasInventory();
@@ -934,12 +1099,20 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
         fetchData();
 
         const handleOnline = () => {
-            syncPendingPedidos(true);
+            setIsOnline(true);
+            void syncPendingPedidos(true);
+        };
+        const handleOffline = () => {
+            setIsOnline(false);
+            getPendingPedidoCount().then(setPendingSyncCount);
+            toast.error('Sem internet. As novas alterações serão salvas neste aparelho.', { duration: 5000 });
         };
 
         window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
         return () => {
             window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
         };
     }, []);
 
@@ -967,11 +1140,14 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                     Supabase Cloud
                                 </span>
                             )}
-                            {pendingSyncCount > 0 && (
-                                <span className="px-1.5 py-0.5 text-[10px] bg-amber-500 text-white rounded-md uppercase tracking-widest font-black shadow-lg">
-                                    {pendingSyncCount} pendente{pendingSyncCount > 1 ? 's' : ''}
-                                </span>
-                            )}
+                            <button
+                                type="button"
+                                onClick={openLocalPendenciesReport}
+                                className={cn("px-1.5 py-0.5 text-[10px] rounded-md uppercase tracking-widest font-black shadow-sm border flex items-center gap-1 hover:brightness-95 transition", syncStatus.className)}
+                            >
+                                {syncStatus.icon}
+                                {syncStatus.label}
+                            </button>
                         </h1>
                         <div className="hidden md:block h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
                         <div id="tour-summary" className="flex flex-col">
@@ -1025,6 +1201,29 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                 )}
                             >
                                 📌 Pedidos
+                            </button>
+
+                            <button
+                                onClick={handleManualSync}
+                                disabled={isSyncingPedidos}
+                                className={cn(
+                                    "px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all border flex items-center gap-1.5 shadow-sm",
+                                    pendingSyncCount > 0
+                                        ? "bg-blue-600 text-white border-blue-700 hover:bg-blue-700"
+                                        : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800",
+                                    isSyncingPedidos && "cursor-wait opacity-80"
+                                )}
+                            >
+                                <RefreshCw className={cn("w-3.5 h-3.5", isSyncingPedidos && "animate-spin")} />
+                                Sincronizar
+                            </button>
+
+                            <button
+                                onClick={openLocalPendenciesReport}
+                                className="px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all border flex items-center gap-1.5 shadow-sm bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                            >
+                                <HardDrive className="w-3.5 h-3.5 text-amber-500" />
+                                Pendências locais
                             </button>
 
                             {isAdmin && (
@@ -1111,6 +1310,41 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                 >
                                     <PenTool className={cn("w-3.5 h-3.5", showOnlyWithSketches ? "text-white" : "text-amber-500")} /> Com Post-it
                                 </button>
+                            </div>
+                        )}
+                        {syncLog.length > 0 && (
+                            <div className="mt-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-3 py-2">
+                                <div className="flex items-center justify-between gap-3 mb-1.5">
+                                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                        <History className="w-3.5 h-3.5" />
+                                        Histórico de sincronização
+                                    </div>
+                                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                                        Últimos {Math.min(syncLog.length, 4)}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-1.5">
+                                    {syncLog.slice(0, 4).map((entry) => (
+                                        <div key={entry.id} className="flex items-center justify-between gap-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5">
+                                            <div className="min-w-0">
+                                                <p className="truncate text-[11px] font-black text-slate-700 dark:text-slate-200">
+                                                    {entry.codigo} <span className="text-slate-400">/</span> {entry.factory} <span className="text-slate-400">=</span> {entry.quantidade}
+                                                </p>
+                                                <p className="truncate text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                                                    {entry.message}
+                                                </p>
+                                            </div>
+                                            <span className={cn(
+                                                "shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase",
+                                                entry.status === 'synced' && "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+                                                entry.status === 'pending' && "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+                                                entry.status === 'failed' && "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+                                            )}>
+                                                {entry.status === 'synced' ? 'nuvem' : entry.status === 'pending' ? 'local' : 'falha'}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -1742,6 +1976,117 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                         className="w-full h-12 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 font-black text-xs uppercase tracking-widest transition-all disabled:opacity-50"
                                     >
                                         Voltar
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {isLocalPendenciesModalOpen && (
+                    <div className="fixed inset-0 z-[105] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsLocalPendenciesModalOpen(false)}
+                            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ scale: 0.92, opacity: 0, y: 18 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.92, opacity: 0, y: 18 }}
+                            className="relative w-full max-w-4xl max-h-[86dvh] rounded-[28px] bg-white dark:bg-slate-900 shadow-2xl border border-white/60 dark:border-slate-800 overflow-hidden flex flex-col"
+                        >
+                            <div className="flex-none px-5 sm:px-7 py-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
+                                            <HardDrive className="w-5 h-5 text-amber-600 dark:text-amber-300" />
+                                        </div>
+                                        <h2 className="text-xl font-black text-slate-800 dark:text-slate-100">Pendências locais</h2>
+                                    </div>
+                                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                                        Alterações salvas neste aparelho que ainda não foram confirmadas pela nuvem.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setIsLocalPendenciesModalOpen(false)}
+                                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                                >
+                                    <X className="w-6 h-6 text-slate-400" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-auto px-5 sm:px-7 py-5">
+                                {localPendingRows.length === 0 ? (
+                                    <div className="py-14 text-center">
+                                        <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
+                                            <Wifi className="w-7 h-7 text-emerald-600 dark:text-emerald-300" />
+                                        </div>
+                                        <p className="text-lg font-black text-slate-800 dark:text-slate-100">Tudo sincronizado</p>
+                                        <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">Nenhuma alteração está salva apenas neste aparelho.</p>
+                                    </div>
+                                ) : (
+                                    <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-slate-50 dark:bg-slate-950/70 text-slate-500 dark:text-slate-400">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest">Código</th>
+                                                    <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest">Fábrica</th>
+                                                    <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest">Quantidade</th>
+                                                    <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest">Salvo em</th>
+                                                    <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                                {localPendingRows.map((row) => (
+                                                    <tr key={`${row.codigo}-${row.factory}`} className="bg-white dark:bg-slate-900">
+                                                        <td className="px-4 py-3 font-black text-slate-800 dark:text-slate-100">{row.codigo}</td>
+                                                        <td className="px-4 py-3 font-bold text-slate-600 dark:text-slate-300">{row.factory}</td>
+                                                        <td className="px-4 py-3 text-right font-black text-amber-600 dark:text-amber-300">{row.quantidade}</td>
+                                                        <td className="px-4 py-3 font-medium text-slate-500 dark:text-slate-400">
+                                                            {new Date(row.updated_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <span className="rounded-md bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 px-2 py-1 text-[10px] font-black uppercase">
+                                                                Pendente
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex-none px-5 sm:px-7 py-4 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                                <span className="text-xs font-black uppercase tracking-widest text-slate-400">
+                                    {localPendingRows.length} item{localPendingRows.length !== 1 ? 's' : ''} local{localPendingRows.length !== 1 ? 'is' : ''}
+                                </span>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <button
+                                        onClick={handleManualSync}
+                                        disabled={isSyncingPedidos || localPendingRows.length === 0}
+                                        className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2"
+                                    >
+                                        <RefreshCw className={cn("w-4 h-4", isSyncingPedidos && "animate-spin")} />
+                                        Sincronizar agora
+                                    </button>
+                                    <button
+                                        onClick={copyLocalPendenciesReport}
+                                        className="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                        Copiar relatório
+                                    </button>
+                                    <button
+                                        onClick={downloadLocalPendenciesBackup}
+                                        className="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Baixar JSON
                                     </button>
                                 </div>
                             </div>

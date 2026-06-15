@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, Minus, Plus, X } from 'lucide-react';
+import { Check, Loader2, Minus, Plus, X } from 'lucide-react';
 import { StockItem } from '../types';
 import { NumericKeypad } from './NumericKeypad';
 import { cn } from '../utils';
@@ -14,24 +14,31 @@ interface PendencyQuantityModalProps {
     stockQty: number;
     pendencyQty: number;
     currentQty: number;
-    onConfirm: (newQty: number) => void;
+    onConfirm: (newQty: number) => boolean | Promise<boolean>;
 }
 
 export function PendencyQuantityModal({ isOpen, onClose, item, factory, photoUrl, stockQty, pendencyQty, currentQty, onConfirm }: PendencyQuantityModalProps) {
     const [quantity, setQuantity] = useState(0);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
             setQuantity(currentQty);
+            setIsSaving(false);
         }
     }, [isOpen, currentQty]);
 
     if (!isOpen || !item) return null;
 
-    const increaseQty = () => setQuantity(prev => prev + 1);
-    const decreaseQty = () => setQuantity(prev => (prev > 0 ? prev - 1 : 0));
+    const increaseQty = () => {
+        if (!isSaving) setQuantity(prev => prev + 1);
+    };
+    const decreaseQty = () => {
+        if (!isSaving) setQuantity(prev => (prev > 0 ? prev - 1 : 0));
+    };
 
     const handleKeyPress = (digit: string) => {
+        if (isSaving) return;
         setQuantity(prev => {
             const currentStr = String(prev);
             if (currentStr.length >= 4) return prev;
@@ -41,6 +48,7 @@ export function PendencyQuantityModal({ isOpen, onClose, item, factory, photoUrl
     };
 
     const handleBackspace = () => {
+        if (isSaving) return;
         setQuantity(prev => {
             const currentStr = String(prev);
             if (currentStr.length <= 1) return 0;
@@ -48,11 +56,18 @@ export function PendencyQuantityModal({ isOpen, onClose, item, factory, photoUrl
         });
     };
 
-    const handleClear = () => setQuantity(0);
+    const handleClear = () => {
+        if (!isSaving) setQuantity(0);
+    };
 
-    const handleConfirm = () => {
-        onConfirm(quantity);
-        onClose();
+    const handleConfirm = async () => {
+        if (isSaving) return;
+        setIsSaving(true);
+        const saved = await onConfirm(quantity);
+        setIsSaving(false);
+        if (saved) {
+            onClose();
+        }
     };
 
     const getFactoryDetails = (fac: string) => {
@@ -79,7 +94,9 @@ export function PendencyQuantityModal({ isOpen, onClose, item, factory, photoUrl
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    onClick={onClose}
+                    onClick={() => {
+                        if (!isSaving) onClose();
+                    }}
                     className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
                 />
 
@@ -156,6 +173,7 @@ export function PendencyQuantityModal({ isOpen, onClose, item, factory, photoUrl
                                     <button
                                         type="button"
                                         onClick={decreaseQty}
+                                        disabled={isSaving}
                                         className="w-11 h-11 md:w-14 md:h-14 flex items-center justify-center rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-amber-400 dark:hover:border-amber-500/50 active:scale-95 transition-all"
                                     >
                                         <Minus className="w-5 h-5 md:w-6 md:h-6" />
@@ -173,6 +191,7 @@ export function PendencyQuantityModal({ isOpen, onClose, item, factory, photoUrl
                                     <button
                                         type="button"
                                         onClick={increaseQty}
+                                        disabled={isSaving}
                                         className="w-11 h-11 md:w-14 md:h-14 flex items-center justify-center rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-amber-400 dark:hover:border-amber-500/50 active:scale-95 transition-all"
                                     >
                                         <Plus className="w-5 h-5 md:w-6 md:h-6" />
@@ -184,6 +203,7 @@ export function PendencyQuantityModal({ isOpen, onClose, item, factory, photoUrl
                                     <button 
                                         type="button"
                                         onClick={() => setQuantity(prev => prev + 4)} 
+                                        disabled={isSaving}
                                         className="flex-1 py-2 md:py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-black border-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600 transition-all active:scale-95"
                                     >
                                         +4
@@ -191,6 +211,7 @@ export function PendencyQuantityModal({ isOpen, onClose, item, factory, photoUrl
                                     <button 
                                         type="button"
                                         onClick={() => setQuantity(prev => prev + 12)} 
+                                        disabled={isSaving}
                                         className="flex-1 py-2 md:py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-black border-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600 transition-all active:scale-95"
                                     >
                                         +12
@@ -198,6 +219,7 @@ export function PendencyQuantityModal({ isOpen, onClose, item, factory, photoUrl
                                     <button 
                                         type="button"
                                         onClick={() => setQuantity(prev => prev + 100)} 
+                                        disabled={isSaving}
                                         className="flex-1 py-2 md:py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-black border-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600 transition-all active:scale-95"
                                     >
                                         +100
@@ -218,10 +240,11 @@ export function PendencyQuantityModal({ isOpen, onClose, item, factory, photoUrl
                             <button
                                 type="button"
                                 onClick={handleConfirm}
-                                className="w-full h-12 md:h-16 mt-1 md:mt-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl md:rounded-2xl font-black text-sm md:text-base shadow-xl shadow-amber-200 dark:shadow-none transition-all active:scale-[0.98] flex items-center justify-center gap-3 uppercase tracking-wider"
+                                disabled={isSaving}
+                                className="w-full h-12 md:h-16 mt-1 md:mt-2 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-400 disabled:cursor-wait text-white rounded-xl md:rounded-2xl font-black text-sm md:text-base shadow-xl shadow-amber-200 dark:shadow-none transition-all active:scale-[0.98] flex items-center justify-center gap-3 uppercase tracking-wider"
                             >
-                                CONFIRMAR PEDIDO
-                                <Check className="w-6 h-6" />
+                                {isSaving ? 'SALVANDO...' : 'CONFIRMAR PEDIDO'}
+                                {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Check className="w-6 h-6" />}
                             </button>
                         </div>
                     </div>

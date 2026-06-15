@@ -38,6 +38,14 @@ import { AudioPlayerModal } from './AudioPlayerModal';
 import { WelcomeModal } from './WelcomeModal';
 import { OnboardingTour } from './OnboardingTour';
 import { saveSketch, getSketch, getAllSketches, deleteSketch, saveAudio, getAudio, getAllAudioKeys, deleteAudio } from '../lib/sketchStore';
+import {
+    getPendingPedidoCount,
+    loadPendingPedidos,
+    mergePendingPedidosIntoState,
+    queuePendingPedido,
+    removePendingPedido,
+    clearPendingPedidos
+} from '../lib/offlinePedidoQueue';
 
 interface PendenciesModuleProps {
     onBackToMenu: () => void;
@@ -50,7 +58,9 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     const [lastUploadDate, setLastUploadDate] = useState<string | null>(null);
 
     type FactoryName = 'MK' | 'MOLERI' | 'CM' | 'OLIMPO';
+    const emptyFactoryPendencies: Record<FactoryName, number> = { MK: 0, MOLERI: 0, CM: 0, OLIMPO: 0 };
     const [pendencies, setPendencies] = useState<Record<string, Record<FactoryName, number>>>({});
+    const [pendingSyncCount, setPendingSyncCount] = useState(0);
 
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -271,13 +281,16 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
         setIsModalOpen(true);
     };
 
-    const handleConfirmQty = async (newQty: number) => {
-        if (!modalConfig.item) return;
+    const handleConfirmQty = async (newQty: number): Promise<boolean> => {
+        if (!modalConfig.item) return false;
         const { codigo } = modalConfig.item;
         const { factory } = modalConfig;
 
+        queuePendingPedido(codigo, factory, newQty);
+        setPendingSyncCount(getPendingPedidoCount());
+
         setPendencies(prev => {
-            const itemPendencies = prev[codigo] || { MK: 0, MOLERI: 0, CM: 0, OLIMPO: 0 };
+            const itemPendencies = prev[codigo] || emptyFactoryPendencies;
             return {
                 ...prev,
                 [codigo]: {
@@ -287,15 +300,55 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
             };
         });
 
-        // Background sync to db
-        const success = await upsertPedidoFabrica(codigo, factory, newQty);
-        if (!success) {
-            toast.error(`Falha ao salvar o pedido na nuvem para a ${factory}.`);
+        if (!USE_LOCAL_DB && typeof navigator !== 'undefined' && !navigator.onLine) {
+            toast.error('Sem internet. Alteração salva neste aparelho e pendente de sincronização.', { duration: 6000 });
+            return true;
         }
+
+        const success = await upsertPedidoFabrica(codigo, factory, newQty);
+        if (success) {
+            removePendingPedido(codigo, factory);
+            setPendingSyncCount(getPendingPedidoCount());
+            return true;
+        }
+
+        toast.error(`Falha ao enviar para a nuvem. Alteração salva neste aparelho e pendente de sincronização.`, { duration: 6000 });
+        return true;
     };
 
     const handleClearAll = async () => {
         setIsClearWeekModalOpen(true);
+    };
+
+    const syncPendingPedidos = async (showSuccessToast = false) => {
+        const pendingRows = loadPendingPedidos();
+        if (pendingRows.length === 0) {
+            setPendingSyncCount(0);
+            return 0;
+        }
+
+        if (!USE_LOCAL_DB && typeof navigator !== 'undefined' && !navigator.onLine) {
+            setPendingSyncCount(pendingRows.length);
+            return 0;
+        }
+
+        let syncedCount = 0;
+        for (const row of pendingRows) {
+            const success = await upsertPedidoFabrica(row.codigo, row.factory, row.quantidade);
+            if (success) {
+                removePendingPedido(row.codigo, row.factory);
+                syncedCount += 1;
+            }
+        }
+
+        const remainingCount = getPendingPedidoCount();
+        setPendingSyncCount(remainingCount);
+
+        if (syncedCount > 0 && remainingCount === 0 && showSuccessToast) {
+            toast.success('Alterações enviadas para a nuvem com sucesso.', { duration: 4000 });
+        }
+
+        return syncedCount;
     };
 
     const executeClearWeek = async () => {
@@ -309,6 +362,8 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                 setPendencies({});
                 setStock([]);
                 setLastUploadDate(null);
+                clearPendingPedidos();
+                setPendingSyncCount(0);
                 localStorage.removeItem('inventory_cache');
                 setIsClearWeekModalOpen(false);
                 toast.success("Lista, estoque e pendência arquivados/zerados com sucesso! Pronto para nova semana.", { id: loadingToast });
@@ -812,22 +867,31 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
 
         const fetchData = async () => {
             try {
+                const pendingAtStartup = getPendingPedidoCount();
+                setPendingSyncCount(pendingAtStartup);
+                if (pendingAtStartup > 0) {
+                    toast('Existem alterações salvas neste aparelho aguardando sincronização.', { duration: 4000 });
+                    await syncPendingPedidos(true);
+                }
+
                 // Carregar Catálogo de Tags
                 const gTags = await getGlobalTags();
                 setGlobalTags(gTags);
 
                 // 1. Carregar Pedidos da Nuvem
                 const pedidosData = await loadPedidosFabrica();
+                let loadedPendencies: Record<string, Record<FactoryName, number>> = {};
                 if (pedidosData && pedidosData.length > 0) {
-                    const loadedPendencies: Record<string, Record<FactoryName, number>> = {};
                     pedidosData.forEach((row: any) => {
                         if (!loadedPendencies[row.codigo]) {
-                            loadedPendencies[row.codigo] = { MK: 0, MOLERI: 0, CM: 0, OLIMPO: 0 };
+                            loadedPendencies[row.codigo] = { ...emptyFactoryPendencies };
                         }
                         loadedPendencies[row.codigo][row.factory as FactoryName] = row.quantidade;
                     });
-                    setPendencies(loadedPendencies);
                 }
+                loadedPendencies = mergePendingPedidosIntoState(loadedPendencies, emptyFactoryPendencies);
+                setPendencies(loadedPendencies);
+                setPendingSyncCount(getPendingPedidoCount());
 
                 // 2. Tentar buscar inventário base das PENDÊNCIAS na Nuvem
                 const inventoryData = await getPendenciasInventory();
@@ -868,6 +932,15 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
             }
         };
         fetchData();
+
+        const handleOnline = () => {
+            syncPendingPedidos(true);
+        };
+
+        window.addEventListener('online', handleOnline);
+        return () => {
+            window.removeEventListener('online', handleOnline);
+        };
     }, []);
 
     return (
@@ -892,6 +965,11 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                 <span id="tour-cloud" className="px-1.5 py-0.5 text-[10px] bg-blue-600 text-white rounded-md uppercase tracking-widest font-black shadow-lg flex items-center gap-1">
                                     <span className="w-1.5 h-1.5 bg-blue-200 rounded-full animate-ping"></span>
                                     Supabase Cloud
+                                </span>
+                            )}
+                            {pendingSyncCount > 0 && (
+                                <span className="px-1.5 py-0.5 text-[10px] bg-amber-500 text-white rounded-md uppercase tracking-widest font-black shadow-lg">
+                                    {pendingSyncCount} pendente{pendingSyncCount > 1 ? 's' : ''}
                                 </span>
                             )}
                         </h1>

@@ -138,7 +138,7 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
                                         <input
                                             ref={searchInputRef}
                                             type="text"
-                                            placeholder="Ex: Roda Scorro, VR... ou 00123"
+                                            placeholder="Ex: M16 14, 15x6 ..."
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                             className="w-full h-20 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-[24px] pl-16 pr-16 text-2xl font-bold text-slate-800 dark:text-slate-100 placeholder-slate-300 focus:outline-none focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm"

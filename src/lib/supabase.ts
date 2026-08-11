@@ -292,16 +292,23 @@ export async function savePendenciaCompletaBaseRows(rows: PendenciaCompletaBaseR
   if (USE_LOCAL_DB) return true;
 
   try {
-    const payload = rows
+    const seenCodes = new Set<string>();
+    const payload: any[] = [];
+    rows
       .filter((row) => row.codigo && row.descricao)
-      .map((row, index) => ({
-        codigo: String(row.codigo).trim(),
-        descricao: String(row.descricao).trim(),
-        custo: Number(row.custo) || 0,
-        ordem: Number(row.ordem ?? index),
-        ordem_origem: row.ordem_origem || (row.fixa === false ? 'temporaria' : 'fixa'),
-        updated_at: new Date().toISOString()
-      }));
+      .forEach((row, index) => {
+        const codigo = String(row.codigo).trim();
+        if (seenCodes.has(codigo)) return;
+        seenCodes.add(codigo);
+        payload.push({
+          codigo,
+          descricao: String(row.descricao).trim(),
+          custo: Number(row.custo) || 0,
+          ordem: Number(row.ordem ?? index),
+          ordem_origem: row.ordem_origem || (row.fixa === false ? 'temporaria' : 'fixa'),
+          updated_at: new Date().toISOString()
+        });
+      });
 
     const { error: deleteError } = await supabase
       .from('pendencia_completa_base_fixa')
@@ -316,7 +323,7 @@ export async function savePendenciaCompletaBaseRows(rows: PendenciaCompletaBaseR
       const batch = payload.slice(i, i + batchSize);
       const { error } = await supabase
         .from('pendencia_completa_base_fixa')
-        .insert(batch);
+        .upsert(batch, { onConflict: 'codigo' });
 
       if (error) throw error;
     }
@@ -979,6 +986,23 @@ export async function deletePendenciaImportCodeMapping(codigoImportado: string) 
   }
 }
 
+export async function deletePendenciaImportCodeMappingsBatch(codigosImportados: string[]) {
+  if (USE_LOCAL_DB || codigosImportados.length === 0) return true;
+
+  try {
+    const { error } = await supabase
+      .from('pendencia_codigo_import_mappings')
+      .delete()
+      .in('codigo_importado', codigosImportados);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Erro ao excluir lote de vínculos de importação:', err);
+    return false;
+  }
+}
+
 export async function clearAllPendenciaImportCodeMappings() {
   if (USE_LOCAL_DB) return true;
 
@@ -1074,6 +1098,23 @@ export async function deletePendenciaExportCodeMapping(codigoBase: string) {
     return true;
   } catch (err) {
     console.error('Erro ao excluir vínculo de exportação:', err);
+    return false;
+  }
+}
+
+export async function deletePendenciaExportCodeMappingsBatch(codigosBase: string[]) {
+  if (USE_LOCAL_DB || codigosBase.length === 0) return true;
+
+  try {
+    const { error } = await supabase
+      .from('pendencia_codigo_export_mappings')
+      .delete()
+      .in('codigo_base', codigosBase);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Erro ao excluir lote de vínculos de exportação:', err);
     return false;
   }
 }

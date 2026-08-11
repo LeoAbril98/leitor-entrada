@@ -1,9 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toaster, toast } from 'react-hot-toast';
 import {
     AlertTriangle,
     ArrowLeft,
+    ArrowRight,
+    ArrowUp,
+    ArrowDown,
+    ArrowUpDown,
     Camera,
     CloudUpload,
     Database,
@@ -40,6 +44,7 @@ import Lottie from 'lottie-react';
 import { saveAs } from 'file-saver';
 import cloudSyncAnimation from '../assets/cloud-sync.json';
 import { cn } from '../utils';
+import LinkedItemsTable, { LinkedItem, LinkedItemLink } from './LinkedItemsTable';
 import {
     getPhotoOverrides,
     loadPedidosFabrica,
@@ -55,10 +60,12 @@ import {
     getPendenciaImportCodeMappings,
     savePendenciaImportCodeMappings,
     deletePendenciaImportCodeMapping,
+    deletePendenciaImportCodeMappingsBatch,
     clearAllPendenciaImportCodeMappings,
     getPendenciaExportCodeMappings,
     savePendenciaExportCodeMappings,
     deletePendenciaExportCodeMapping,
+    deletePendenciaExportCodeMappingsBatch,
     clearAllPendenciaExportCodeMappings,
     getItemTags,
     saveItemTags,
@@ -592,6 +599,8 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const [showSyncConfirm, setShowSyncConfirm] = useState(false);
     const [showSyncSuccess, setShowSyncSuccess] = useState(false);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [isCrossVerificationModalOpen, setIsCrossVerificationModalOpen] = useState(false);
+    const [pendingExport, setPendingExport] = useState<{ action: () => void; title: string } | null>(null);
     const [isSyncingCloud, setIsSyncingCloud] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [activeSettingsTab, setActiveSettingsTab] = useState<'vinculos' | 'regras' | 'tags' | 'custo'>('vinculos');
@@ -617,6 +626,91 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const [lastCloudSyncAt, setLastCloudSyncAt] = useState<string | null>(() => localStorage.getItem(CLOUD_SYNC_STATUS_STORAGE_KEY));
     const [globalTags, setGlobalTags] = useState<string[]>([]);
     const [newTagName, setNewTagName] = useState("");
+    const [hasPendingCloudUpdate, setHasPendingCloudUpdate] = useState(false);
+    const [isCheckingCloud, setIsCheckingCloud] = useState(false);
+    const crossVerificationItems = useMemo(() => {
+        const list: {
+            importedCode: string;
+            fixedCode: string;
+            description: string;
+            pedidoPR: number;
+            pedidoSC: number;
+            pedidoCM: number;
+            pedidoRS: number;
+            totalPedidos: number;
+            foundInBase: boolean;
+        }[] = [];
+        const processedKeys = new Set<string>();
+
+        // 1. From codeMappings (Código Planilha -> Código Base)
+        (Object.entries(codeMappings) as [string, string][]).forEach(([importedCode, fixedCode]) => {
+            const targetCodes = fixedCode.split(',').map(s => s.trim()).filter(Boolean);
+            const matchedRows = rows.filter(r => targetCodes.includes(r.codigo));
+            const totalPedidos = matchedRows.reduce((acc, r) => 
+                acc + (r.pedido_pr || 0) + (r.pedido_sc || 0) + (r.pedido_cm || 0) + (r.pedido_rs || 0), 0
+            );
+
+            if (totalPedidos > 0) {
+                processedKeys.add(importedCode);
+                list.push({
+                    importedCode,
+                    fixedCode,
+                    description: matchedRows.map(r => r.descricao).join(' | ') || 'Item não encontrado na base',
+                    pedidoPR: matchedRows.reduce((acc, r) => acc + (r.pedido_pr || 0), 0),
+                    pedidoSC: matchedRows.reduce((acc, r) => acc + (r.pedido_sc || 0), 0),
+                    pedidoCM: matchedRows.reduce((acc, r) => acc + (r.pedido_cm || 0), 0),
+                    pedidoRS: matchedRows.reduce((acc, r) => acc + (r.pedido_rs || 0), 0),
+                    totalPedidos,
+                    foundInBase: matchedRows.length > 0,
+                });
+            }
+        });
+
+        // 2. From exportCodeMappings (Código Base -> Código Planilha)
+        (Object.entries(exportCodeMappings) as [string, ExportMapping][]).forEach(([fixedCode, exp]) => {
+            if (!exp?.codigo || exp.codigo === fixedCode) return;
+            const importedCode = exp.codigo;
+            if (processedKeys.has(importedCode)) return;
+
+            const matchedRow = rows.find(r => r.codigo === fixedCode);
+            if (matchedRow) {
+                const totalPedidos = (matchedRow.pedido_pr || 0) + (matchedRow.pedido_sc || 0) + (matchedRow.pedido_cm || 0) + (matchedRow.pedido_rs || 0);
+                if (totalPedidos > 0) {
+                    processedKeys.add(importedCode);
+                    list.push({
+                        importedCode,
+                        fixedCode,
+                        description: matchedRow.descricao,
+                        pedidoPR: matchedRow.pedido_pr || 0,
+                        pedidoSC: matchedRow.pedido_sc || 0,
+                        pedidoCM: matchedRow.pedido_cm || 0,
+                        pedidoRS: matchedRow.pedido_rs || 0,
+                        totalPedidos,
+                        foundInBase: true,
+                    });
+                }
+            }
+        });
+
+        return list.sort((a, b) => a.importedCode.localeCompare(b.importedCode));
+    }, [codeMappings, exportCodeMappings, rows]);
+
+    const linkedItemsData: LinkedItem[] = useMemo(() => {
+        return (Object.entries(codeMappings) as [string, string][])
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([importedCode, fixedCode]) => {
+                const targetCodes = fixedCode.split(',').map(s => s.trim()).filter(Boolean);
+                const links: LinkedItemLink[] = targetCodes.flatMap(tc => {
+                    const foundRow = rows.find(r => r.codigo === tc);
+                    return foundRow ? [{ link: tc, desc: foundRow.descricao }] : [];
+                });
+                return {
+                    code: importedCode,
+                    fixedCode,
+                    links,
+                };
+            });
+    }, [codeMappings, rows]);
 
     // Filtros Antigos
     const [showFilters, setShowFilters] = useState(false);
@@ -757,20 +851,20 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         loadAudios();
     }, []);
 
-    useEffect(() => {
-        let isMounted = true;
-
-        const loadBaseRowsFromCloud = async () => {
+    const fetchAndApplyCloudRows = useCallback(async (showToast = false) => {
+        setIsCheckingCloud(true);
+        try {
             const [cloudRows, costs] = await Promise.all([
                 getPendenciaCompletaBaseRows(),
                 getItemCosts()
             ]);
-            if (!isMounted) return;
 
             setItemCosts(costs);
 
             if (cloudRows.length === 0) {
                 setRows([]);
+                setHasPendingCloudUpdate(false);
+                if (showToast) toast.success('Tabela limpa na nuvem.');
                 return;
             }
 
@@ -826,15 +920,63 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
             });
 
             setRows(rowsWithOrders);
-            toast.success('Tabela carregada da nuvem.', { duration: 2000 });
+            setHasPendingCloudUpdate(false);
+            markCloudSaved();
+            if (showToast) toast.success('Tabela sincronizada com a nuvem!', { duration: 2000 });
+        } catch (err) {
+            console.error('Erro ao buscar dados da nuvem:', err);
+            if (showToast) toast.error('Erro ao sincronizar com a nuvem.');
+        } finally {
+            setIsCheckingCloud(false);
+        }
+    }, []);
+
+    const checkForCloudUpdates = useCallback(async () => {
+        try {
+            const cloudRows = await getPendenciaCompletaBaseRows();
+            if (cloudRows.length === 0 && rows.length === 0) return;
+
+            const currentSig = rows.map(r => r.codigo).join(',');
+            const cloudSig = cloudRows.map(r => r.codigo).join(',');
+
+            if (currentSig !== cloudSig) {
+                setHasPendingCloudUpdate(true);
+            }
+        } catch (e) {
+            console.warn('Erro ao checar atualizações da nuvem:', e);
+        }
+    }, [rows]);
+
+    useEffect(() => {
+        fetchAndApplyCloudRows(false);
+    }, [fetchAndApplyCloudRows]);
+
+    useEffect(() => {
+        const handleFocusOrVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                if (rows.length === 0) {
+                    fetchAndApplyCloudRows(false);
+                } else {
+                    checkForCloudUpdates();
+                }
+            }
         };
 
-        loadBaseRowsFromCloud();
+        window.addEventListener('focus', handleFocusOrVisibility);
+        document.addEventListener('visibilitychange', handleFocusOrVisibility);
+
+        const interval = setInterval(() => {
+            if (document.visibilityState === 'visible' && rows.length > 0) {
+                checkForCloudUpdates();
+            }
+        }, 60000);
 
         return () => {
-            isMounted = false;
+            window.removeEventListener('focus', handleFocusOrVisibility);
+            document.removeEventListener('visibilitychange', handleFocusOrVisibility);
+            clearInterval(interval);
         };
-    }, []);
+    }, [rows, checkForCloudUpdates, fetchAndApplyCloudRows]);
 
     useEffect(() => {
         let isMounted = true;
@@ -968,6 +1110,90 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         }
 
         toast.success('Vínculo excluído com sucesso.');
+    };
+
+    const deleteCodeMappingsBatch = async (items: LinkedItem[]) => {
+        if (items.length === 0) return;
+        const toastId = toast.loading(`Excluindo ${items.length} vínculo(s)...`);
+        try {
+            const newMappings = { ...codeMappings };
+            const nextExportMappings = { ...exportCodeMappings };
+            let hasExportChanges = false;
+
+            const importCodesToDelete: string[] = [];
+            const exportCodesToDelete: string[] = [];
+
+            for (const item of items) {
+                delete newMappings[item.code];
+                importCodesToDelete.push(item.code);
+
+                const fixedCode = item.fixedCode || '';
+                if (
+                    exportCodeMappings[fixedCode]?.codigo === item.code ||
+                    normalizeUploadCode(exportCodeMappings[fixedCode]?.codigo || '', replacementRules) === item.code
+                ) {
+                    delete nextExportMappings[fixedCode];
+                    exportCodesToDelete.push(fixedCode);
+                    hasExportChanges = true;
+                }
+            }
+
+            setCodeMappings(newMappings);
+            localStorage.setItem(CODE_MAPPING_STORAGE_KEY, JSON.stringify(newMappings));
+
+            if (hasExportChanges) {
+                setExportCodeMappings(nextExportMappings);
+                localStorage.setItem(EXPORT_CODE_MAPPING_STORAGE_KEY, JSON.stringify(nextExportMappings));
+            }
+
+            await Promise.all([
+                deletePendenciaImportCodeMappingsBatch(importCodesToDelete),
+                deletePendenciaExportCodeMappingsBatch(exportCodesToDelete)
+            ]);
+
+            toast.success(`${items.length} vínculo(s) excluído(s) com sucesso.`, { id: toastId });
+        } catch (err) {
+            console.error('Erro ao excluir lote de vínculos:', err);
+            toast.error('Erro ao excluir lote de vínculos.', { id: toastId });
+        }
+    };
+
+    const moveRow = (rowCode: string, direction: 'up' | 'down') => {
+        const sorted = [...rows].sort((a, b) => a.ordem - b.ordem);
+        const index = sorted.findIndex(r => r.codigo === rowCode);
+        if (index === -1) return;
+
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= sorted.length) return;
+
+        const [movedItem] = sorted.splice(index, 1);
+        sorted.splice(targetIndex, 0, movedItem);
+
+        const updated = sorted.map((r, i) => ({ ...r, ordem: i }));
+        persistRows(updated);
+    };
+
+    const moveRowToPosition = (rowCode: string, currentPos: number) => {
+        const total = rows.length;
+        const input = window.prompt(`Mover item para qual posição? (1 a ${total}):`, String(currentPos));
+        if (!input) return;
+        const targetPos = parseInt(input.trim(), 10);
+        if (isNaN(targetPos) || targetPos < 1 || targetPos > total) {
+            toast.error(`Posição inválida. Informe um número entre 1 e ${total}.`);
+            return;
+        }
+        const targetIndex = targetPos - 1;
+
+        const sorted = [...rows].sort((a, b) => a.ordem - b.ordem);
+        const index = sorted.findIndex(r => r.codigo === rowCode);
+        if (index === -1 || index === targetIndex) return;
+
+        const [movedItem] = sorted.splice(index, 1);
+        sorted.splice(targetIndex, 0, movedItem);
+
+        const updated = sorted.map((r, i) => ({ ...r, ordem: i }));
+        persistRows(updated);
+        toast.success(`Item movido para a posição ${targetPos}.`);
     };
 
     const persistReplacementRules = (newRules: ReplacementRule[]) => {
@@ -2070,6 +2296,70 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         }
     };
 
+    const exportCrossVerificationExcel = async () => {
+        const toastId = toast.loading('Gerando planilha de verificação cruzada...');
+        try {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Verificacao_Cruzada');
+
+            worksheet.columns = [
+                { header: 'Código Planilha (Original)', key: 'importedCode', width: 25 },
+                { header: 'Código da Base (Vinculado)', key: 'fixedCode', width: 25 },
+                { header: 'Descrição do Item', key: 'description', width: 45 },
+                { header: 'Pedido MK', key: 'pedidoPR', width: 14 },
+                { header: 'Pedido Moleri', key: 'pedidoSC', width: 14 },
+                { header: 'Pedido CM', key: 'pedidoCM', width: 14 },
+                { header: 'Pedido Olimpo', key: 'pedidoRS', width: 14 },
+                { header: 'Total Pedidos', key: 'totalPedidos', width: 16 },
+            ];
+
+            const headerRow = worksheet.getRow(1);
+            headerRow.height = 28;
+            headerRow.eachCell((cell) => {
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            });
+
+            crossVerificationItems.forEach((item) => {
+                const row = worksheet.addRow({
+                    importedCode: item.importedCode,
+                    fixedCode: item.fixedCode,
+                    description: item.description,
+                    pedidoPR: item.pedidoPR || 0,
+                    pedidoSC: item.pedidoSC || 0,
+                    pedidoCM: item.pedidoCM || 0,
+                    pedidoRS: item.pedidoRS || 0,
+                    totalPedidos: item.totalPedidos || 0,
+                });
+                row.height = 22;
+                row.eachCell((cell, colNumber) => {
+                    cell.alignment = { vertical: 'middle', horizontal: colNumber >= 4 ? 'center' : 'left' };
+                    cell.font = { size: 10 };
+                });
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+            saveAs(blob, `Verificacao_Cruzada_Pedidos_${dateStr}.xlsx`);
+            toast.success('Planilha de Verificação Cruzada exportada!', { id: toastId });
+        } catch (err) {
+            console.error('Erro ao exportar verificação cruzada:', err);
+            toast.error('Erro ao gerar a planilha.', { id: toastId });
+        }
+    };
+
+    const handleExportRequest = (action: () => void, title: string) => {
+        if (crossVerificationItems.length > 0) {
+            setPendingExport({ action, title });
+            setIsExportModalOpen(false);
+            setIsCrossVerificationModalOpen(true);
+        } else {
+            action();
+        }
+    };
+
     const handleAddTag = async () => {
         if (!newTagName.trim()) return;
         const success = await addGlobalTag(newTagName.trim());
@@ -2243,6 +2533,14 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
 
                             <div className="flex flex-wrap gap-3">
                                 <button
+                                    onClick={() => fetchAndApplyCloudRows(true)}
+                                    disabled={isCheckingCloud}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                                >
+                                    <RefreshCw className={cn("w-4 h-4 text-indigo-500", isCheckingCloud && "animate-spin")} />
+                                    Sincronizar Nuvem
+                                </button>
+                                <button
                                     onClick={onViewHistory}
                                     className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm active:scale-95"
                                 >
@@ -2255,13 +2553,6 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                 >
                                     <FileSpreadsheet className="w-4 h-4" />
                                     Exportar Excel
-                                </button>
-                                <button
-                                    onClick={clearVariableValues}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl text-red-600 dark:text-red-400 font-bold hover:bg-red-100 transition-all shadow-sm active:scale-95"
-                                >
-                                    <RotateCcw className="w-4 h-4" />
-                                    Zerar Semana
                                 </button>
                                 <button
                                     onClick={() => setIsSettingsModalOpen(true)}
@@ -2279,6 +2570,38 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                 </button>
                             </div>
                         </div>
+
+                        {hasPendingCloudUpdate && (
+                            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-amber-500/20 text-amber-500 rounded-xl flex items-center justify-center shrink-0">
+                                        <RefreshCw className="w-5 h-5 animate-spin" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-black text-amber-900 dark:text-amber-200">
+                                            Novos dados de pendência disponíveis na nuvem!
+                                        </h4>
+                                        <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                                            Foi detectada uma atualização nos dados da pendência. Recarregue a tabela para exibir as alterações mais recentes.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                    <button
+                                        onClick={() => fetchAndApplyCloudRows(true)}
+                                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-1.5"
+                                    >
+                                        <RefreshCw className="w-3.5 h-3.5" /> Recarregar Tabela Agora
+                                    </button>
+                                    <button
+                                        onClick={() => setHasPendingCloudUpdate(false)}
+                                        className="px-3 py-2 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 rounded-xl transition-colors"
+                                    >
+                                        Ignorar
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
                             {/* BLOCO 1 */}
@@ -2426,6 +2749,15 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                     Adicionar
                                 </button>
                                 <button
+                                    onClick={() => fetchAndApplyCloudRows(true)}
+                                    disabled={isCheckingCloud}
+                                    title="Sincronizar dados com a nuvem"
+                                    className="h-10 px-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-lg font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm active:scale-95 transition-all disabled:opacity-40"
+                                >
+                                    <RefreshCw className={cn("w-4 h-4", isCheckingCloud && "animate-spin")} />
+                                    <span className="hidden sm:inline">Sincronizar Nuvem</span>
+                                </button>
+                                <button
                                     onClick={() => setIsExportModalOpen(true)}
                                     disabled={rows.length === 0}
                                     className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40 rounded-lg font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm active:scale-95 transition-all"
@@ -2437,6 +2769,37 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                         </header>
 
                         <section className="flex-1 flex flex-col min-h-0">
+                            {hasPendingCloudUpdate && (
+                                <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md shrink-0">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-8 h-8 bg-amber-500/20 text-amber-500 rounded-lg flex items-center justify-center shrink-0">
+                                            <RefreshCw className="w-4 h-4 animate-spin" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xs font-black text-amber-900 dark:text-amber-200">
+                                                Novos dados de pendência disponíveis na nuvem!
+                                            </h4>
+                                            <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                                                Foi detectada uma versão atualizada na nuvem. Recarregue para atualizar.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                        <button
+                                            onClick={() => fetchAndApplyCloudRows(true)}
+                                            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95 flex items-center gap-1.5"
+                                        >
+                                            <RefreshCw className="w-3 h-3" /> Recarregar Tabela
+                                        </button>
+                                        <button
+                                            onClick={() => setHasPendingCloudUpdate(false)}
+                                            className="px-2.5 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
+                                        >
+                                            Ignorar
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                             <main className="flex-1 flex flex-col min-h-0">
                                 <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden shadow-sm">
                                     <div className="px-2 py-1.5 border-b border-slate-200 dark:border-slate-800">
@@ -2660,7 +3023,30 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                                         </div>
                                                                     </div>
                                                                 ))}
-                                                                <div className="p-3 flex gap-2 bg-slate-50 dark:bg-slate-950">
+                                                                <div className="p-3 flex items-center gap-2 bg-slate-50 dark:bg-slate-950">
+                                                                    <button
+                                                                        onClick={() => moveRow(row.codigo, 'up')}
+                                                                        disabled={row.ordem === 0}
+                                                                        className="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-30 flex items-center justify-center active:scale-95 transition-all"
+                                                                        title="Subir Posição"
+                                                                    >
+                                                                        <ArrowUp className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => moveRow(row.codigo, 'down')}
+                                                                        disabled={row.ordem === rows.length - 1}
+                                                                        className="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-30 flex items-center justify-center active:scale-95 transition-all"
+                                                                        title="Descer Posição"
+                                                                    >
+                                                                        <ArrowDown className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => moveRowToPosition(row.codigo, row.ordem + 1)}
+                                                                        className="h-10 px-3 rounded-lg border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center active:scale-95 transition-all"
+                                                                        title="Alterar Posição"
+                                                                    >
+                                                                        <ArrowUpDown className="w-4 h-4" />
+                                                                    </button>
                                                                     <button
                                                                         onClick={() => startEdit(row)}
                                                                         className="flex-1 h-10 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2"
@@ -2739,6 +3125,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                                     <span className="text-slate-700 dark:text-slate-200 font-bold text-[15px] leading-tight">{row.descricao}</span>
                                                                     <div className="flex items-center gap-1">
                                                                         <span className="font-mono text-[11px] text-slate-400 dark:text-slate-500">{row.codigo}</span>
+                                                                        <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400" title={`Posição #${row.ordem + 1}`}>#{row.ordem + 1}</span>
                                                                         <span className={cn(
                                                                             "px-1 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border",
                                                                             row.fixa === false
@@ -2815,6 +3202,29 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                             ))}
                                                             <td className={cn('p-1', bgNormal)}>
                                                                 <div className="flex items-center justify-center gap-0.5">
+                                                                    <button
+                                                                        onClick={() => moveRow(row.codigo, 'up')}
+                                                                        disabled={row.ordem === 0}
+                                                                        className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 disabled:opacity-20 transition-colors"
+                                                                        title="Mover para cima"
+                                                                    >
+                                                                        <ArrowUp className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => moveRow(row.codigo, 'down')}
+                                                                        disabled={row.ordem === rows.length - 1}
+                                                                        className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 disabled:opacity-20 transition-colors"
+                                                                        title="Mover para baixo"
+                                                                    >
+                                                                        <ArrowDown className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => moveRowToPosition(row.codigo, row.ordem + 1)}
+                                                                        className="p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600 transition-colors"
+                                                                        title="Alterar posição exata..."
+                                                                    >
+                                                                        <ArrowUpDown className="w-3.5 h-3.5" />
+                                                                    </button>
                                                                     <button onClick={() => startEdit(row)} className="p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600" title="Editar">
                                                                         <Pencil className="w-3.5 h-3.5" />
                                                                     </button>
@@ -3426,7 +3836,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                             <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Tabelas</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                                 <button
-                                    onClick={() => exportCompleteTable(true)}
+                                    onClick={() => handleExportRequest(() => exportCompleteTable(true), 'Tabela para Impressão')}
                                     className="cursor-pointer text-left group flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm transition-all active:scale-[0.99]"
                                 >
                                     <div className="flex items-center gap-4 min-w-0">
@@ -3444,7 +3854,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                 </button>
 
                                 <button
-                                    onClick={() => exportCompleteTable(false)}
+                                    onClick={() => handleExportRequest(() => exportCompleteTable(false), 'Tabela Completa')}
                                     className="cursor-pointer text-left group flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm transition-all active:scale-[0.99]"
                                 >
                                     <div className="flex items-center gap-4 min-w-0">
@@ -3462,10 +3872,43 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                 </button>
                             </div>
 
+                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Verificação Cruzada</h3>
+                            <div className="mb-8">
+                                <button
+                                    onClick={() => {
+                                        setPendingExport(null);
+                                        setIsExportModalOpen(false);
+                                        setIsCrossVerificationModalOpen(true);
+                                    }}
+                                    className="w-full cursor-pointer text-left group flex items-center justify-between gap-4 p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/40 hover:border-indigo-300 transition-all active:scale-[0.99] shadow-sm"
+                                >
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className="w-11 h-11 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 flex items-center justify-center shrink-0">
+                                            <RefreshCw className="w-5 h-5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="font-bold text-indigo-950 dark:text-indigo-100">Verificação Cruzada de Pedidos</h4>
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white">
+                                                    {crossVerificationItems.length} {crossVerificationItems.length === 1 ? 'item' : 'itens'}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                                Conferir códigos trocados/mapeados que geraram pedidos na fábrica nesta pendência.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="shrink-0 h-9 px-3 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
+                                        Conferir
+                                        <ArrowRight className="w-3.5 h-3.5" />
+                                    </div>
+                                </button>
+                            </div>
+
                             <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Pedidos</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <button
-                                    onClick={() => exportFactoryOrders('pr', 'MK')}
+                                    onClick={() => handleExportRequest(() => exportFactoryOrders('pr', 'MK'), 'Pedidos MK')}
                                     className="cursor-pointer group flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm transition-all text-left active:scale-[0.99]"
                                 >
                                     <div className="min-w-0">
@@ -3481,7 +3924,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                 </button>
 
                                 <button
-                                    onClick={() => exportFactoryOrders('sc', 'Moleri')}
+                                    onClick={() => handleExportRequest(() => exportFactoryOrders('sc', 'Moleri'), 'Pedidos Moleri')}
                                     className="cursor-pointer group flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm transition-all text-left active:scale-[0.99]"
                                 >
                                     <div className="min-w-0">
@@ -3497,7 +3940,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                 </button>
 
                                 <button
-                                    onClick={() => exportFactoryOrders('cm', 'CM')}
+                                    onClick={() => handleExportRequest(() => exportFactoryOrders('cm', 'CM'), 'Pedidos CM')}
                                     className="cursor-pointer group flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm transition-all text-left active:scale-[0.99]"
                                 >
                                     <div className="min-w-0">
@@ -3513,7 +3956,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                 </button>
 
                                 <button
-                                    onClick={() => exportFactoryOrders('rs', 'Olimpo')}
+                                    onClick={() => handleExportRequest(() => exportFactoryOrders('rs', 'Olimpo'), 'Pedidos Olimpo')}
                                     className="cursor-pointer group flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:shadow-sm transition-all text-left active:scale-[0.99]"
                                 >
                                     <div className="min-w-0">
@@ -3527,6 +3970,156 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                         <Download className="w-4 h-4" />
                                     </div>
                                 </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            {isCrossVerificationModalOpen && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="w-full max-w-4xl max-h-[85vh] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col"
+                    >
+                        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4 bg-slate-50 dark:bg-slate-950/50 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 flex items-center justify-center shrink-0">
+                                    <RefreshCw className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-800 dark:text-slate-100">
+                                        {pendingExport ? `Verificação Cruzada — ${pendingExport.title}` : 'Verificação Cruzada de Vínculos'}
+                                    </h2>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        {pendingExport
+                                            ? `Confira abaixo os itens que possuem pedidos e tiveram seu código alterado antes de baixar "${pendingExport.title}".`
+                                            : 'Códigos trocados ou reconciliados que geraram pedidos na fábrica nesta pendência.'}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsCrossVerificationModalOpen(false);
+                                    setPendingExport(null);
+                                }}
+                                className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 flex-1 min-h-0 flex flex-col space-y-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 shrink-0">
+                                <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30">
+                                    <div className="text-[10px] font-black uppercase text-slate-400">Total Itens Trocados</div>
+                                    <div className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-0.5">{crossVerificationItems.length}</div>
+                                </div>
+                                <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30">
+                                    <div className="text-[10px] font-black uppercase text-slate-400">Total Pedidos</div>
+                                    <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                        {formatNumber(crossVerificationItems.reduce((acc, i) => acc + i.totalPedidos, 0))}
+                                    </div>
+                                </div>
+                                <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30">
+                                    <div className="text-[10px] font-black uppercase text-slate-400">Pedidos MK / Moleri</div>
+                                    <div className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-1">
+                                        MK: {formatNumber(crossVerificationItems.reduce((acc, i) => acc + i.pedidoPR, 0))} | Moleri: {formatNumber(crossVerificationItems.reduce((acc, i) => acc + i.pedidoSC, 0))}
+                                    </div>
+                                </div>
+                                <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30">
+                                    <div className="text-[10px] font-black uppercase text-slate-400">Pedidos CM / Olimpo</div>
+                                    <div className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-1">
+                                        CM: {formatNumber(crossVerificationItems.reduce((acc, i) => acc + i.pedidoCM, 0))} | Olimpo: {formatNumber(crossVerificationItems.reduce((acc, i) => acc + i.pedidoRS, 0))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {crossVerificationItems.length === 0 ? (
+                                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/30">
+                                    <Info className="w-10 h-10 text-slate-400 mb-3" />
+                                    <p className="font-bold text-slate-700 dark:text-slate-300">Nenhum código trocado com pedidos ativos.</p>
+                                    <p className="text-xs text-slate-500 mt-1 max-w-sm">Quando um item trocado durante o upload possuir pedidos em alguma fábrica, ele será listado aqui para conferência.</p>
+                                </div>
+                            ) : (
+                                <div className="flex-1 min-h-0 overflow-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm relative custom-scrollbar">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-black tracking-widest text-slate-500 dark:text-slate-400">
+                                            <tr>
+                                                <th className="p-3">Código Planilha</th>
+                                                <th className="p-3">Código Vinculado (Base)</th>
+                                                <th className="p-3 text-center">MK</th>
+                                                <th className="p-3 text-center">Moleri</th>
+                                                <th className="p-3 text-center">CM</th>
+                                                <th className="p-3 text-center">Olimpo</th>
+                                                <th className="p-3 text-right">Total Pedido</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                            {crossVerificationItems.map((item) => (
+                                                <tr key={item.importedCode} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                                    <td className="p-3 font-mono font-bold text-slate-800 dark:text-slate-200">
+                                                        <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-xs">
+                                                            {item.importedCode}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <div className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-xs">
+                                                            {item.fixedCode}
+                                                        </div>
+                                                        <div className="text-xs text-slate-500 truncate max-w-[260px]" title={item.description}>
+                                                            {item.description}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3 text-center font-semibold text-xs">{item.pedidoPR || '-'}</td>
+                                                    <td className="p-3 text-center font-semibold text-xs">{item.pedidoSC || '-'}</td>
+                                                    <td className="p-3 text-center font-semibold text-xs">{item.pedidoCM || '-'}</td>
+                                                    <td className="p-3 text-center font-semibold text-xs">{item.pedidoRS || '-'}</td>
+                                                    <td className="p-3 text-right font-black text-emerald-600 dark:text-emerald-400">
+                                                        {formatNumber(item.totalPedidos)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                            <button
+                                onClick={() => {
+                                    setIsCrossVerificationModalOpen(false);
+                                    setPendingExport(null);
+                                }}
+                                className="h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={exportCrossVerificationExcel}
+                                    disabled={crossVerificationItems.length === 0}
+                                    className="h-10 px-4 rounded-lg border border-emerald-600 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 disabled:opacity-50 font-bold text-xs flex items-center gap-2 transition-colors"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    Excel da Verificação
+                                </button>
+                                {pendingExport && (
+                                    <button
+                                        onClick={() => {
+                                            const runAction = pendingExport.action;
+                                            setIsCrossVerificationModalOpen(false);
+                                            setPendingExport(null);
+                                            runAction();
+                                        }}
+                                        className="h-10 px-5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-md active:scale-95 transition-all"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Baixar {pendingExport.title}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </motion.div>
@@ -3604,7 +4197,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                             </div>
 
                             {activeSettingsTab === 'vinculos' && (
-                                <div className="flex-1 flex flex-col h-full">
+                                <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
                                     <div className="p-8 border-b border-slate-200 dark:border-slate-800 shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                         <div>
                                             <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">
@@ -3624,7 +4217,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                             </button>
                                         )}
                                     </div>
-                                    <div className="p-8 flex-1 min-h-0 flex flex-col">
+                                    <div className="p-8 flex-1 min-h-0 flex flex-col overflow-hidden">
                                         {Object.keys(codeMappings).length === 0 ? (
                                             <div className="flex-1 flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50">
                                                 <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4 text-slate-400">
@@ -3634,64 +4227,20 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                                 <p className="text-sm text-slate-500 mt-2 max-w-md">Quando você vincular um código desconhecido a um item da base durante um upload, ele aparecerá aqui para gerenciamento.</p>
                                             </div>
                                         ) : (
-                                            <div className="flex-1 min-h-0 overflow-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative">
-                                                <table className="w-full text-sm text-left">
-                                                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 text-[10px] uppercase tracking-widest text-slate-500 border-b border-slate-200 dark:border-slate-800">
-                                                        <tr>
-                                                            <th className="p-4 font-black">Código da Planilha</th>
-                                                            <th className="p-4 font-black">Vinculado a (Tabela)</th>
-                                                            <th className="p-4 text-right w-32 font-black">Ações</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {(Object.entries(codeMappings) as [string, string][])
-                                                            .sort(([a], [b]) => a.localeCompare(b))
-                                                            .map(([importedCode, fixedCode]) => (
-                                                                <tr key={importedCode} className="border-b last:border-b-0 border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                                                                    <td className="p-4 font-mono font-bold text-slate-700 dark:text-slate-300">
-                                                                        <div className="bg-slate-100 dark:bg-slate-800 inline-block px-2 py-1 rounded">
-                                                                            {importedCode}
-                                                                        </div>
-                                                                    </td>
-                                                                    <td className="p-4">
-                                                                        <div className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                                                                            {fixedCode}
-                                                                        </div>
-                                                                        <div className="text-xs text-slate-500 mt-1 truncate max-w-[300px]" title={rows.find(r => r.codigo === fixedCode)?.descricao || 'Item não encontrado na base'}>
-                                                                            {rows.find(r => r.codigo === fixedCode)?.descricao || 'Item não encontrado na base'}
-                                                                        </div>
-                                                                    </td>
-                                                                    <td className="p-4">
-                                                                        <div className="flex items-center justify-end gap-2">
-                                                                            <button
-                                                                                onClick={async () => {
-                                                                                    if (window.confirm('Para alterar este vínculo, é recomendado excluí-lo e refazer no próximo upload. Deseja excluir agora?')) {
-                                                                                        await deleteCodeMapping(importedCode, fixedCode);
-                                                                                    }
-                                                                                }}
-                                                                                className="p-2 rounded-lg hover:bg-indigo-50 text-indigo-600 dark:hover:bg-indigo-900/30 transition-colors"
-                                                                                title="Editar Vínculo"
-                                                                            >
-                                                                                <Pencil className="w-4 h-4" />
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={async () => {
-                                                                                    if (window.confirm('Excluir este vínculo? O código original voltará a aparecer nos itens não importados no próximo upload.')) {
-                                                                                        await deleteCodeMapping(importedCode, fixedCode);
-                                                                                    }
-                                                                                }}
-                                                                                className="p-2 rounded-lg hover:bg-red-50 text-red-600 dark:hover:bg-red-900/30 transition-colors"
-                                                                                title="Excluir Vínculo"
-                                                                            >
-                                                                                <Trash2 className="w-4 h-4" />
-                                                                            </button>
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
+                                            <LinkedItemsTable
+                                                data={linkedItemsData}
+                                                onEdit={async (item) => {
+                                                    if (window.confirm('Para alterar este vínculo, é recomendado excluí-lo e refazer no próximo upload. Deseja excluir agora?')) {
+                                                        await deleteCodeMapping(item.code, item.fixedCode || '');
+                                                    }
+                                                }}
+                                                onDelete={async (item) => {
+                                                    if (window.confirm('Excluir este vínculo? O código original voltará a aparecer nos itens não importados no próximo upload.')) {
+                                                        await deleteCodeMapping(item.code, item.fixedCode || '');
+                                                    }
+                                                }}
+                                                onDeleteBatch={deleteCodeMappingsBatch}
+                                            />
                                         )}
                                     </div>
                                 </div>

@@ -1,5 +1,6 @@
 export { default as photoMap } from '../data/photoMap.json';
 import photoMap from '../data/photoMap.json';
+import { findWheelSpecOverride } from './wheelSpecsStore';
 
 // Small 1x1 transparent PNG as a safe fallback that never triggers network requests
 export const NO_PHOTO_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
@@ -244,4 +245,155 @@ export function getWheelPhotoUrl(description: string, itemCodigo?: string): stri
     const finalUrl = publicBaseUrl + normalizedPath.split('/').map(part => encodeURIComponent(part)).join('/');
 
     return finalUrl;
+}
+
+export interface WheelSpecs {
+    model: string;
+    linha: string;
+    aroTala: string;
+    aro: string;
+    tala: string;
+    furacao: string;
+    offset: string;
+    cuboAnel: string;
+    cuboTipo: 'cubo' | 'anel' | 'desconhecido';
+    acabamento: string;
+}
+
+/**
+ * Extrai informações técnicas completas da roda a partir da descrição e/ou código.
+ * (Aro, Tala, Furação/PCD, Offset/ET, Cubo/Anel Centralizador, Linha/Modelo, Acabamento)
+ */
+export function parseWheelSpecs(description: string = '', itemCodigo: string = ''): WheelSpecs {
+    const descUpper = (description || '').toUpperCase().trim();
+    const codeUpper = (itemCodigo || '').toUpperCase().trim();
+    const { modelCode: model, finishAbbr } = getModelAndFinish(descUpper);
+
+    // 1. Linha (ex: Linha M, Linha K, Linha R)
+    const lineLetter = model.match(/^[A-Z]+/i)?.[0] || "";
+    const linha = lineLetter ? `Linha ${lineLetter}` : "";
+
+    // 2. Aro e Tala (ex: 13X5,5 | 15X7 | 14X6 | 17X4 | 15*7.5 | 13X5.5)
+    const sizeMatch = descUpper.match(/(\d{2})[XxX\*]([\d\.,]+)/i);
+    let aro = "";
+    let tala = "";
+    let aroTala = "";
+    if (sizeMatch) {
+        aro = sizeMatch[1];
+        tala = sizeMatch[2].replace(',', '.');
+        aroTala = `${aro}x${tala}"`;
+    } else {
+        const aroOnly = descUpper.match(/(\b\d{2}\b)/);
+        if (aroOnly) {
+            aro = aroOnly[1];
+            aroTala = `${aro}"`;
+        }
+    }
+
+    // 3. Furação (PCD) (ex: 4X98 | 4X100 | 5X112 | 5X120 | 5X114 | 4X108 | 4F | 5F)
+    const furMatch = descUpper.match(/\b(\d[XxX\*]\d{2,3}(\.\d+)?)\b/i) || descUpper.match(/\b(\d[Ff])\b/i);
+    const furacao = furMatch ? furMatch[0].toUpperCase().replace('*', 'X') : "";
+
+    // 4. Offset (ET) (ex: ET36 | ET 36 | ET39 | ET32 | ET42)
+    const etMatch = descUpper.match(/\bET\s*(-?\d{1,2})\b/i) || descUpper.match(/\bET(\d{1,2})\b/i);
+    let offset = "";
+    if (etMatch) {
+        offset = `ET${etMatch[1]}`;
+    } else {
+        // Tentar extrair do código (ex: A36 -> ET36 ou ET36)
+        const codeEt = codeUpper.match(/ET(\d{2})|A(\d{2})/);
+        if (codeEt) {
+            offset = `ET${codeEt[1] || codeEt[2]}`;
+        }
+    }
+
+    // 5. Cubo (CB) / Anel Centralizador
+    let cuboAnel = "";
+    let cuboTipo: 'cubo' | 'anel' | 'desconhecido' = 'desconhecido';
+
+    // 5.1 Verificar se existe um mapeamento customizado pelo usuário no menu
+    const customOverride = findWheelSpecOverride(model, furacao, aro);
+
+    if (customOverride) {
+        cuboTipo = customOverride.type === 'ANEL' ? 'anel' : 'cubo';
+        cuboAnel = `${customOverride.mm} mm (${customOverride.type === 'ANEL' ? 'Anel' : 'Cubo Esp.'})`;
+    } else {
+        const mmMatch = descUpper.match(/(\d{2}\.\d)\s*(MM)?/i) || descUpper.match(/CB\s*(\d{2}\.\d)/i);
+        const isAnelKeyword = /\b(ANEL|ANEL CENTRALIZADOR)\b/i.test(descUpper) || /\b\d[XxX\*]\d{2,3}\s+A\s+/i.test(descUpper) || descUpper.includes(' ANEL ');
+        const isCuboKeyword = /\b(CUBO|CB|CUBO ESP|CUBO ESPECIFICO)\b/i.test(descUpper);
+
+        if (mmMatch) {
+            const mmVal = mmMatch[1];
+            if (isAnelKeyword) {
+                cuboAnel = `${mmVal} mm (Anel)`;
+                cuboTipo = 'anel';
+            } else {
+                cuboAnel = `${mmVal} mm (Cubo)`;
+                cuboTipo = 'cubo';
+            }
+        } else if (model.startsWith('R82')) {
+            cuboAnel = '56.6 mm (Cubo Esp.)';
+            cuboTipo = 'cubo';
+        } else if (model.startsWith('R83') || model.startsWith('R75')) {
+            cuboAnel = '57.1 mm (Cubo Esp.)';
+            cuboTipo = 'cubo';
+        } else if (model.startsWith('K57')) {
+            cuboAnel = '57.1 mm (Anel)';
+            cuboTipo = 'anel';
+        } else if (model.startsWith('K58')) {
+            if (furacao.includes('5X112')) {
+                cuboAnel = '66.6 mm (Cubo Esp.)';
+                cuboTipo = 'cubo';
+            } else if (furacao.includes('5X120')) {
+                cuboAnel = '72.6 mm (Cubo Esp.)';
+                cuboTipo = 'cubo';
+            } else {
+                cuboAnel = '66.6/72.6 mm (Cubo Esp.)';
+                cuboTipo = 'cubo';
+            }
+        } else if (isAnelKeyword) {
+            if (furacao.includes('4X100') || furacao.includes('4X98')) {
+                cuboAnel = '57.1 mm (Anel)';
+            } else {
+                cuboAnel = 'Anel Centralizador';
+            }
+            cuboTipo = 'anel';
+        } else if (isCuboKeyword) {
+            cuboAnel = 'Cubo Específico';
+            cuboTipo = 'cubo';
+        } else if (furacao) {
+            if (furacao.includes('4X100') || furacao.includes('4X98')) {
+                cuboAnel = '57.1 mm (Anel)';
+                cuboTipo = 'anel';
+            } else if (furacao.includes('5X112')) {
+                cuboAnel = '66.6 mm (Cubo Esp.)';
+                cuboTipo = 'cubo';
+            } else if (furacao.includes('5X120')) {
+                cuboAnel = '72.6 mm (Cubo Esp.)';
+                cuboTipo = 'cubo';
+            }
+        }
+    }
+
+    // 6. Acabamento
+    let acabamento = finishAbbr || "";
+    for (const [key] of Object.entries(finishMapping)) {
+        if (descUpper.includes(key) && key.length > 3) {
+            acabamento = key;
+            break;
+        }
+    }
+
+    return {
+        model,
+        linha,
+        aroTala,
+        aro,
+        tala,
+        furacao,
+        offset,
+        cuboAnel,
+        cuboTipo,
+        acabamento
+    };
 }

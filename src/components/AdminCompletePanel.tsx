@@ -87,6 +87,8 @@ import {
     setPhotoOverrides
 } from '../utils/photoUtils';
 import { SketchModal } from './SketchModal';
+import { WheelLegendCard } from './WheelLegendCard';
+import { WheelSpecsManagerModal } from './WheelSpecsManagerModal';
 import { AudioRecorderModal } from './AudioRecorderModal';
 import { AudioPlayerModal } from './AudioPlayerModal';
 import { saveSketch, getSketch, getAllSketches, deleteSketch, saveAudio, getAudio, getAllAudioKeys, deleteAudio } from '../lib/sketchStore';
@@ -607,6 +609,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const [itemCosts, setItemCosts] = useState<Record<string, number>>({});
     const [itemCostsSearchQuery, setItemCostsSearchQuery] = useState('');
     const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+    const [isWheelSpecsOpen, setIsWheelSpecsOpen] = useState(false);
     const [isPhotoUploading, setIsPhotoUploading] = useState(false);
     const [importReport, setImportReport] = useState<ImportReport | null>(null);
     const [uploadSummaries, setUploadSummaries] = useState<Record<string, UploadSummary>>(loadUploadSummaries);
@@ -2758,6 +2761,14 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                     <span className="hidden sm:inline">Sincronizar Nuvem</span>
                                 </button>
                                 <button
+                                    onClick={() => setIsWheelSpecsOpen(true)}
+                                    title="Configurar Cubos e Anéis por modelo e furação"
+                                    className="h-10 px-3 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-lg font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+                                >
+                                    <Disc className="w-4 h-4 text-purple-500" />
+                                    <span className="hidden sm:inline">Cubos & Anéis</span>
+                                </button>
+                                <button
                                     onClick={() => setIsExportModalOpen(true)}
                                     disabled={rows.length === 0}
                                     className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40 rounded-lg font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm active:scale-95 transition-all"
@@ -4524,6 +4535,11 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                             onError={(event) => (event.currentTarget.src = 'https://placehold.co/300x300/e2e8f0/64748b?text=SEM+FOTO')}
                                         />
                                     </div>
+                                    <WheelLegendCard 
+                                        description={photoTarget.description} 
+                                        itemCodigo={photoTarget.codigo} 
+                                        className="mt-3" 
+                                    />
                                 </div>
 
                                 <div className="flex flex-col justify-center gap-4">
@@ -4855,6 +4871,11 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                 title={activeAudioItem?.title || ''}
                 audioUrl={activeAudioItem ? audios[activeAudioItem.codigo] : ''}
                 readOnly={true}
+            />
+
+            <WheelSpecsManagerModal
+                isOpen={isWheelSpecsOpen}
+                onClose={() => setIsWheelSpecsOpen(false)}
             />
         </>
     );

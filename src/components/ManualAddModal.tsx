@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Search, Plus, Minus, X, PackageOpen, Check, Hash, Star, Clock, RefreshCcw } from 'lucide-react';
 import { StockItem } from '../types';
 import { cn } from '../utils';
-import { getWheelPhotoUrl } from '../utils/photoUtils';
+import { getWheelPhotoUrl, parseWheelSpecs } from '../utils/photoUtils';
+import { WheelLegendCard } from './WheelLegendCard';
 
 interface ManualAddModalProps {
     isOpen: boolean;
@@ -169,38 +170,53 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-1">
-                                            {filteredStock.map((item, index) => (
-                                                <button
-                                                    key={`${item.codigo}-${index}`}
-                                                    onClick={() => handleItemClick(item)}
-                                                    className="text-left w-full p-4 flex items-center gap-4 rounded-3xl border-2 border-slate-50 dark:border-slate-800 bg-white dark:bg-slate-800 hover:border-indigo-500 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-none transition-all active:scale-[0.98] group"
-                                                >
-                                                    <div className="w-16 h-16 shrink-0 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-700">
-                                                        <img 
-                                                            src={getWheelPhotoUrl(item.descricao, item.codigo)} 
-                                                            alt={item.descricao}
-                                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                            loading="lazy"
-                                                            onError={(e) => {
-                                                                (e.target as HTMLImageElement).src = "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO";
-                                                            }}
-                                                        />
-                                                    </div>
+                                            {filteredStock.map((item, index) => {
+                                                const specs = parseWheelSpecs(item.descricao, item.codigo);
+                                                return (
+                                                    <button
+                                                        key={`${item.codigo}-${index}`}
+                                                        onClick={() => handleItemClick(item)}
+                                                        className="text-left w-full p-4 flex items-center gap-4 rounded-3xl border-2 border-slate-50 dark:border-slate-800 bg-white dark:bg-slate-800 hover:border-indigo-500 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-none transition-all active:scale-[0.98] group"
+                                                    >
+                                                        <div className="w-16 h-16 shrink-0 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-700">
+                                                            <img 
+                                                                src={getWheelPhotoUrl(item.descricao, item.codigo)} 
+                                                                alt={item.descricao}
+                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                                loading="lazy"
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).src = "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO";
+                                                                }}
+                                                            />
+                                                        </div>
 
-                                                    <div className="flex-1 min-w-0">
-                                                        <h3 className="font-black text-sm text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 transition-colors mb-1">
-                                                            {item.descricao}
-                                                        </h3>
-                                                        <div className="flex flex-col gap-1">
-                                                            <span className="text-[10px] font-bold text-slate-400 font-mono italic">#{item.codigo}</span>
-                                                            <div className="flex items-center gap-2 text-[10px] font-black uppercase">
-                                                                <span className="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded">Est: {item.quantidade}</span>
-                                                                <span className="text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 px-1.5 py-0.5 rounded">{item.local || '---'}</span>
+                                                        <div className="flex-1 min-w-0">
+                                                            <h3 className="font-black text-sm text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 transition-colors mb-1">
+                                                                {item.descricao}
+                                                            </h3>
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                                    <span className="text-[10px] font-bold text-slate-400 font-mono italic">#{item.codigo}</span>
+                                                                    {specs.cuboAnel && (
+                                                                        <span className={cn(
+                                                                            "text-[9px] font-black px-1.5 py-0.2 rounded",
+                                                                            specs.cuboTipo === 'anel' ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200" :
+                                                                            specs.cuboTipo === 'cubo' ? "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200" :
+                                                                            "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                                                        )}>
+                                                                            {specs.cuboAnel}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-[10px] font-black uppercase">
+                                                                    <span className="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded">Est: {item.quantidade}</span>
+                                                                    <span className="text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 px-1.5 py-0.5 rounded">{item.local || '---'}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </button>
-                                            ))}
+                                                    </button>
+                                                );
+                                            })}
                                             {filteredStock.length === 0 && (
                                                 <div className="col-span-full p-12 text-center text-slate-400 italic bg-slate-50 dark:bg-slate-800/30 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
                                                     Nenhum modelo compatível encontrado.
@@ -255,28 +271,60 @@ export function ManualAddModal({ isOpen, onClose, stock, onAdd, mode = 'add' }: 
                                 animate={{ opacity: 1, x: 0 }}
                                 className="space-y-8 py-4"
                             >
-                                <div className="p-6 bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-100 dark:border-indigo-800/50 rounded-[32px] flex items-center gap-6">
-                                    <div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-xl shrink-0">
-                                        <img 
-                                            src={getWheelPhotoUrl(selectedItem.descricao, selectedItem.codigo)} 
-                                            alt={selectedItem.descricao}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">Item Selecionado</p>
-                                        <h3 className="font-black text-slate-800 dark:text-slate-100 text-2xl leading-tight truncate">
-                                            {selectedItem.descricao}
-                                        </h3>
-                                        <p className="font-mono font-bold text-slate-500 mt-1">#{selectedItem.codigo}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => setSelectedItem(null)}
-                                        className="p-3 bg-white dark:bg-slate-800 text-indigo-600 rounded-2xl shadow-sm border border-indigo-100 transition-all hover:bg-indigo-50"
-                                    >
-                                        <RefreshCcw className="w-6 h-6" />
-                                    </button>
-                                </div>
+                                {(() => {
+                                    const selectedSpecs = parseWheelSpecs(selectedItem.descricao, selectedItem.codigo);
+                                    return (
+                                        <div className="p-6 bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-100 dark:border-indigo-800/50 rounded-[32px] space-y-4">
+                                            <div className="flex items-center gap-6">
+                                                <div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-xl shrink-0">
+                                                    <img 
+                                                        src={getWheelPhotoUrl(selectedItem.descricao, selectedItem.codigo)} 
+                                                        alt={selectedItem.descricao}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">Item Selecionado</p>
+                                                    <h3 className="font-black text-slate-800 dark:text-slate-100 text-2xl leading-tight truncate">
+                                                        {selectedItem.descricao}
+                                                    </h3>
+                                                    <p className="font-mono font-bold text-slate-500 mt-1">#{selectedItem.codigo}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => setSelectedItem(null)}
+                                                    className="p-3 bg-white dark:bg-slate-800 text-indigo-600 rounded-2xl shadow-sm border border-indigo-100 transition-all hover:bg-indigo-50"
+                                                >
+                                                    <RefreshCcw className="w-6 h-6" />
+                                                </button>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-indigo-100 dark:border-indigo-800/40">
+                                                <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-xl border border-indigo-100/50 dark:border-indigo-900/50">
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase block">Aro / Tala</span>
+                                                    <span className="text-xs font-black text-slate-800 dark:text-slate-200">{selectedSpecs.aroTala || '---'}</span>
+                                                </div>
+                                                <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-xl border border-indigo-100/50 dark:border-indigo-900/50">
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase block">Furação</span>
+                                                    <span className="text-xs font-black text-indigo-600 dark:text-indigo-400">{selectedSpecs.furacao || '---'}</span>
+                                                </div>
+                                                <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-xl border border-indigo-100/50 dark:border-indigo-900/50">
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase block">Offset</span>
+                                                    <span className="text-xs font-black text-slate-800 dark:text-slate-200">{selectedSpecs.offset || '---'}</span>
+                                                </div>
+                                                <div className="bg-white/80 dark:bg-slate-900/80 p-2 rounded-xl border border-indigo-100/50 dark:border-indigo-900/50">
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase block">Cubo / Anel</span>
+                                                    <span className="text-xs font-black text-amber-700 dark:text-amber-400">{selectedSpecs.cuboAnel || '---'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* Card da Legenda de Anel / Cubo */}
+                                <WheelLegendCard 
+                                    description={selectedItem.descricao} 
+                                    itemCodigo={selectedItem.codigo} 
+                                />
 
                                 <div className="space-y-6">
                                     <div className="text-center space-y-2">

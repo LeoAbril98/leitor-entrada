@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
-import { ArrowLeft, MapPin, Search, Package2, RefreshCcw, Hash } from 'lucide-react';
+import { ArrowLeft, MapPin, Search, Package2, RefreshCcw, Hash, Disc } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScannerInput } from './ScannerInput';
 import { ManualAddModal } from './ManualAddModal';
 import { getInventory } from '../lib/supabase';
 import { StockItem } from '../types';
-import { getWheelPhotoUrl } from '../utils/photoUtils';
+import { getWheelPhotoUrl, parseWheelSpecs } from '../utils/photoUtils';
+import { Settings } from 'lucide-react';
+import { WheelSpecsManagerModal } from './WheelSpecsManagerModal';
+import { WheelLegendCard } from './WheelLegendCard';
+import { cn } from '../utils';
 
 interface LocatorModuleProps {
     onBackToMenu: () => void;
@@ -18,6 +22,7 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
     const [scannedItem, setScannedItem] = useState<StockItem | null>(null);
     const [scanError, setScanError] = useState(false);
     const [isManualAddOpen, setIsManualAddOpen] = useState(false);
+    const [isSpecsManagerOpen, setIsSpecsManagerOpen] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -131,6 +136,15 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                             <MapPin className="text-emerald-500 w-6 h-6" /> Localização
                         </h1>
                     </div>
+
+                    <button
+                        onClick={() => setIsSpecsManagerOpen(true)}
+                        className="ml-auto text-xs font-black bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300 px-3.5 py-2 rounded-xl flex items-center gap-2 border border-indigo-200 dark:border-indigo-800 transition-colors shadow-sm"
+                        title="Configurar Cubos e Anéis por modelo e furação"
+                    >
+                        <Settings className="w-4 h-4 text-indigo-500" />
+                        <span className="hidden sm:inline">Mapear Rodas</span>
+                    </button>
                 </div>
             </header>
 
@@ -189,8 +203,8 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                                 </div>
                             </div>
 
-                            {/* GRID INVERTIDO: Quantidade Primeiro, Local Depois */}
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* GRID DE QUANTIDADE E LOCALIZAÇÃO NO TOPO */}
+                            <div className="grid grid-cols-2 gap-4 mb-6">
                                 <div className="bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 shadow-sm">
                                     <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] mb-2">Quantidade</p>
                                     <p className="text-4xl font-black text-emerald-700 dark:text-emerald-300">
@@ -205,6 +219,61 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                                     </p>
                                 </div>
                             </div>
+
+                            {/* ESPECIFICAÇÕES TÉCNICAS DA RODA ABAIXO */}
+                            {(() => {
+                                const specs = parseWheelSpecs(scannedItem.descricao, scannedItem.codigo);
+                                return (
+                                    <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+                                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-700/50 pb-2">
+                                            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                                                <Disc className="w-3.5 h-3.5 text-indigo-500" /> Especificações da Roda
+                                            </span>
+                                            {specs.linha && (
+                                                <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50">
+                                                    {specs.linha}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            <div className="flex flex-col bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Aro / Tala</span>
+                                                <span className="text-sm font-black text-slate-800 dark:text-slate-100">{specs.aroTala || '---'}</span>
+                                            </div>
+
+                                            <div className="flex flex-col bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Furação (PCD)</span>
+                                                <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">{specs.furacao || '---'}</span>
+                                            </div>
+
+                                            <div className="flex flex-col bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Offset (ET)</span>
+                                                <span className="text-sm font-black text-slate-800 dark:text-slate-100">{specs.offset || '---'}</span>
+                                            </div>
+
+                                            <div className="flex flex-col bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Cubo / Anel</span>
+                                                <span className={cn(
+                                                    "text-xs font-black px-2 py-0.5 rounded-md w-fit mt-0.5",
+                                                    specs.cuboTipo === 'anel' ? "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border border-amber-300/50" :
+                                                    specs.cuboTipo === 'cubo' ? "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border border-blue-300/50" :
+                                                    "text-slate-700 dark:text-slate-300"
+                                                )}>
+                                                    {specs.cuboAnel || '---'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* CARD DE LEGENDA DO ANEL / CUBO (CATÁLOGO) EM BAIXO */}
+                            <WheelLegendCard 
+                                description={scannedItem.descricao} 
+                                itemCodigo={scannedItem.codigo} 
+                                className="mb-6"
+                            />
 
                             <button
                                 onClick={() => setScannedItem(null)}
@@ -240,6 +309,11 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                 stock={stock}
                 onAdd={handleManualSearch}
                 mode="search"
+            />
+
+            <WheelSpecsManagerModal
+                isOpen={isSpecsManagerOpen}
+                onClose={() => setIsSpecsManagerOpen(false)}
             />
         </div>
     );

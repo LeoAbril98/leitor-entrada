@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Plus, Trash2, Edit2, RotateCcw, Search, Check, Disc, Settings, ChevronDown, Sparkles } from 'lucide-react';
 import photoMap from '../data/photoMap.json';
+import { StockItem } from '../types';
+import { parseWheelSpecs } from '../utils/photoUtils';
 import {
     WheelSpecOverride,
     getWheelSpecOverrides,
@@ -14,6 +16,7 @@ interface WheelSpecsManagerModalProps {
     isOpen: boolean;
     onClose: () => void;
     onUpdated?: () => void;
+    stock?: StockItem[];
 }
 
 const COLOR_PRESETS = [
@@ -231,7 +234,8 @@ const CustomTypeSelect: React.FC<{
 const CustomPcdSelect: React.FC<{
     value: string;
     onChange: (pcd: string) => void;
-}> = ({ value, onChange }) => {
+    options?: string[];
+}> = ({ value, onChange, options }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -258,7 +262,7 @@ const CustomPcdSelect: React.FC<{
 
             {open && (
                 <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-56 overflow-y-auto p-1.5 space-y-0.5 animate-in fade-in">
-                    {PCD_PRESETS.map(p => {
+                    {(options && options.length > 0 ? options : PCD_PRESETS).map(p => {
                         const isSelected = value === p;
                         return (
                             <button
@@ -288,7 +292,8 @@ const CustomPcdSelect: React.FC<{
 export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
     isOpen,
     onClose,
-    onUpdated
+    onUpdated,
+    stock = []
 }) => {
     const [mappings, setMappings] = useState<WheelSpecOverride[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -335,9 +340,13 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
     const allKnownModels = useMemo(() => {
         const set = new Set<string>();
         Object.keys(photoMap || {}).forEach(m => set.add(m.toUpperCase()));
+        stock.forEach(item => {
+            const model = parseWheelSpecs(item.descricao, item.codigo).model;
+            if (model) set.add(model.toUpperCase());
+        });
         mappings.forEach(m => set.add(m.model.toUpperCase()));
         return Array.from(set).sort();
-    }, [mappings]);
+    }, [mappings, stock]);
 
     // Popular models for quick access chips
     const popularModels = useMemo(() => {
@@ -361,12 +370,32 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
         const list: Array<{ id: string; aro: string; pcd: string; label: string }> = [];
         const seen = new Set<string>();
 
-        // 1. From photoMap
+        const addVariation = (aroFound: string, pcdFound: string) => {
+            if (!pcdFound) return;
+            const vKey = `${aroFound}-${pcdFound}`;
+            if (seen.has(vKey)) return;
+            seen.add(vKey);
+            list.push({
+                id: vKey,
+                aro: aroFound,
+                pcd: pcdFound,
+                label: `${aroFound ? `Aro ${aroFound}` : 'Geral'} - ${pcdFound}`
+            });
+        };
+
+        // 1. From real inventory: this keeps furações tied to the selected model.
+        stock.forEach(item => {
+            const specs = parseWheelSpecs(item.descricao, item.codigo);
+            if (specs.model?.toUpperCase() !== modelKey) return;
+            addVariation(specs.aro || '', specs.furacao);
+        });
+
+        // 2. From photoMap only when the inventory has no exact variations for the model.
         const FOUR_HOLE_PCDS = ['4X98', '4X100', '4X108'];
         const FIVE_HOLE_PCDS = ['5X100', '5X105', '5X108', '5X110', '5X112', '5X114', '5X120'];
         const SIX_HOLE_PCDS = ['6X114', '6X139'];
 
-        if (photoEntries) {
+        if (list.length === 0 && photoEntries) {
             Object.keys(photoEntries).forEach(key => {
                 const upper = key.toUpperCase();
                 const pcdMatch = upper.match(/\b(\d[XxX\*]\d{2,3}|\d[Ff])\b/);
@@ -380,33 +409,13 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
                 else if (rawPcd === '5F') pcdsToExpand = FIVE_HOLE_PCDS;
                 else if (rawPcd === '6F') pcdsToExpand = SIX_HOLE_PCDS;
 
-                pcdsToExpand.forEach(pcdFound => {
-                    const vKey = `${aroFound}-${pcdFound}`;
-                    if (!seen.has(vKey)) {
-                        seen.add(vKey);
-                        list.push({
-                            id: vKey,
-                            aro: aroFound,
-                            pcd: pcdFound,
-                            label: `${aroFound ? `Aro ${aroFound}` : 'Geral'} - ${pcdFound}`
-                        });
-                    }
-                });
+                pcdsToExpand.forEach(pcdFound => addVariation(aroFound, pcdFound));
             });
         }
 
-        // 2. From saved overrides for this model
+        // 3. From saved overrides for this model
         mappings.filter(m => m.model === modelKey).forEach(m => {
-            const vKey = `${m.aro || ''}-${m.pcd}`;
-            if (!seen.has(vKey)) {
-                seen.add(vKey);
-                list.push({
-                    id: vKey,
-                    aro: m.aro || '',
-                    pcd: m.pcd,
-                    label: `${m.aro ? `Aro ${m.aro}` : 'Geral'} - ${m.pcd}`
-                });
-            }
+            addVariation(m.aro || '', m.pcd);
         });
 
         // Default fallbacks if none found
@@ -416,7 +425,17 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
         }
 
         return list;
-    }, [selectedModel, mappings]);
+    }, [selectedModel, mappings, stock]);
+
+    const pcdOptionsByAro = useMemo(() => {
+        const allModelPcds = Array.from(new Set(catalogVariations.map(item => item.pcd))).filter(Boolean).sort();
+        const byAro = new Map<string, string[]>();
+        catalogVariations.forEach(item => {
+            const key = item.aro || '';
+            byAro.set(key, Array.from(new Set([...(byAro.get(key) || []), item.pcd])).filter(Boolean).sort());
+        });
+        return { all: allModelPcds, byAro };
+    }, [catalogVariations]);
 
     if (!isOpen) return null;
 
@@ -485,22 +504,30 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
         m.pcd.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.mm.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    const selectedModelMappings = filteredMappings.filter(m => m.model === selectedModel);
+    const savedMappingsToShow = selectedModelMappings.length > 0 || !searchTerm.trim()
+        ? selectedModelMappings
+        : filteredMappings;
+    const mappedVariationCount = catalogVariations.filter(varItem => mappings.some(m =>
+        m.model === selectedModel &&
+        ((varItem.aro && m.aro === varItem.aro && m.pcd === varItem.pcd) || (!m.aro && m.pcd === varItem.pcd))
+    )).length;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 animate-in fade-in" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
                 {/* Modal Header */}
-                <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+                <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                            <Disc className="w-6 h-6" />
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                            <Disc className="w-5 h-5" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">
-                                Mapeamento Técnico de Cubos & Anéis por Roda
+                            <h2 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">
+                                Mapeamento Técnico
                             </h2>
                             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                Configure se cada Aro e Furação da roda usa Anel Centralizador ou Cubo Específico
+                                Cubo ou anel por modelo, aro e furação
                             </p>
                         </div>
                     </div>
@@ -514,23 +541,27 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
                 </div>
 
                 {/* Main Content Body */}
-                <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* Column 1: Active Model Workspace */}
-                    <div className="lg:col-span-7 space-y-6">
-                        {/* Seletor de Modelo */}
-                        <div className="bg-slate-50 dark:bg-slate-800/40 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <label className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                                    <Search className="w-4 h-4 text-indigo-500" />
-                                    Selecione o Modelo da Roda
-                                </label>
-                                {selectedModel && (
-                                    <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-indigo-600 text-white shadow-sm">
-                                        Modelo Ativo: {selectedModel}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+                    {/* Seletor de Modelo */}
+                    <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <label className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                                <Search className="w-4 h-4 text-indigo-500" />
+                                Modelo
+                            </label>
+                            {selectedModel && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                        {mappedVariationCount}/{catalogVariations.length} mapeadas
                                     </span>
-                                )}
-                            </div>
+                                    <span className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-indigo-600 text-white shadow-sm">
+                                        {selectedModel}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
 
+                        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-3 items-start">
                             {/* Campo de Busca de Modelo com Autocomplete */}
                             <div className="relative" ref={dropdownRef}>
                                 <div className="relative">
@@ -543,27 +574,26 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
                                             setShowModelDropdown(true);
                                         }}
                                         onFocus={() => setShowModelDropdown(true)}
-                                        placeholder="Digite o modelo (ex: R06, K57, M16, E55)..."
-                                        className="w-full h-12 pr-10 px-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 font-black text-base uppercase text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm"
+                                        placeholder="Digite o modelo. Ex: R06, K57, M16, E55"
+                                        className="w-full h-11 pr-10 px-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 font-black text-sm uppercase text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowModelDropdown(!showModelDropdown)}
-                                        className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                        className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                                     >
                                         <ChevronDown className="w-5 h-5" />
                                     </button>
                                 </div>
 
-                                {/* Menu Dropdown Autocomplete */}
                                 {showModelDropdown && suggestedModels.length > 0 && (
-                                    <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-30 max-h-52 overflow-y-auto p-1.5 space-y-0.5 animate-in fade-in">
+                                    <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-30 max-h-52 overflow-y-auto p-1.5 space-y-0.5 animate-in fade-in">
                                         {suggestedModels.map(m => (
                                             <button
                                                 key={m}
                                                 type="button"
                                                 onClick={() => chooseModel(m)}
-                                                className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-black flex items-center justify-between transition-colors ${
+                                                className={`w-full text-left px-3 py-2 rounded-lg text-xs font-black flex items-center justify-between transition-colors ${
                                                     selectedModel === m 
                                                         ? 'bg-indigo-600 text-white' 
                                                         : 'text-slate-800 dark:text-slate-100 hover:bg-indigo-50 dark:hover:bg-indigo-900/40'
@@ -585,17 +615,16 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
                                 )}
                             </div>
 
-                            {/* Pílulas de Acesso Rápido a Modelos Populares */}
-                            <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                            <div className="flex items-center gap-1.5 flex-wrap lg:justify-end">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Rápidos:</span>
                                 {popularModels.map(m => (
                                     <button
                                         key={m}
                                         type="button"
                                         onClick={() => chooseModel(m)}
-                                        className={`px-3 py-1 text-xs font-black rounded-xl border transition-all ${
+                                        className={`px-2.5 py-1.5 text-[11px] font-black rounded-lg border transition-all ${
                                             selectedModel === m 
-                                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-md scale-105' 
+                                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
                                                 : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-300'
                                         }`}
                                     >
@@ -604,297 +633,262 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
                                 ))}
                             </div>
                         </div>
+                    </div>
 
-                        {/* Variações do Modelo Ativo (Card Principal de Configuração) */}
-                        {selectedModel && (
-                            <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                                    <div>
-                                        <h3 className="text-base font-black text-slate-900 dark:text-white uppercase flex items-center gap-2">
-                                            <Sparkles className="w-4 h-4 text-indigo-500" />
-                                            Variações da Roda {selectedModel}
-                                        </h3>
-                                        <p className="text-[11px] font-semibold text-slate-500">
-                                            Configure as especificações de cubo/anel para cada Aro e Furação
-                                        </p>
-                                    </div>
+                    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-4">
+                        {/* Variações compactas */}
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                            <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase flex items-center gap-2">
+                                        <Sparkles className="w-4 h-4 text-indigo-500" />
+                                        Variações {selectedModel}
+                                    </h3>
+                                    <p className="text-[11px] font-semibold text-slate-500">
+                                        Ajuste uma linha por aro e furação
+                                    </p>
                                 </div>
+                                <details className="relative group">
+                                    <summary className="list-none cursor-pointer px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                                        <Plus className="w-3.5 h-3.5" /> Nova combinação
+                                    </summary>
+                                    <form onSubmit={handleFormSubmit} className="absolute right-0 top-full mt-2 w-[320px] z-20 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl space-y-3 animate-in fade-in">
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Aro</label>
+                                                <CustomAroSelect value={aro} onChange={(newAro) => setAro(newAro)} />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Furação</label>
+                                                <input
+                                                    type="text"
+                                                    value={pcd}
+                                                    onChange={(e) => setPcd(e.target.value.toUpperCase())}
+                                                    placeholder="Ex: 4X100"
+                                                    list="pcd-options-for-selected-model"
+                                                    className="w-full h-9 px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold uppercase"
+                                                    required
+                                                />
+                                                <datalist id="pcd-options-for-selected-model">
+                                                    {pcdOptionsByAro.all.map(option => (
+                                                        <option key={option} value={option} />
+                                                    ))}
+                                                </datalist>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Tipo</label>
+                                                <CustomTypeSelect value={type} onChange={(newType) => setType(newType)} />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">MM</label>
+                                                <CustomMmSelect value={mm} type={type} onChange={(newMm) => setMm(newMm)} />
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase rounded-xl flex items-center justify-center gap-1.5 shadow-md"
+                                        >
+                                            <Plus className="w-4 h-4" /> Cadastrar
+                                        </button>
+                                    </form>
+                                </details>
+                            </div>
 
-                                {/* Cards Interativos para cada Variação (Aro + PCD) */}
-                                <div className="space-y-3">
-                                    {catalogVariations.map(varItem => {
-                                        // Buscar se já existe override salvo para este modelo + aro + pcd ou modelo + pcd
-                                        const savedOverride = mappings.find(m => 
-                                            m.model === selectedModel && 
-                                            ((varItem.aro && m.aro === varItem.aro && m.pcd === varItem.pcd) || (!m.aro && m.pcd === varItem.pcd))
-                                        );
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[760px] text-sm">
+                                    <thead className="bg-slate-50 dark:bg-slate-950/60 text-slate-500 dark:text-slate-400">
+                                        <tr>
+                                            <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest">Aro</th>
+                                            <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest">Furação</th>
+                                            <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest">Tipo</th>
+                                            <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest">Medida</th>
+                                            <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest">Status</th>
+                                            <th className="px-4 py-2.5 text-right text-[10px] font-black uppercase tracking-widest">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                        {catalogVariations.map(varItem => {
+                                            const savedOverride = mappings.find(m => 
+                                                m.model === selectedModel && 
+                                                ((varItem.aro && m.aro === varItem.aro && m.pcd === varItem.pcd) || (!m.aro && m.pcd === varItem.pcd))
+                                            );
 
-                                        const currentType = savedOverride ? savedOverride.type : 'ANEL';
-                                        const currentMm = savedOverride ? savedOverride.mm : '57.1';
-                                        const currentColor = savedOverride?.ringColor || (currentType === 'ANEL' ? '#f97316' : '#ea580c');
+                                            const currentType = savedOverride ? savedOverride.type : 'ANEL';
+                                            const currentMm = savedOverride ? savedOverride.mm : '57.1';
+                                            const currentColor = savedOverride?.ringColor || (currentType === 'ANEL' ? '#f97316' : '#ea580c');
 
-                                        return (
-                                            <div
-                                                key={varItem.id}
-                                                className={`p-4 rounded-2xl border transition-all space-y-3 ${
-                                                    savedOverride
-                                                        ? 'bg-indigo-50/40 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800/60'
-                                                        : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800'
-                                                }`}
-                                            >
-                                                {/* Header da Variante */}
-                                                <div className="flex items-center justify-between gap-3">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <div 
-                                                            className="w-3.5 h-8 rounded-md shrink-0 shadow-sm"
-                                                            style={{ backgroundColor: currentColor }}
-                                                        />
-                                                        <div>
-                                                            <span className="font-black text-sm text-slate-900 dark:text-white uppercase tracking-tight">
-                                                                {selectedModel} {varItem.label}
-                                                            </span>
-                                                            <div className="flex items-center gap-2 mt-0.5">
-                                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded ${
-                                                                    currentType === 'ANEL'
-                                                                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
-                                                                        : 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
-                                                                }`}>
-                                                                    {currentType === 'ANEL' ? 'ANEL CENTRALIZADOR' : 'CUBO ESP. (SEM ANEL)'}
-                                                                </span>
-                                                                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                                                                    {currentMm} MM
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {savedOverride && (
-                                                        <button
-                                                            onClick={() => handleDelete(savedOverride.id)}
-                                                            className="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                                                            title="Remover Mapeamento"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    )}
-                                                </div>
-
-                                                {/* Bar de Controles Diretos da Variante */}
-                                                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-800">
-                                                    {/* Toggle Tipo */}
-                                                    <div className="sm:col-span-4 flex rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-0.5">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleSaveSingle(varItem.aro, varItem.pcd, 'ANEL', currentMm, currentColor === '#ea580c' ? '#f97316' : currentColor)}
-                                                            className={`flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${
-                                                                currentType === 'ANEL'
-                                                                    ? 'bg-amber-500 text-white shadow-sm'
-                                                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                                                            }`}
-                                                        >
-                                                            ANEL
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleSaveSingle(varItem.aro, varItem.pcd, 'CUBO', currentMm, currentColor === '#f97316' ? '#ea580c' : currentColor)}
-                                                            className={`flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${
-                                                                currentType === 'CUBO'
-                                                                    ? 'bg-blue-600 text-white shadow-sm'
-                                                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                                                            }`}
-                                                        >
-                                                            CUBO ESP.
-                                                        </button>
-                                                    </div>
-
-                                                    {/* Selector de PCD */}
-                                                    <div className="sm:col-span-3 flex items-center gap-1">
+                                            return (
+                                                <tr key={varItem.id} className={savedOverride ? 'bg-indigo-50/30 dark:bg-indigo-950/10' : 'bg-white dark:bg-slate-900'}>
+                                                    <td className="px-4 py-2.5">
+                                                        <span className="font-black text-slate-800 dark:text-slate-100">{varItem.aro ? `Aro ${varItem.aro}` : 'Geral'}</span>
+                                                    </td>
+                                                    <td className="px-4 py-2.5 w-36">
                                                         <CustomPcdSelect
                                                             value={varItem.pcd}
                                                             onChange={(newPcd) => handleSaveSingle(varItem.aro, newPcd, currentType, currentMm, currentColor)}
+                                                            options={pcdOptionsByAro.byAro.get(varItem.aro || '') || pcdOptionsByAro.all}
                                                         />
-                                                    </div>
-
-                                                    {/* Selector de MM */}
-                                                    <div className="sm:col-span-3 flex items-center gap-1">
+                                                    </td>
+                                                    <td className="px-4 py-2.5 w-52">
+                                                        <div className="flex rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-0.5">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleSaveSingle(varItem.aro, varItem.pcd, 'ANEL', currentMm, currentColor === '#ea580c' ? '#f97316' : currentColor)}
+                                                                className={`flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${
+                                                                    currentType === 'ANEL'
+                                                                        ? 'bg-amber-500 text-white shadow-sm'
+                                                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                                                                }`}
+                                                            >
+                                                                ANEL
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleSaveSingle(varItem.aro, varItem.pcd, 'CUBO', currentMm, currentColor === '#f97316' ? '#ea580c' : currentColor)}
+                                                                className={`flex-1 py-1.5 text-[10px] font-black rounded-lg transition-all ${
+                                                                    currentType === 'CUBO'
+                                                                        ? 'bg-blue-600 text-white shadow-sm'
+                                                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                                                                }`}
+                                                            >
+                                                                CUBO
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-2.5 w-36">
                                                         <CustomMmSelect
                                                             value={currentMm}
                                                             type={currentType}
                                                             onChange={(newMm) => handleSaveSingle(varItem.aro, varItem.pcd, currentType, newMm, getRingColorBySpecs(newMm, currentType))}
                                                         />
-                                                    </div>
-
-                                                    {/* Botão Salvar / OK */}
-                                                    <div className="sm:col-span-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleSaveSingle(varItem.aro, varItem.pcd, currentType, currentMm, currentColor)}
-                                                            className="w-full h-8 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl flex items-center justify-center gap-1 shadow-sm transition-all active:scale-95"
-                                                        >
-                                                            <Check className="w-3.5 h-3.5" /> OK
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Sub-form para Adicionar Variação Personalizada */}
-                                <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
-                                    <details className="group">
-                                        <summary className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider cursor-pointer hover:underline flex items-center gap-1">
-                                            <Plus className="w-3.5 h-3.5" /> Adicionar outra combinação (Aro/PCD) para {selectedModel}...
-                                        </summary>
-
-                                        <form onSubmit={handleFormSubmit} className="mt-3 p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 animate-in fade-in">
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div>
-                                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Aro</label>
-                                                    <CustomAroSelect
-                                                        value={aro}
-                                                        onChange={(newAro) => setAro(newAro)}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Furação (PCD)</label>
-                                                    <input
-                                                        type="text"
-                                                        value={pcd}
-                                                        onChange={(e) => setPcd(e.target.value.toUpperCase())}
-                                                        placeholder="Ex: 4X100"
-                                                        className="w-full h-9 px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold uppercase"
-                                                        required
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div>
-                                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Tipo</label>
-                                                    <CustomTypeSelect
-                                                        value={type}
-                                                        onChange={(newType) => setType(newType)}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Medida em MM</label>
-                                                    <CustomMmSelect
-                                                        value={mm}
-                                                        type={type}
-                                                        onChange={(newMm) => setMm(newMm)}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <button
-                                                type="submit"
-                                                className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase rounded-xl flex items-center justify-center gap-1.5 shadow-md"
-                                            >
-                                                <Plus className="w-4 h-4" /> Cadastrar Variação para {selectedModel}
-                                            </button>
-                                        </form>
-                                    </details>
-                                </div>
+                                                    </td>
+                                                    <td className="px-4 py-2.5">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="w-2.5 h-7 rounded-md" style={{ backgroundColor: currentColor }} />
+                                                            <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${
+                                                                savedOverride
+                                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                                                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                                            }`}>
+                                                                {savedOverride ? 'SALVO' : 'PADRÃO'}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-2.5 text-right">
+                                                        <div className="flex justify-end gap-1">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleSaveSingle(varItem.aro, varItem.pcd, currentType, currentMm, currentColor)}
+                                                                className="h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl inline-flex items-center gap-1 shadow-sm transition-all active:scale-95"
+                                                            >
+                                                                <Check className="w-3.5 h-3.5" /> OK
+                                                            </button>
+                                                            {savedOverride && (
+                                                                <button
+                                                                    onClick={() => handleDelete(savedOverride.id)}
+                                                                    className="h-8 w-8 inline-flex items-center justify-center text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                                                                    title="Remover Mapeamento"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
-                        )}
-                    </div>
-
-                    {/* Column 2: Saved Mappings List */}
-                    <div className="lg:col-span-5 flex flex-col space-y-4">
-                        <div className="flex items-center justify-between gap-3">
-                            <div className="relative flex-1">
-                                <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="Filtrar regas salvas..."
-                                    className="w-full h-10 pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={handleReset}
-                                className="h-10 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-extrabold text-xs rounded-xl flex items-center gap-1.5 transition-colors shrink-0"
-                                title="Restaurar padrões de fábrica"
-                            >
-                                <RotateCcw className="w-3.5 h-3.5" /> Padrões
-                            </button>
                         </div>
 
-                        {/* List items */}
-                        <div className="flex-1 overflow-y-auto space-y-2 max-h-[500px] pr-1">
-                            {filteredMappings.length === 0 ? (
-                                <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                                    <p className="text-xs font-bold text-slate-400">Nenhum mapeamento encontrado</p>
-                                </div>
-                            ) : (
-                                filteredMappings.map(item => (
-                                    <div
-                                        key={item.id}
-                                        className={`p-3 rounded-2xl border flex items-center justify-between gap-3 transition-all ${
-                                            editingId === item.id 
-                                                ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-700' 
-                                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                                        }`}
+                        {/* Regras salvas compactas */}
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                            <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 space-y-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase">Regras salvas</h3>
+                                        <p className="text-[11px] font-semibold text-slate-500">Mostrando o modelo atual</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleReset}
+                                        className="h-9 px-3 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-extrabold text-xs rounded-xl flex items-center gap-1.5 transition-colors shrink-0 border border-slate-200 dark:border-slate-700"
+                                        title="Restaurar padrões de fábrica"
                                     >
-                                        <div className="flex items-center gap-2.5">
-                                            {/* Color badge */}
-                                            <div 
-                                                className="w-3.5 h-9 rounded-md shrink-0"
-                                                style={{ backgroundColor: item.ringColor || '#f97316' }}
-                                            />
+                                        <RotateCcw className="w-3.5 h-3.5" /> Padrões
+                                    </button>
+                                </div>
+                                <div className="relative">
+                                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        placeholder="Filtrar regras salvas..."
+                                        className="w-full h-9 pl-9 pr-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                </div>
+                            </div>
 
-                                            <div>
-                                                <div className="flex items-center gap-1.5 flex-wrap">
-                                                    <span className="font-black text-sm text-slate-900 dark:text-white uppercase">
-                                                        {item.model}
-                                                    </span>
-                                                    {item.aro && (
-                                                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                                                            Aro {item.aro}
+                            <div className="overflow-y-auto max-h-[520px] p-2 space-y-1.5">
+                                {savedMappingsToShow.length === 0 ? (
+                                    <div className="p-6 text-center bg-white dark:bg-slate-800/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+                                        <p className="text-xs font-bold text-slate-400">Nenhuma regra salva para {selectedModel}</p>
+                                    </div>
+                                ) : (
+                                    savedMappingsToShow.map(item => (
+                                        <div
+                                            key={item.id}
+                                            className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 transition-all ${
+                                                editingId === item.id 
+                                                    ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-700' 
+                                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <div className="w-2.5 h-8 rounded-md shrink-0" style={{ backgroundColor: item.ringColor || '#f97316' }} />
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className="font-black text-xs text-slate-900 dark:text-white uppercase">{item.model}</span>
+                                                        {item.aro && <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">Aro {item.aro}</span>}
+                                                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">{item.pcd}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
+                                                            item.type === 'ANEL' 
+                                                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' 
+                                                                : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
+                                                        }`}>
+                                                            {item.type}
                                                         </span>
-                                                    )}
-                                                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
-                                                        {item.pcd}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 mt-0.5">
-                                                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
-                                                        item.type === 'ANEL' 
-                                                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' 
-                                                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
-                                                    }`}>
-                                                        {item.type}
-                                                    </span>
-                                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                                                        {item.mm} MM
-                                                    </span>
+                                                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">{item.mm} MM</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div className="flex items-center gap-1">
-                                            <button
-                                                onClick={() => handleEditItem(item)}
-                                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-lg transition-colors"
-                                                title="Editar"
-                                            >
-                                                <Edit2 className="w-3.5 h-3.5" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(item.id)}
-                                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/40 rounded-lg transition-colors"
-                                                title="Remover"
-                                            >
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                            </button>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                <button
+                                                    onClick={() => handleEditItem(item)}
+                                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-lg transition-colors"
+                                                    title="Editar"
+                                                >
+                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(item.id)}
+                                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/40 rounded-lg transition-colors"
+                                                    title="Remover"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))
-                            )}
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -314,6 +314,7 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
             <WheelSpecsManagerModal
                 isOpen={isSpecsManagerOpen}
                 onClose={() => setIsSpecsManagerOpen(false)}
+                stock={stock}
             />
         </div>
     );

@@ -11,6 +11,7 @@ import {
     Camera,
     CloudUpload,
     Database,
+    Disc,
     Download,
     FileSpreadsheet,
     Filter,

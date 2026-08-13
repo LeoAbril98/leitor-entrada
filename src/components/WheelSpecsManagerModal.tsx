@@ -104,10 +104,11 @@ const CustomMmSelect: React.FC<{
     );
 };
 
-const CustomAroSelect: React.FC<{
-    value: string;
-    onChange: (aro: string) => void;
-}> = ({ value, onChange }) => {
+// Novo componente de múltipla seleção para Aros
+const CustomMultiAroSelect: React.FC<{
+    values: string[];
+    onChange: (aros: string[]) => void;
+}> = ({ values, onChange }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -121,6 +122,10 @@ const CustomAroSelect: React.FC<{
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [open]);
 
+    const displayText = values.length === 0 || (values.length === 1 && values[0] === '') 
+        ? 'Geral (Sem Aro)' 
+        : `Aro(s) ${values.join(', ')}`;
+
     return (
         <div className="relative w-full" ref={ref} onClick={(e) => e.stopPropagation()}>
             <button
@@ -128,35 +133,48 @@ const CustomAroSelect: React.FC<{
                 onClick={() => setOpen(!open)}
                 className="w-full h-9 px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-white flex items-center justify-between shadow-sm hover:border-indigo-400 transition-all"
             >
-                <span>{value ? `Aro ${value}` : 'Geral (Sem Aro)'}</span>
-                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+                <span className="truncate">{displayText}</span>
+                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`} />
             </button>
 
             {open && (
                 <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-52 overflow-y-auto p-1.5 space-y-0.5 animate-in fade-in">
                     <button
                         type="button"
-                        onClick={() => { onChange(''); setOpen(false); }}
+                        onClick={() => { onChange([]); setOpen(false); }}
                         className={`w-full text-left px-3 py-2 rounded-xl text-xs font-black flex items-center justify-between transition-colors ${
-                            !value ? 'bg-indigo-600 text-white' : 'text-slate-800 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/60'
+                            values.length === 0 ? 'bg-indigo-600 text-white' : 'text-slate-800 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/60'
                         }`}
                     >
                         <span>Geral (Sem Aro)</span>
-                        {!value && <Check className="w-3.5 h-3.5" />}
+                        {values.length === 0 && <Check className="w-3.5 h-3.5" />}
                     </button>
                     {ARO_PRESETS.map(a => {
-                        const isSelected = value === a;
+                        const isSelected = values.includes(a);
                         return (
                             <button
                                 key={a}
                                 type="button"
-                                onClick={() => { onChange(a); setOpen(false); }}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    if (isSelected) {
+                                        onChange(values.filter(v => v !== a));
+                                    } else {
+                                        onChange([...values.filter(v => v !== ''), a].sort((x, y) => parseInt(x) - parseInt(y)));
+                                    }
+                                }}
                                 className={`w-full text-left px-3 py-2 rounded-xl text-xs font-black flex items-center justify-between transition-colors ${
-                                    isSelected ? 'bg-indigo-600 text-white' : 'text-slate-800 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/60'
+                                    isSelected ? 'bg-indigo-50 dark:bg-indigo-900/30' : 'text-slate-800 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/60'
                                 }`}
                             >
-                                <span>Aro {a}</span>
-                                {isSelected && <Check className="w-3.5 h-3.5" />}
+                                <span className={isSelected ? 'text-indigo-600 dark:text-indigo-400' : ''}>Aro {a}</span>
+                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                    isSelected 
+                                        ? 'bg-indigo-600 border-indigo-600' 
+                                        : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
+                                }`}>
+                                    {isSelected && <Check className="w-3 h-3 text-white" />}
+                                </div>
                             </button>
                         );
                     })}
@@ -299,14 +317,13 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
     const [searchTerm, setSearchTerm] = useState('');
     const [editingId, setEditingId] = useState<string | null>(null);
 
-    // Selected model state for active configuration workspace
     const [selectedModel, setSelectedModel] = useState<string>('R06');
     const [modelSearchInput, setModelSearchInput] = useState<string>('R06');
     const [showModelDropdown, setShowModelDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Custom single form state
-    const [aro, setAro] = useState<string>('15');
+    // Mudança principal: aro agora é um array para suportar múltiplos
+    const [formAros, setFormAros] = useState<string[]>(['15']);
     const [pcd, setPcd] = useState<string>('4X100');
     const [type, setType] = useState<'ANEL' | 'CUBO'>('ANEL');
     const [mm, setMm] = useState<string>('57.1');
@@ -336,7 +353,6 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
         setMappings(getWheelSpecOverrides());
     };
 
-    // Consolidated list of all known model codes
     const allKnownModels = useMemo(() => {
         const set = new Set<string>();
         Object.keys(photoMap || {}).forEach(m => set.add(m.toUpperCase()));
@@ -348,20 +364,17 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
         return Array.from(set).sort();
     }, [mappings, stock]);
 
-    // Popular models for quick access chips
     const popularModels = useMemo(() => {
         const priority = ['R06', 'K57', 'K58', 'M16', 'E55', 'R10', 'R82', 'R83', 'C10'];
         return priority.filter(m => allKnownModels.includes(m));
     }, [allKnownModels]);
 
-    // Suggested models when typing in model input
     const suggestedModels = useMemo(() => {
         if (!modelSearchInput.trim()) return allKnownModels.slice(0, 15);
         const mUpper = modelSearchInput.trim().toUpperCase();
         return allKnownModels.filter(m => m.includes(mUpper)).slice(0, 15);
     }, [modelSearchInput, allKnownModels]);
 
-    // Extract all variations (Aro + PCD) available for selected model
     const catalogVariations = useMemo(() => {
         if (!selectedModel.trim()) return [];
         const modelKey = selectedModel.trim().toUpperCase();
@@ -383,14 +396,12 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
             });
         };
 
-        // 1. From real inventory: this keeps furações tied to the selected model.
         stock.forEach(item => {
             const specs = parseWheelSpecs(item.descricao, item.codigo);
             if (specs.model?.toUpperCase() !== modelKey) return;
             addVariation(specs.aro || '', specs.furacao);
         });
 
-        // 2. From photoMap only when the inventory has no exact variations for the model.
         const FOUR_HOLE_PCDS = ['4X98', '4X100', '4X108'];
         const FIVE_HOLE_PCDS = ['5X100', '5X105', '5X108', '5X110', '5X112', '5X114', '5X120'];
         const SIX_HOLE_PCDS = ['6X114', '6X139'];
@@ -413,18 +424,16 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
             });
         }
 
-        // 3. From saved overrides for this model
         mappings.filter(m => m.model === modelKey).forEach(m => {
             addVariation(m.aro || '', m.pcd);
         });
 
-        // Default fallbacks if none found
         if (list.length === 0) {
             list.push({ id: '15-4X100', aro: '15', pcd: '4X100', label: 'Aro 15 - 4X100' });
             list.push({ id: '17-4X100', aro: '17', pcd: '4X100', label: 'Aro 17 - 4X100' });
         }
 
-        return list;
+        return list.sort((a, b) => parseInt(a.aro || '0') - parseInt(b.aro || '0'));
     }, [selectedModel, mappings, stock]);
 
     const pcdOptionsByAro = useMemo(() => {
@@ -465,15 +474,24 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
 
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        handleSaveSingle(aro, pcd, type, mm, ringColor);
+        
+        // Se o usuário não selecionou nenhum aro, salvamos como geral ('')
+        const arosToSave = formAros.length > 0 ? formAros : [''];
+        
+        // Salva para cada aro selecionado na lista
+        arosToSave.forEach(singleAro => {
+            handleSaveSingle(singleAro, pcd, type, mm, ringColor);
+        });
+        
         setEditingId(null);
+        setFormAros([]); // Reseta o form após salvar
     };
 
     const handleEditItem = (item: WheelSpecOverride) => {
         setEditingId(item.id);
         setSelectedModel(item.model);
         setModelSearchInput(item.model);
-        setAro(item.aro || '');
+        setFormAros(item.aro ? [item.aro] : []);
         setPcd(item.pcd);
         setType(item.type);
         setMm(item.mm);
@@ -655,8 +673,8 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
                                     <form onSubmit={handleFormSubmit} className="absolute right-0 top-full mt-2 w-[320px] z-20 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl space-y-3 animate-in fade-in">
                                         <div className="grid grid-cols-2 gap-2">
                                             <div>
-                                                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Aro</label>
-                                                <CustomAroSelect value={aro} onChange={(newAro) => setAro(newAro)} />
+                                                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Aros</label>
+                                                <CustomMultiAroSelect values={formAros} onChange={(newAros) => setFormAros(newAros)} />
                                             </div>
                                             <div>
                                                 <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Furação</label>
@@ -690,7 +708,7 @@ export const WheelSpecsManagerModal: React.FC<WheelSpecsManagerModalProps> = ({
                                             type="submit"
                                             className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase rounded-xl flex items-center justify-center gap-1.5 shadow-md"
                                         >
-                                            <Plus className="w-4 h-4" /> Cadastrar
+                                            <Plus className="w-4 h-4" /> Cadastrar Seleção
                                         </button>
                                     </form>
                                 </details>

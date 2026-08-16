@@ -1379,41 +1379,7 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                                 </button>
                             </div>
                         )}
-                        {syncLog.length > 0 && (
-                            <div className="mt-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-3 py-2">
-                                <div className="flex items-center justify-between gap-3 mb-1.5">
-                                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                        <History className="w-3.5 h-3.5" />
-                                        Histórico de sincronização
-                                    </div>
-                                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
-                                        Últimos {Math.min(syncLog.length, 4)}
-                                    </span>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-1.5">
-                                    {syncLog.slice(0, 4).map((entry) => (
-                                        <div key={entry.id} className="flex items-center justify-between gap-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5">
-                                            <div className="min-w-0">
-                                                <p className="truncate text-[11px] font-black text-slate-700 dark:text-slate-200">
-                                                    {entry.codigo} <span className="text-slate-400">/</span> {entry.factory} <span className="text-slate-400">=</span> {entry.quantidade}
-                                                </p>
-                                                <p className="truncate text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-                                                    {entry.message}
-                                                </p>
-                                            </div>
-                                            <span className={cn(
-                                                "shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase",
-                                                entry.status === 'synced' && "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-                                                entry.status === 'pending' && "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-                                                entry.status === 'failed' && "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
-                                            )}>
-                                                {entry.status === 'synced' ? 'nuvem' : entry.status === 'pending' ? 'local' : 'falha'}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+
                     </div>
 
                     <div className="md:hidden flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 px-3 py-3 space-y-3">

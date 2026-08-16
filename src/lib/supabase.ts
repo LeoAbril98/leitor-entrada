@@ -11,7 +11,14 @@ export const clearLocalInventoryCache = () => {
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: {
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+    },
+  },
+})
 
 // Toggle para Banco de Dados Local (CSV + LocalStorage) para desenvolvimento
 export const USE_LOCAL_DB = false; // Forçado para testes finais em Cloud
@@ -98,34 +105,41 @@ function mapData(data: any[]) {
  * Busca o estoque exclusivo das PENDÊNCIAS (carregado via Excel)
  */
 export async function getPendenciasInventory() {
-  let allData: any[] = []
-  let hasMore = true
-  let page = 0
-  const pageSize = 1000
+  const pageSize = 1000;
 
-  // Puxa da tabela separada para não interferir no robô
   try {
     if (USE_LOCAL_DB) {
       console.log('Modo Desenvolvimento: Carregando inventário do CSV local...');
       return await localDb.getLocalPendenciasInventory();
     }
 
-    while (hasMore) {
-      const { data, error } = await supabase
-        .from('pendencias_estoque')
-        .select('*')
-        .range(page * pageSize, (page + 1) * pageSize - 1)
+    // Carregar tabelas em paralelo para otimizar o carregamento e evitar gargalo de rede no iPad
+    const fetchPendenciasEstoque = async () => {
+      let allData: any[] = [];
+      let hasMore = true;
+      let page = 0;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('pendencias_estoque')
+          .select('*')
+          .range(page * pageSize, (page + 1) * pageSize - 1);
 
-      if (error) throw error;
-      if (data && data.length > 0) {
-        allData = [...allData, ...data]
-        page++
-        hasMore = data.length === pageSize
-      } else {
-        hasMore = false
+        if (error) throw error;
+        if (data && data.length > 0) {
+          allData = [...allData, ...data];
+          page++;
+          hasMore = data.length === pageSize;
+        } else {
+          hasMore = false;
+        }
       }
-    }
-    const baseRows = await getPendenciaCompletaBaseRows();
+      return allData;
+    };
+
+    const [allData, baseRows] = await Promise.all([
+      fetchPendenciasEstoque(),
+      getPendenciaCompletaBaseRows()
+    ]);
 
     if (baseRows && baseRows.length > 0) {
       const stockByCode = new Map(allData.map((item) => [String(item.codigo || '').trim(), item]));
@@ -155,7 +169,7 @@ export async function getPendenciasInventory() {
     return allData;
   } catch (error) {
     console.warn('Erro ao buscar estoque de pendências:', error);
-    return [];
+    return null; // Retorna null em vez de [] para sinalizar falha no carregamento
   }
 }
 

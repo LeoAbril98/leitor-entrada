@@ -74,7 +74,7 @@ export const AdminManagementPanel: React.FC<AdminManagementPanelProps> = ({ onBa
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const inventory = await getPendenciasInventory();
+            const inventory = await getPendenciasInventory() || [];
             const pendsData = await loadPedidosFabrica();
             const tags = await getItemTags();
             const gTags = await getGlobalTags();

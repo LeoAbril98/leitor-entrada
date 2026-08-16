@@ -872,7 +872,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                 return;
             }
 
-            const stockRows = await getPendenciasInventory();
+            const stockRows = await getPendenciasInventory() || [];
             const stockByCode = new Map(stockRows.map((row: any) => [normalizeCodeKey(row.codigo), row]));
 
             const baseRows = cloudRows.map((row, index) => {

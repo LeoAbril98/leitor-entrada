@@ -22,11 +22,13 @@ export default function App() {
 
   // Detect administrative route e carregar overrides globais
   React.useEffect(() => {
-    if (window.location.pathname === '/admin') {
+    const path = window.location.pathname;
+    if (path === '/admin') {
       setMode('admin-login');
-    }
-    if (window.location.pathname === '/pendencia-completa') {
+    } else if (path === '/pendencia-completa') {
       setMode('admin-complete');
+    } else if (path === '/pendencias' || path === '/pendencia' || path === '/p') {
+      setMode('pendencies');
     }
 
     // Carregar overrides de fotos do Supabase assim que o app inicia

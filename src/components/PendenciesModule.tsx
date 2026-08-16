@@ -410,23 +410,35 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     };
 
     const handleManualSync = async () => {
-        const pendingRows = await loadPendingPedidos();
-        if (pendingRows.length === 0) {
-            toast.success('Tudo sincronizado. Nenhuma alteração pendente.', { duration: 3000 });
-            return;
-        }
         if (!USE_LOCAL_DB && !isOnline) {
             toast.error('Sem internet. As alterações continuam salvas neste aparelho.', { duration: 5000 });
             return;
         }
-        toast.loading('Sincronizando alterações pendentes...', { id: 'pedidos-sync' });
-        const syncedCount = await syncPendingPedidos(false);
-        const remainingCount = await getPendingPedidoCount();
-        if (remainingCount === 0) {
-            toast.success(`${syncedCount} alteração${syncedCount !== 1 ? 'es' : ''} enviada${syncedCount !== 1 ? 's' : ''} para a nuvem.`, { id: 'pedidos-sync', duration: 4000 });
-        } else {
-            toast.error(`${remainingCount} alteração${remainingCount > 1 ? 'es' : ''} ainda pendente${remainingCount > 1 ? 's' : ''}.`, { id: 'pedidos-sync', duration: 5000 });
+
+        toast.loading('Sincronizando com a nuvem...', { id: 'pedidos-sync' });
+        
+        try {
+            // 1. Enviar alterações locais
+            const syncedCount = await syncPendingPedidos(false);
+            const remainingCount = await getPendingPedidoCount();
+            
+            // 2. Buscar dados mais recentes da nuvem (Pull completo)
+            await fetchData();
+
+            if (remainingCount === 0) {
+                if (syncedCount > 0) {
+                    toast.success(`${syncedCount} alteração${syncedCount !== 1 ? 'es' : ''} enviada${syncedCount !== 1 ? 's' : ''} e dados atualizados!`, { id: 'pedidos-sync', duration: 4000 });
+                } else {
+                    toast.success('Dados atualizados com a nuvem!', { id: 'pedidos-sync', duration: 3000 });
+                }
+            } else {
+                toast.error(`${remainingCount} alteração${remainingCount > 1 ? 'es' : ''} ainda pendente${remainingCount > 1 ? 's' : ''}.`, { id: 'pedidos-sync', duration: 5000 });
+            }
+        } catch (error) {
+            console.error('Erro na sincronização manual:', error);
+            toast.error('Erro ao sincronizar com a nuvem.', { id: 'pedidos-sync', duration: 4000 });
         }
+
         if (isLocalPendenciesModalOpen) {
             setLocalPendingRows(await loadPendingPedidos());
         }
@@ -1022,6 +1034,118 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                     icon: <Wifi className="w-3.5 h-3.5" />
                 };
 
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const pendingAtStartup = await getPendingPedidoCount();
+            setPendingSyncCount(pendingAtStartup);
+            if (pendingAtStartup > 0) {
+                toast('Existem alterações salvas neste aparelho aguardando sincronização.', { duration: 4000 });
+                await syncPendingPedidos(true);
+            }
+
+            // Carregar tudo em paralelo para otimização máxima de carregamento no iPad
+            const [
+                gTags,
+                pedidosData,
+                inventoryData,
+                updateData,
+                tags,
+                cloudSketches,
+                cloudAudios,
+                localSketches,
+                localAudioKeys
+            ] = await Promise.all([
+                getGlobalTags(),
+                loadPedidosFabrica(),
+                getPendenciasInventory(),
+                getLastUpdate(),
+                getItemTags(),
+                getAllCloudSketches(),
+                getAllCloudAudios(),
+                getAllSketches(),
+                getAllAudioKeys()
+            ]);
+
+            if (gTags && gTags.length > 0) {
+                setGlobalTags(gTags);
+            }
+
+            // 1. Carregar Pedidos da Nuvem
+            let loadedPendencies: Record<string, Record<FactoryName, number>> = {};
+            if (pedidosData && pedidosData.length > 0) {
+                pedidosData.forEach((row: any) => {
+                    if (!loadedPendencies[row.codigo]) {
+                        loadedPendencies[row.codigo] = { ...emptyFactoryPendencies };
+                    }
+                    loadedPendencies[row.codigo][row.factory as FactoryName] = row.quantidade;
+                });
+            }
+            loadedPendencies = await mergePendingPedidosIntoState(loadedPendencies, emptyFactoryPendencies);
+            setPendencies(loadedPendencies);
+            setPendingSyncCount(await getPendingPedidoCount());
+
+            // 2. Carregar Inventário (Supabase) ou Cache Local
+            if (inventoryData !== null) {
+                setStock(inventoryData as StockItem[]);
+                if (updateData) {
+                    setLastUploadDate(updateData.date);
+                }
+                localStorage.setItem('inventory_cache', JSON.stringify({
+                    data: inventoryData,
+                    updatedAt: updateData?.date || new Date().toISOString(),
+                    fileName: updateData?.fileName || 'Base Fixa Sincronizada'
+                }));
+            } else {
+                // Se falhou ao buscar na nuvem (null), tentar carregar do Cache Local
+                const savedCache = localStorage.getItem('inventory_cache');
+                if (savedCache) {
+                    const { data, updatedAt, fileName } = JSON.parse(savedCache);
+                    setStock(data as StockItem[]);
+                    setLastUploadDate(updatedAt || null);
+                    toast.success('Usando inventário carregado localmente (Offline).', { duration: 2500 });
+                }
+            }
+
+            // 3. Carregar Tags
+            if (tags) {
+                setItemTags(tags);
+            }
+
+            // 4. Carregar Sketches/Desenhos e mesclar local + nuvem
+            const mergedSketches = { ...cloudSketches, ...localSketches };
+            setSketches(mergedSketches);
+            for (const [codigo, dataUrl] of Object.entries(cloudSketches)) {
+                if (!localSketches[codigo]) {
+                    await saveSketch(codigo, dataUrl as string);
+                }
+            }
+
+            // 5. Carregar Audios e mesclar local + nuvem
+            const urls: Record<string, string> = {};
+            for (const key of localAudioKeys) {
+                const blob = await getAudio(key);
+                if (blob) {
+                    urls[key] = URL.createObjectURL(blob);
+                }
+            }
+            for (const [codigo, base64] of Object.entries(cloudAudios)) {
+                if (!urls[codigo]) {
+                    const blob = base64ToBlob(base64 as string);
+                    await saveAudio(codigo, blob);
+                    urls[codigo] = URL.createObjectURL(blob);
+                }
+            }
+            setAudios(urls);
+
+        } catch (err) {
+            console.error('Erro ao inicializar dados', err);
+            toast.error('Erro ao carregar dados. Verifique a conexão.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
         // Verificar se é o primeiro acesso à versão 2.0 (Cloud)
         const hasSeenWelcome = localStorage.getItem('@MK_WELCOME_CLOUD_SEEN');
@@ -1030,77 +1154,11 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
         }
         loadPedidoSyncLog().then(setSyncLog);
 
-        const fetchData = async () => {
-            try {
-                const pendingAtStartup = await getPendingPedidoCount();
-                setPendingSyncCount(pendingAtStartup);
-                if (pendingAtStartup > 0) {
-                    toast('Existem alterações salvas neste aparelho aguardando sincronização.', { duration: 4000 });
-                    await syncPendingPedidos(true);
-                }
-
-                // Carregar Catálogo de Tags
-                const gTags = await getGlobalTags();
-                setGlobalTags(gTags);
-
-                // 1. Carregar Pedidos da Nuvem
-                const pedidosData = await loadPedidosFabrica();
-                let loadedPendencies: Record<string, Record<FactoryName, number>> = {};
-                if (pedidosData && pedidosData.length > 0) {
-                    pedidosData.forEach((row: any) => {
-                        if (!loadedPendencies[row.codigo]) {
-                            loadedPendencies[row.codigo] = { ...emptyFactoryPendencies };
-                        }
-                        loadedPendencies[row.codigo][row.factory as FactoryName] = row.quantidade;
-                    });
-                }
-                loadedPendencies = await mergePendingPedidosIntoState(loadedPendencies, emptyFactoryPendencies);
-                setPendencies(loadedPendencies);
-                setPendingSyncCount(await getPendingPedidoCount());
-
-                // 2. Tentar buscar inventário base das PENDÊNCIAS na Nuvem
-                const inventoryData = await getPendenciasInventory();
-                if (inventoryData && inventoryData.length > 0) {
-                    setStock(inventoryData as StockItem[]);
-                    
-                    // Buscar metadados (data e nome do arquivo) da nuvem
-                    const updateData = await getLastUpdate();
-                    if (updateData) {
-                        setLastUploadDate(updateData.date);
-                    }
-
-                    // Atualizar cache local
-                    localStorage.setItem('inventory_cache', JSON.stringify({
-                        data: inventoryData,
-                        updatedAt: updateData?.date || new Date().toISOString(),
-                        fileName: updateData?.fileName || 'Base Fixa Sincronizada'
-                    }));
-                } else {
-                    // 3. Se não houver nada na nuvem, tentar carregar do Cache Local (Backup)
-                    const savedCache = localStorage.getItem('inventory_cache');
-                    if (savedCache) {
-                        const { data, updatedAt, fileName } = JSON.parse(savedCache);
-                        setStock(data as StockItem[]);
-                        setLastUploadDate(updatedAt || null);
-                        toast.success('Usando inventário carregado localmente.', { duration: 2000 });
-                    }
-                }
-
-                await loadTags();
-                await loadSketches();
-                await loadAudios();
-            } catch (err) {
-                console.error('Erro ao inicializar', err);
-                toast.error('Erro ao carregar dados.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchData();
 
         const handleOnline = () => {
             setIsOnline(true);
-            void syncPendingPedidos(true);
+            void syncPendingPedidos(true).then(() => fetchData());
         };
         const handleOffline = () => {
             setIsOnline(false);
@@ -1108,11 +1166,20 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
             toast.error('Sem internet. As novas alterações serão salvas neste aparelho.', { duration: 5000 });
         };
 
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                void fetchData();
+            }
+        };
+
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, []);
 

@@ -35,8 +35,6 @@ import { getWheelPhotoUrl, getModelAndFinish } from '../utils/photoUtils';
 import { SketchModal } from './SketchModal';
 import { AudioRecorderModal } from './AudioRecorderModal';
 import { AudioPlayerModal } from './AudioPlayerModal';
-import { WelcomeModal } from './WelcomeModal';
-import { OnboardingTour } from './OnboardingTour';
 import { saveSketch, getSketch, getAllSketches, deleteSketch, saveAudio, getAudio, getAllAudioKeys, deleteAudio } from '../lib/sketchStore';
 import {
     getPendingPedidoCount,
@@ -872,8 +870,6 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     const [currentPage, setCurrentPage] = useState(1);
     
     const [showOnlyWithAudio, setShowOnlyWithAudio] = useState(false);
-    const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
-    const [isTourOpen, setIsTourOpen] = useState(false);
     const [globalTags, setGlobalTags] = useState<string[]>(['VÍDEO', 'PEDIR', 'FOTO', 'WILLIAM', 'SP']);
     const [showOnlyWithTags, setShowOnlyWithTags] = useState(false);
     const [showOnlyWithSketches, setShowOnlyWithSketches] = useState(false);
@@ -1147,11 +1143,6 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
     };
 
     useEffect(() => {
-        // Verificar se é o primeiro acesso à versão 2.0 (Cloud)
-        const hasSeenWelcome = localStorage.getItem('@MK_WELCOME_CLOUD_SEEN');
-        if (!hasSeenWelcome) {
-            setIsWelcomeModalOpen(true);
-        }
         loadPedidoSyncLog().then(setSyncLog);
 
         fetchData();
@@ -2205,19 +2196,6 @@ export const PendenciesModule: React.FC<PendenciesModuleProps> = ({ onBackToMenu
                 )}
             </AnimatePresence>
 
-            <WelcomeModal 
-                isOpen={isWelcomeModalOpen} 
-                onClose={() => {
-                    setIsWelcomeModalOpen(false);
-                    localStorage.setItem('@MK_WELCOME_CLOUD_SEEN', 'true');
-                    setTimeout(() => setIsTourOpen(true), 500); // Inicia o tour logo após
-                }} 
-            />
-
-            <OnboardingTour 
-                isOpen={isTourOpen} 
-                onClose={() => setIsTourOpen(false)} 
-            />
         </div>
     );
 };

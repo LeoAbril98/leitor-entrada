@@ -44,6 +44,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
 }) => {
     const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
     const [activeCameraId, setActiveCameraId] = useState<string>('');
+    const [runningResolution, setRunningResolution] = useState<string>('');
     const [currentFacingMode, setCurrentFacingMode] = useState<'environment' | 'user'>('environment');
     const [isScanning, setIsScanning] = useState(false);
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -108,10 +109,13 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             setIsScanning(true);
             setIsTorchOn(false);
             setTorchSupported(false);
+            setRunningResolution('');
 
+            // Request HD video resolution constraints using a flexible range.
+            // This is more resilient in Safari and allows selecting the highest supported resolution.
             const localVideoConstraints: any = {
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
+                width: { min: 640, ideal: 1280, max: 1920 },
+                height: { min: 480, ideal: 720, max: 1080 }
             };
 
             if (typeof cameraSelector === 'string') {
@@ -123,21 +127,21 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             await scanner.start(
                 cameraSelector,
                 {
-                    fps: 20, // Increased to 20 for faster frame analysis
+                    fps: 8, // Reduced to 8 FPS to prevent CPU choking and allow clear binarization
                     qrbox: (width, height) => {
-                        // Taller/wider target optimized for 1D barcodes
+                        // Narrower target box (100px height) reduces binarization processing time by 40%
                         const boxWidth = Math.min(width * 0.9, 360);
-                        const boxHeight = Math.min(height * 0.45, 160);
+                        const boxHeight = Math.min(height * 0.35, 100);
                         return { width: boxWidth, height: boxHeight };
                     },
                     videoConstraints: localVideoConstraints,
-                    // Restrict formats to 1D barcodes to speed up ZXing's decoding pipeline
+                    // Limit supported formats strictly to 1D barcodes for faster matching loops
                     formatsToSupport: [
                         Html5QrcodeSupportedFormats.CODE_128,
                         Html5QrcodeSupportedFormats.CODE_39,
                         Html5QrcodeSupportedFormats.EAN_13
                     ],
-                    // Use hardware accelerated browser scanner where supported (Android Chrome)
+                    // Enable hardware accelerated scanning where supported (Android Chrome)
                     experimentalFeatures: {
                         useBarCodeDetectorIfSupported: true
                     }
@@ -155,11 +159,16 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
 
             setHasPermission(true);
 
-            // Read settings from the active video track to know which camera is actually running
+            // Read settings from the active video track to know which camera and resolution are running
             try {
                 const settings = (scanner as any).getRunningTrackSettings?.();
-                if (settings && settings.deviceId) {
-                    setActiveCameraId(settings.deviceId);
+                if (settings) {
+                    if (settings.deviceId) {
+                        setActiveCameraId(settings.deviceId);
+                    }
+                    if (settings.width && settings.height) {
+                        setRunningResolution(`${settings.width}x${settings.height}`);
+                    }
                 }
             } catch (e) {
                 console.warn("Não foi possível ler as configurações da câmera ativa:", e);
@@ -212,7 +221,6 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             const nextDevice = validCameras[nextIndex];
             setActiveCameraId(nextDevice.deviceId);
             
-            // Show toast message with selected camera label
             toast.success(`Alternando para: ${nextDevice.label || 'Câmera ' + (nextIndex + 1)}`, {
                 id: 'camera-switch-toast',
                 duration: 2000
@@ -277,8 +285,11 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                         </button>
                     </div>
                     {hasPermission && (
-                        <div className="mt-1 text-xs text-slate-400 truncate">
-                            Câmera ativa: <span className="text-emerald-400 font-semibold">{activeCameraLabel}</span>
+                        <div className="mt-1.5 flex items-center justify-between text-xs text-slate-400">
+                            <span className="truncate">Câmera: <span className="text-emerald-400 font-semibold">{activeCameraLabel}</span></span>
+                            {runningResolution && (
+                                <span className="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px] font-mono ml-2 shrink-0">{runningResolution}</span>
+                            )}
                         </div>
                     )}
                 </div>

@@ -29,3 +29,20 @@
   @apply bg-slate-200 dark:bg-slate-700 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600;
 }
 
+@keyframes scanner-laser {
+  0% {
+    top: 0%;
+  }
+  50% {
+    top: 100%;
+  }
+  100% {
+    top: 0%;
+  }
+}
+
+.animate-laser {
+  animation: scanner-laser 2s infinite linear;
+}
+
+

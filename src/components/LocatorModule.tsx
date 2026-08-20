@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
-import { ArrowLeft, MapPin, Search, Package2, RefreshCcw, Hash, Disc } from 'lucide-react';
+import { ArrowLeft, MapPin, Search, Package2, RefreshCcw, Hash, Disc, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScannerInput } from './ScannerInput';
 import { ManualAddModal } from './ManualAddModal';
+import { CameraScannerModal } from './CameraScannerModal';
 import { getInventory } from '../lib/supabase';
 import { StockItem } from '../types';
 import { getWheelPhotoUrl, parseWheelSpecs } from '../utils/photoUtils';
@@ -23,6 +24,7 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
     const [scanError, setScanError] = useState(false);
     const [isManualAddOpen, setIsManualAddOpen] = useState(false);
     const [isSpecsManagerOpen, setIsSpecsManagerOpen] = useState(false);
+    const [isCameraOpen, setIsCameraOpen] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -149,7 +151,7 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
             </header>
 
             <main className="max-w-3xl mx-auto px-4 mt-8">
-                <section className="mb-8 flex gap-3">
+                <section className="mb-8 flex flex-col sm:flex-row gap-3">
                     <div className="flex-1 bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
                         <h2 className="text-slate-500 dark:text-slate-400 font-semibold mb-4 flex items-center gap-2">
                             <Search className="w-5 h-5" /> Bipar código de barras
@@ -161,14 +163,22 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                             onSubmit={handleSearch}
                         />
                     </div>
-                    <button
-                        onClick={() => setIsManualAddOpen(true)}
-                        className="h-auto w-32 sm:w-auto px-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-3xl font-bold flex flex-col sm:flex-row items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all shadow-sm shrink-0"
-                    >
-                        <Search className="w-6 h-6" />
-                        <span className="sm:hidden text-xs mt-1">Busca<br />Manual</span>
-                        <span className="hidden sm:inline">Busca Manual</span>
-                    </button>
+                    <div className="flex sm:flex-col gap-3 shrink-0">
+                        <button
+                            onClick={() => setIsCameraOpen(true)}
+                            className="flex-1 h-16 sm:w-48 bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl font-bold flex items-center justify-center gap-2.5 transition-all shadow-md shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-[0.98]"
+                        >
+                            <Camera className="w-6 h-6" />
+                            <span>Ler com Câmera</span>
+                        </button>
+                        <button
+                            onClick={() => setIsManualAddOpen(true)}
+                            className="flex-1 h-16 sm:w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-3xl font-bold flex items-center justify-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all shadow-sm active:scale-[0.98]"
+                        >
+                            <Search className="w-5 h-5" />
+                            <span>Busca Manual</span>
+                        </button>
+                    </div>
                 </section>
 
                 <AnimatePresence mode="wait">
@@ -315,6 +325,12 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                 isOpen={isSpecsManagerOpen}
                 onClose={() => setIsSpecsManagerOpen(false)}
                 stock={stock}
+            />
+
+            <CameraScannerModal
+                isOpen={isCameraOpen}
+                onClose={() => setIsCameraOpen(false)}
+                onScan={handleManualSearch}
             />
         </div>
     );

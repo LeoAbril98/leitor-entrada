@@ -83,7 +83,6 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                         const boxHeight = Math.min(height * 0.35, 120);
                         return { width: boxWidth, height: boxHeight };
                     },
-                    aspectRatio: 1.777778, // 16:9
                     formatsToSupport: [
                         Html5QrcodeSupportedFormats.CODE_128,
                         Html5QrcodeSupportedFormats.CODE_39,
@@ -197,12 +196,12 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 </div>
 
                 {/* Body/Scanner Area */}
-                <div className="relative flex-1 bg-black aspect-[4/3] flex items-center justify-center min-h-[300px]">
+                <div className="relative w-full aspect-[4/3] min-h-[320px] bg-black overflow-hidden shrink-0">
                     
                     {/* Mounting element for html5-qrcode */}
                     <div 
                         id={containerId} 
-                        className="w-full h-full object-cover [&_video]:w-full [&_video]:h-full [&_video]:object-cover" 
+                        className="absolute inset-0 w-full h-full [&_video]:w-full [&_video]:h-full [&_video]:object-cover [&_video]:block" 
                     />
 
                     {/* Camera Permission State */}

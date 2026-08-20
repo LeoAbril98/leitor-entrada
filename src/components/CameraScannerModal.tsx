@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
-import { X, Camera, Zap, ZapOff, RefreshCw, AlertTriangle } from 'lucide-react';
+import { X, Camera, Zap, ZapOff, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface CameraScannerModalProps {
@@ -247,45 +247,6 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
         }
     };
 
-    const handleSwitchCamera = async () => {
-        if (!scannerRef.current) return;
-        hasScannedRef.current = false;
-
-        const validCameras = cameras.filter(c => c.id);
-        
-        if (validCameras.length > 1) {
-            // Cycle through available camera ids
-            let nextIndex = 0;
-            if (activeCameraId) {
-                const currentIndex = validCameras.findIndex(c => c.id === activeCameraId);
-                nextIndex = currentIndex >= 0 ? (currentIndex + 1) % validCameras.length : 0;
-            } else {
-                nextIndex = 1;
-            }
-            const nextDevice = validCameras[nextIndex];
-            setActiveCameraId(nextDevice.id);
-            
-            toast.success(`Alternando para: ${nextDevice.label || 'Câmera ' + (nextIndex + 1)}`, {
-                id: 'camera-switch-toast',
-                duration: 1500
-            });
-            
-            await startScannerOnDevice(scannerRef.current, nextDevice.id);
-        } else {
-            // Fallback: toggle facingMode constraint
-            const nextFacing = currentFacingMode === 'environment' ? 'user' : 'environment';
-            setCurrentFacingMode(nextFacing);
-            setActiveCameraId('');
-            
-            toast.success(`Alternando câmera para modo: ${nextFacing === 'environment' ? 'Traseira' : 'Frontal'}`, {
-                id: 'camera-switch-toast',
-                duration: 1500
-            });
-
-            await startScannerOnDevice(scannerRef.current, { facingMode: nextFacing });
-        }
-    };
-
     const handleToggleTorch = async () => {
         if (!scannerRef.current || !torchSupported) return;
         
@@ -315,9 +276,6 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
     };
 
     if (!isOpen) return null;
-
-    // Show switch camera button if we have multiple cameras or if we are toggling facingMode fallback
-    const showSwitchButton = cameras.length > 1 || (!activeCameraId && hasPermission);
 
     // Active camera human-readable label
     const activeCameraLabel = cameras.find(c => c.id === activeCameraId)?.label 
@@ -436,17 +394,6 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                                     <span>Acender Lanterna</span>
                                 </>
                             )}
-                        </button>
-                    )}
-
-                    {/* Switch camera control */}
-                    {showSwitchButton && (
-                        <button
-                            onClick={handleSwitchCamera}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold text-sm transition-all active:scale-[0.98]"
-                        >
-                            <RefreshCw className="w-4 h-4 text-emerald-400" />
-                            <span>Inverter Câmera</span>
                         </button>
                     )}
                 </div>

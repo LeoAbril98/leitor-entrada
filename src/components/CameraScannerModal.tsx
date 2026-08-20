@@ -9,6 +9,34 @@ interface CameraScannerModalProps {
     onScan: (code: string) => void;
 }
 
+// Selects the highest quality 1x Wide camera, avoiding blurry ultra-wide (0.5x) and telephoto lenses.
+const getBestBackCamera = (devices: MediaDeviceInfo[]): string | null => {
+    if (!devices || devices.length === 0) return null;
+
+    // Filter for back cameras
+    const backCameras = devices.filter(device => {
+        const label = device.label.toLowerCase();
+        return label.includes('back') || 
+               label.includes('traseira') || 
+               label.includes('rear') || 
+               label.includes('environment');
+    });
+
+    if (backCameras.length === 0) return null;
+
+    // Prioritize the main Wide camera. Avoid ultra-wide (0.5x) or telephoto (3x/5x) lenses
+    const mainBackCamera = backCameras.find(device => {
+        const label = device.label.toLowerCase();
+        return !label.includes('ultra') && 
+               !label.includes('tele') && 
+               !label.includes('0.5x') && 
+               !label.includes('zoom');
+    });
+
+    // Fall back to first back camera if specific main camera is not identified
+    return mainBackCamera ? mainBackCamera.deviceId : backCameras[0].deviceId;
+};
+
 export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
     isOpen,
     onClose,
@@ -32,26 +60,34 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
         scannerRef.current = html5Qrcode;
 
         const startScanning = async () => {
-            // First attempt: environment (back) camera
-            await startScannerOnDevice(html5Qrcode, { facingMode: "environment" });
-            
-            // Once started and permission is granted, list cameras to support switching
             try {
+                // Request camera permission and list devices immediately (preserving user gesture context)
                 const devices = await Html5Qrcode.getCameras();
+                setHasPermission(true);
+                setCameras(devices);
+
                 if (devices && devices.length > 0) {
-                    setCameras(devices);
+                    const bestCameraId = getBestBackCamera(devices);
+                    if (bestCameraId) {
+                        setActiveCameraId(bestCameraId);
+                        await startScannerOnDevice(html5Qrcode, bestCameraId);
+                        return;
+                    }
                 }
-            } catch (e) {
-                console.warn("Não foi possível listar as câmeras de alternância:", e);
+                
+                // Fallback if no specific camera was listed
+                await startScannerOnDevice(html5Qrcode, { facingMode: "environment" });
+            } catch (err) {
+                console.warn('Erro ao solicitar/listar cameras, tentando facingMode como fallback:', err);
+                // Fallback generic facingMode
+                await startScannerOnDevice(html5Qrcode, { facingMode: "environment" });
             }
         };
 
-        const timer = setTimeout(() => {
-            startScanning();
-        }, 300);
+        // Start scanning immediately without setTimeout to preserve Safari user-interaction context
+        startScanning();
 
         return () => {
-            clearTimeout(timer);
             if (scannerRef.current) {
                 const scanner = scannerRef.current;
                 if (scanner.isScanning) {
@@ -78,9 +114,9 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 {
                     fps: 15,
                     qrbox: (width, height) => {
-                        // Wide rectangle optimized for 1D alphanumeric barcodes
-                        const boxWidth = Math.min(width * 0.85, 340);
-                        const boxHeight = Math.min(height * 0.35, 120);
+                        // Taller and wider area to allow barcode reading at angles, tilt or distance
+                        const boxWidth = Math.min(width * 0.9, 380);
+                        const boxHeight = Math.min(height * 0.6, 200);
                         return { width: boxWidth, height: boxHeight };
                     },
                     formatsToSupport: [
@@ -118,10 +154,15 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
         } catch (err) {
             console.error('Erro ao iniciar scanner no dispositivo', err);
             
-            // Fallback: if environment camera failed, try user (front) camera
-            if (typeof cameraSelector !== 'string' && cameraSelector.facingMode === 'environment') {
+            // Fallback chain
+            if (typeof cameraSelector === 'string') {
+                console.log('Tentando fallback para facingMode environment...');
+                setActiveCameraId('');
+                await startScannerOnDevice(scanner, { facingMode: 'environment' });
+            } else if (typeof cameraSelector !== 'string' && cameraSelector.facingMode === 'environment') {
                 console.log('Camera traseira indisponível. Tentando camera frontal como fallback...');
                 setCurrentFacingMode('user');
+                setActiveCameraId('');
                 await startScannerOnDevice(scanner, { facingMode: 'user' });
             } else {
                 setIsScanning(false);
@@ -232,7 +273,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                     {isScanning && (
                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                             {/* Scanning Area indicator */}
-                            <div className="relative w-[85%] h-[35%] max-w-[340px] max-h-[120px] border-2 border-emerald-500 rounded-xl bg-transparent flex flex-col justify-between overflow-hidden shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
+                            <div className="relative w-[90%] h-[60%] max-w-[380px] max-h-[200px] border-2 border-emerald-500 rounded-3xl bg-transparent flex flex-col justify-between overflow-hidden shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
                                 
                                 {/* Corner styling */}
                                 <div className="absolute top-0 left-0 w-5 h-5 border-t-4 border-l-4 border-emerald-400 rounded-tl" />

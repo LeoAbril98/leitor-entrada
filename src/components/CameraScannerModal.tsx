@@ -119,6 +119,11 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                         const boxHeight = Math.min(height * 0.6, 200);
                         return { width: boxWidth, height: boxHeight };
                     },
+                    // Request high resolution to ensure crisp barcode lines from distance
+                    videoConstraints: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
                     formatsToSupport: [
                         Html5QrcodeSupportedFormats.CODE_128,
                         Html5QrcodeSupportedFormats.CODE_39,
@@ -141,6 +146,16 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             );
 
             setHasPermission(true);
+
+            // Read settings from the active video track to know which camera is actually running
+            try {
+                const settings = (scanner as any).getRunningTrackSettings?.();
+                if (settings && settings.deviceId) {
+                    setActiveCameraId(settings.deviceId);
+                }
+            } catch (e) {
+                console.warn("Não foi possível ler as configurações da câmera ativa:", e);
+            }
 
             // Check if torch/flashlight is supported on the active video track
             try {
@@ -188,12 +203,25 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             }
             const nextDevice = validCameras[nextIndex];
             setActiveCameraId(nextDevice.deviceId);
+            
+            // Show toast message with selected camera label
+            toast.success(`Alternando para: ${nextDevice.label || 'Câmera ' + (nextIndex + 1)}`, {
+                id: 'camera-switch-toast',
+                duration: 2000
+            });
+            
             await startScannerOnDevice(scannerRef.current, nextDevice.deviceId);
         } else {
             // Fallback: toggle facingMode constraint
             const nextFacing = currentFacingMode === 'environment' ? 'user' : 'environment';
             setCurrentFacingMode(nextFacing);
             setActiveCameraId('');
+            
+            toast.success(`Alternando câmera para modo: ${nextFacing === 'environment' ? 'Traseira' : 'Frontal'}`, {
+                id: 'camera-switch-toast',
+                duration: 2000
+            });
+
             await startScannerOnDevice(scannerRef.current, { facingMode: nextFacing });
         }
     };
@@ -218,22 +246,33 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
     // Show switch camera button if we have multiple cameras or if we are toggling facingMode fallback
     const showSwitchButton = cameras.length > 1 || (!activeCameraId && hasPermission);
 
+    // Active camera human-readable label
+    const activeCameraLabel = cameras.find(c => c.deviceId === activeCameraId)?.label 
+        || (currentFacingMode === 'environment' ? 'Câmera Traseira Principal' : 'Câmera Frontal');
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
             <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
                 
                 {/* Header */}
-                <div className="px-6 py-4 flex items-center justify-between border-b border-slate-800 shrink-0">
-                    <div className="flex items-center gap-2">
-                        <Camera className="w-5 h-5 text-emerald-500 animate-pulse" />
-                        <span className="font-bold text-white">Ler Código com Câmera</span>
+                <div className="px-6 py-4 flex flex-col border-b border-slate-800 shrink-0">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Camera className="w-5 h-5 text-emerald-500 animate-pulse" />
+                            <span className="font-bold text-white">Ler Código com Câmera</span>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="p-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl hover:bg-slate-700 transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl hover:bg-slate-700 transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
+                    {hasPermission && (
+                        <div className="mt-1 text-xs text-slate-400 truncate">
+                            Câmera ativa: <span className="text-emerald-400 font-semibold">{activeCameraLabel}</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Body/Scanner Area */}

@@ -9,8 +9,13 @@ interface CameraScannerModalProps {
     onScan: (code: string) => void;
 }
 
+interface CameraDevice {
+    id: string;
+    label: string;
+}
+
 // Selects the highest quality 1x Wide camera, avoiding blurry ultra-wide (0.5x) and telephoto lenses.
-const getBestBackCamera = (devices: MediaDeviceInfo[]): string | null => {
+const getBestBackCamera = (devices: CameraDevice[]): string | null => {
     if (!devices || devices.length === 0) return null;
 
     // Filter for back cameras
@@ -34,7 +39,7 @@ const getBestBackCamera = (devices: MediaDeviceInfo[]): string | null => {
     });
 
     // Fall back to first back camera if specific main camera is not identified
-    return mainBackCamera ? mainBackCamera.deviceId : backCameras[0].deviceId;
+    return mainBackCamera ? mainBackCamera.id : backCameras[0].id;
 };
 
 export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
@@ -42,25 +47,43 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
     onClose,
     onScan
 }) => {
-    const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+    const [cameras, setCameras] = useState<CameraDevice[]>([]);
     const [activeCameraId, setActiveCameraId] = useState<string>('');
     const [runningResolution, setRunningResolution] = useState<string>('');
     const [currentFacingMode, setCurrentFacingMode] = useState<'environment' | 'user'>('environment');
+    
     const [isScanning, setIsScanning] = useState(false);
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+    
     const [isTorchOn, setIsTorchOn] = useState(false);
     const [torchSupported, setTorchSupported] = useState(false);
+    
     const scannerRef = useRef<Html5Qrcode | null>(null);
+    const hasScannedRef = useRef(false);
+    const startingRef = useRef(false);
     const containerId = 'camera-scanner-element';
 
     useEffect(() => {
         if (!isOpen) return;
 
-        // Initialize scanner instance
-        const html5Qrcode = new Html5Qrcode(containerId);
+        hasScannedRef.current = false;
+        startingRef.current = false;
+
+        // Initialize scanner instance with format filters in the constructor configuration
+        const html5Qrcode = new Html5Qrcode(containerId, {
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.EAN_13
+            ],
+            verbose: false
+        });
         scannerRef.current = html5Qrcode;
 
         const startScanning = async () => {
+            if (startingRef.current) return;
+            startingRef.current = true;
+
             try {
                 // Request camera permission and list devices immediately (preserving user gesture context)
                 const devices = await Html5Qrcode.getCameras();
@@ -80,21 +103,27 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 await startScannerOnDevice(html5Qrcode, { facingMode: "environment" });
             } catch (err) {
                 console.warn('Erro ao solicitar/listar cameras, tentando facingMode como fallback:', err);
-                // Fallback generic facingMode
-                await startScannerOnDevice(html5Qrcode, { facingMode: "environment" });
+                try {
+                    await startScannerOnDevice(html5Qrcode, { facingMode: "environment" });
+                } catch {
+                    setHasPermission(false);
+                }
             }
         };
 
-        // Start scanning immediately without setTimeout to preserve Safari user-interaction context
         startScanning();
 
         return () => {
+            hasScannedRef.current = true;
+            startingRef.current = false;
+            
             if (scannerRef.current) {
                 const scanner = scannerRef.current;
                 if (scanner.isScanning) {
                     scanner.stop().catch(err => console.error('Erro ao parar scanner no unmount', err));
                 }
             }
+            scannerRef.current = null;
         };
     }, [isOpen]);
 
@@ -112,42 +141,43 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             setRunningResolution('');
 
             // Request HD video resolution constraints using a flexible range.
-            // This is more resilient in Safari and allows selecting the highest supported resolution.
-            const localVideoConstraints: any = {
+            const videoConstraints: MediaTrackConstraints = {
                 width: { min: 640, ideal: 1280, max: 1920 },
-                height: { min: 480, ideal: 720, max: 1080 }
+                height: { min: 480, ideal: 720, max: 1080 },
+                facingMode: typeof cameraSelector === 'string' ? undefined : cameraSelector.facingMode
             };
 
             if (typeof cameraSelector === 'string') {
-                localVideoConstraints.deviceId = cameraSelector;
-            } else {
-                localVideoConstraints.facingMode = cameraSelector.facingMode;
+                videoConstraints.deviceId = { exact: cameraSelector };
             }
 
             await scanner.start(
                 cameraSelector,
                 {
-                    fps: 8, // Reduced to 8 FPS to prevent CPU choking and allow clear binarization
+                    fps: 12, // 12 FPS: balanced decoding frequency without CPU throttling
                     qrbox: (width, height) => {
-                        // Narrower target box (100px height) reduces binarization processing time by 40%
-                        const boxWidth = Math.min(width * 0.9, 360);
-                        const boxHeight = Math.min(height * 0.35, 100);
+                        // Wide, centered box for 1D barcodes. Smaller height decreases pixel load by 40%
+                        const boxWidth = Math.min(width * 0.92, 500);
+                        const boxHeight = Math.min(height * 0.30, 160);
                         return { width: boxWidth, height: boxHeight };
                     },
-                    videoConstraints: localVideoConstraints,
-                    // Limit supported formats strictly to 1D barcodes for faster matching loops
-                    formatsToSupport: [
-                        Html5QrcodeSupportedFormats.CODE_128,
-                        Html5QrcodeSupportedFormats.CODE_39,
-                        Html5QrcodeSupportedFormats.EAN_13
-                    ],
-                    // Enable hardware accelerated scanning where supported (Android Chrome)
+                    videoConstraints,
                     experimentalFeatures: {
                         useBarCodeDetectorIfSupported: true
                     }
                 },
                 (decodedText) => {
+                    if (hasScannedRef.current) return;
                     if (decodedText) {
+                        hasScannedRef.current = true;
+                        
+                        // Stop scanner immediately to prevent duplicate triggers
+                        const currentScanner = scannerRef.current;
+                        if (currentScanner && currentScanner.isScanning) {
+                            currentScanner.stop().catch(() => {});
+                        }
+                        
+                        setIsScanning(false);
                         onScan(decodedText);
                         onClose();
                     }
@@ -206,27 +236,28 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
 
     const handleSwitchCamera = async () => {
         if (!scannerRef.current) return;
+        hasScannedRef.current = false;
 
-        const validCameras = cameras.filter(c => c.deviceId);
+        const validCameras = cameras.filter(c => c.id);
         
         if (validCameras.length > 1) {
-            // Cycle through available camera deviceIds
+            // Cycle through available camera ids
             let nextIndex = 0;
             if (activeCameraId) {
-                const currentIndex = validCameras.findIndex(c => c.deviceId === activeCameraId);
-                nextIndex = (currentIndex + 1) % validCameras.length;
+                const currentIndex = validCameras.findIndex(c => c.id === activeCameraId);
+                nextIndex = currentIndex >= 0 ? (currentIndex + 1) % validCameras.length : 0;
             } else {
                 nextIndex = 1;
             }
             const nextDevice = validCameras[nextIndex];
-            setActiveCameraId(nextDevice.deviceId);
+            setActiveCameraId(nextDevice.id);
             
             toast.success(`Alternando para: ${nextDevice.label || 'Câmera ' + (nextIndex + 1)}`, {
                 id: 'camera-switch-toast',
-                duration: 2000
+                duration: 1500
             });
             
-            await startScannerOnDevice(scannerRef.current, nextDevice.deviceId);
+            await startScannerOnDevice(scannerRef.current, nextDevice.id);
         } else {
             // Fallback: toggle facingMode constraint
             const nextFacing = currentFacingMode === 'environment' ? 'user' : 'environment';
@@ -235,7 +266,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             
             toast.success(`Alternando câmera para modo: ${nextFacing === 'environment' ? 'Traseira' : 'Frontal'}`, {
                 id: 'camera-switch-toast',
-                duration: 2000
+                duration: 1500
             });
 
             await startScannerOnDevice(scannerRef.current, { facingMode: nextFacing });
@@ -257,13 +288,26 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
         }
     };
 
+    const handleClose = async () => {
+        hasScannedRef.current = true;
+        if (scannerRef.current && scannerRef.current.isScanning) {
+            try {
+                await scannerRef.current.stop();
+            } catch {
+                // Ignore stop failure
+            }
+        }
+        setIsScanning(false);
+        onClose();
+    };
+
     if (!isOpen) return null;
 
     // Show switch camera button if we have multiple cameras or if we are toggling facingMode fallback
     const showSwitchButton = cameras.length > 1 || (!activeCameraId && hasPermission);
 
     // Active camera human-readable label
-    const activeCameraLabel = cameras.find(c => c.deviceId === activeCameraId)?.label 
+    const activeCameraLabel = cameras.find(c => c.id === activeCameraId)?.label 
         || (currentFacingMode === 'environment' ? 'Câmera Traseira Principal' : 'Câmera Frontal');
 
     return (
@@ -278,7 +322,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                             <span className="font-bold text-white">Ler Código com Câmera</span>
                         </div>
                         <button
-                            onClick={onClose}
+                            onClick={handleClose}
                             className="p-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl hover:bg-slate-700 transition-colors"
                         >
                             <X className="w-5 h-5" />
@@ -312,7 +356,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                                 Por favor, autorize o acesso à câmera nas configurações do seu navegador para escanear os códigos.
                             </p>
                             <button
-                                onClick={onClose}
+                                onClick={handleClose}
                                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-semibold transition-colors"
                             >
                                 Fechar
@@ -331,13 +375,13 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                     {isScanning && (
                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                             {/* Scanning Area indicator */}
-                            <div className="relative w-[90%] h-[45%] max-w-[360px] max-h-[160px] border-2 border-emerald-500 rounded-3xl bg-transparent flex flex-col justify-between overflow-hidden shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
+                            <div className="relative w-[92%] h-[30%] max-w-[500px] max-h-[160px] min-h-[120px] border-2 border-emerald-500 rounded-3xl bg-transparent flex flex-col justify-between overflow-hidden shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
                                 
                                 {/* Corner styling */}
-                                <div className="absolute top-0 left-0 w-5 h-5 border-t-4 border-l-4 border-emerald-400 rounded-tl" />
-                                <div className="absolute top-0 right-0 w-5 h-5 border-t-4 border-r-4 border-emerald-400 rounded-tr" />
-                                <div className="absolute bottom-0 left-0 w-5 h-5 border-b-4 border-l-4 border-emerald-400 rounded-bl" />
-                                <div className="absolute bottom-0 right-0 w-5 h-5 border-b-4 border-r-4 border-emerald-400 rounded-br" />
+                                <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-emerald-400 rounded-tl" />
+                                <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-emerald-400 rounded-tr" />
+                                <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-emerald-400 rounded-bl" />
+                                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-emerald-400 rounded-br" />
 
                                 {/* Moving Laser Line */}
                                 <div className="absolute left-0 w-full h-0.5 bg-red-500 shadow-[0_0_8px_#ef4444] animate-laser" />

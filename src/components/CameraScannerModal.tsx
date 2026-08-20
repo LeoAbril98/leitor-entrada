@@ -59,6 +59,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
     const [isScanning, setIsScanning] = useState(false);
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
     const [isScannedSuccess, setIsScannedSuccess] = useState(false);
+    const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
     
     const [isTorchOn, setIsTorchOn] = useState(false);
     const [torchSupported, setTorchSupported] = useState(false);
@@ -73,6 +74,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
 
         hasScannedRef.current = false;
         startingRef.current = false;
+        setCapturedPhoto(null);
 
         // Initialize scanner instance with format filters in the constructor configuration
         const html5Qrcode = new Html5Qrcode(containerId, {
@@ -145,6 +147,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             setTorchSupported(false);
             setRunningResolution('');
             setIsScannedSuccess(false);
+            setCapturedPhoto(null);
 
             // Request HD video resolution constraints using a flexible range.
             const videoConstraints: MediaTrackConstraints = {
@@ -168,13 +171,29 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                         return { width: boxWidth, height: boxHeight };
                     },
                     videoConstraints
-                    // Omitted "experimentalFeatures" to bypass Apple's buggy native BarcodeDetector API on iOS 18
                 },
                 (decodedText) => {
                     if (hasScannedRef.current) return;
                     if (decodedText) {
                         hasScannedRef.current = true;
                         
+                        // Capture snapshot from the live video feed to freeze the image
+                        try {
+                            const videoEl = document.querySelector(`#${containerId} video`) as HTMLVideoElement;
+                            if (videoEl) {
+                                const canvas = document.createElement('canvas');
+                                canvas.width = videoEl.videoWidth || 640;
+                                canvas.height = videoEl.videoHeight || 480;
+                                const ctx = canvas.getContext('2d');
+                                if (ctx) {
+                                    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+                                    setCapturedPhoto(canvas.toDataURL('image/jpeg', 0.8));
+                                }
+                            }
+                        } catch (e) {
+                            console.warn("Could not capture freeze frame:", e);
+                        }
+
                         // Trigger visual success feedback
                         setIsScannedSuccess(true);
                         
@@ -192,11 +211,11 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                         }
                         setIsScanning(false);
                         
-                        // Delay closure for 300ms to display visual success animation
+                        // Delay closure for 450ms to display the high-contrast snapshot and flash
                         setTimeout(() => {
                             onScan(decodedText);
                             onClose();
-                        }, 300);
+                        }, 450);
                     }
                 },
                 () => {
@@ -322,6 +341,15 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                         className="absolute inset-0 w-full h-full [&_video]:w-full [&_video]:h-full [&_video]:object-cover [&_video]:block" 
                     />
 
+                    {/* Captured Photo Freeze Frame (grayscale, high-contrast style) */}
+                    {capturedPhoto && (
+                        <img 
+                            src={capturedPhoto} 
+                            alt="Código Capturado" 
+                            className="absolute inset-0 w-full h-full object-cover z-20 filter grayscale contrast-[160%] brightness-[105%] transition-all duration-200" 
+                        />
+                    )}
+
                     {/* Camera Permission State */}
                     {hasPermission === false && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-slate-900 text-slate-200">
@@ -366,7 +394,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
 
                     {/* Success Highlight Overlay */}
                     {isScannedSuccess && (
-                        <div className="absolute inset-0 border-[6px] border-emerald-500 bg-emerald-500/15 z-10 transition-all duration-200 animate-pulse pointer-events-none flex items-center justify-center">
+                        <div className="absolute inset-0 border-[6px] border-emerald-500 bg-emerald-500/15 z-30 transition-all duration-200 animate-pulse pointer-events-none flex items-center justify-center">
                             <div className="bg-emerald-500 text-white px-4 py-2 rounded-2xl font-bold text-sm shadow-lg flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-white animate-ping" />
                                 Código Lido!

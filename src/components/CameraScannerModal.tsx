@@ -54,6 +54,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
     
     const [isScanning, setIsScanning] = useState(false);
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+    const [isScannedSuccess, setIsScannedSuccess] = useState(false);
     
     const [isTorchOn, setIsTorchOn] = useState(false);
     const [torchSupported, setTorchSupported] = useState(false);
@@ -139,6 +140,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             setIsTorchOn(false);
             setTorchSupported(false);
             setRunningResolution('');
+            setIsScannedSuccess(false);
 
             // Request HD video resolution constraints using a flexible range.
             const videoConstraints: MediaTrackConstraints = {
@@ -155,13 +157,9 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 cameraSelector,
                 {
                     fps: 12, // 12 FPS: balanced decoding frequency without CPU throttling
-                    qrbox: (width, height) => {
-                        // Wide, centered box for 1D barcodes. Smaller height decreases pixel load by 40%
-                        const boxWidth = Math.min(width * 0.92, 500);
-                        const boxHeight = Math.min(height * 0.30, 160);
-                        return { width: boxWidth, height: boxHeight };
-                    },
                     videoConstraints,
+                    // By leaving out "qrbox", html5-qrcode scans the ENTIRE video feed,
+                    // so the barcode can be read anywhere on the screen!
                     experimentalFeatures: {
                         useBarCodeDetectorIfSupported: true
                     }
@@ -171,15 +169,28 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                     if (decodedText) {
                         hasScannedRef.current = true;
                         
-                        // Stop scanner immediately to prevent duplicate triggers
+                        // Trigger visual success feedback
+                        setIsScannedSuccess(true);
+                        
+                        // Vibrate if supported (satisfying physical feedback)
+                        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                            try {
+                                navigator.vibrate(100);
+                            } catch (e) {}
+                        }
+
+                        // Stop scanner immediately
                         const currentScanner = scannerRef.current;
                         if (currentScanner && currentScanner.isScanning) {
                             currentScanner.stop().catch(() => {});
                         }
-                        
                         setIsScanning(false);
-                        onScan(decodedText);
-                        onClose();
+                        
+                        // Delay closure for 300ms to display visual success animation
+                        setTimeout(() => {
+                            onScan(decodedText);
+                            onClose();
+                        }, 300);
                     }
                 },
                 () => {
@@ -372,19 +383,29 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                     )}
 
                     {/* Scanning overlay with laser line */}
-                    {isScanning && (
+                    {isScanning && !isScannedSuccess && (
                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                            {/* Scanning Area indicator */}
-                            <div className="relative w-[92%] h-[30%] max-w-[500px] max-h-[160px] min-h-[120px] border-2 border-emerald-500 rounded-3xl bg-transparent flex flex-col justify-between overflow-hidden shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
+                            {/* Aiming Guide Box (guide only - scanner runs full screen) */}
+                            <div className="relative w-[85%] h-[50%] max-w-[420px] max-h-[220px] border border-white/20 rounded-3xl bg-transparent flex flex-col justify-between overflow-hidden">
                                 
                                 {/* Corner styling */}
-                                <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-emerald-400 rounded-tl" />
-                                <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-emerald-400 rounded-tr" />
-                                <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-emerald-400 rounded-bl" />
-                                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-emerald-400 rounded-br" />
+                                <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-emerald-500 rounded-tl" />
+                                <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-emerald-500 rounded-tr" />
+                                <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-emerald-500 rounded-bl" />
+                                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-emerald-500 rounded-br" />
 
                                 {/* Moving Laser Line */}
-                                <div className="absolute left-0 w-full h-0.5 bg-red-500 shadow-[0_0_8px_#ef4444] animate-laser" />
+                                <div className="absolute left-0 w-full h-0.5 bg-emerald-500/80 shadow-[0_0_8px_#10b981] animate-laser" />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Success Highlight Overlay */}
+                    {isScannedSuccess && (
+                        <div className="absolute inset-0 border-[6px] border-emerald-500 bg-emerald-500/15 z-10 transition-all duration-200 animate-pulse pointer-events-none flex items-center justify-center">
+                            <div className="bg-emerald-500 text-white px-4 py-2 rounded-2xl font-bold text-sm shadow-lg flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                                Código Lido!
                             </div>
                         </div>
                     )}

@@ -123,23 +123,24 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             await scanner.start(
                 cameraSelector,
                 {
-                    fps: 15,
+                    fps: 20, // Increased to 20 for faster frame analysis
                     qrbox: (width, height) => {
-                        // Taller and wider area to allow barcode reading at angles, tilt or distance
-                        const boxWidth = Math.min(width * 0.9, 380);
-                        const boxHeight = Math.min(height * 0.6, 200);
+                        // Taller/wider target optimized for 1D barcodes
+                        const boxWidth = Math.min(width * 0.9, 360);
+                        const boxHeight = Math.min(height * 0.45, 160);
                         return { width: boxWidth, height: boxHeight };
                     },
                     videoConstraints: localVideoConstraints,
+                    // Restrict formats to 1D barcodes to speed up ZXing's decoding pipeline
                     formatsToSupport: [
                         Html5QrcodeSupportedFormats.CODE_128,
                         Html5QrcodeSupportedFormats.CODE_39,
-                        Html5QrcodeSupportedFormats.EAN_13,
-                        Html5QrcodeSupportedFormats.EAN_8,
-                        Html5QrcodeSupportedFormats.UPC_A,
-                        Html5QrcodeSupportedFormats.UPC_E,
-                        Html5QrcodeSupportedFormats.QR_CODE
-                    ]
+                        Html5QrcodeSupportedFormats.EAN_13
+                    ],
+                    // Use hardware accelerated browser scanner where supported (Android Chrome)
+                    experimentalFeatures: {
+                        useBarCodeDetectorIfSupported: true
+                    }
                 },
                 (decodedText) => {
                     if (decodedText) {
@@ -319,7 +320,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                     {isScanning && (
                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                             {/* Scanning Area indicator */}
-                            <div className="relative w-[90%] h-[60%] max-w-[380px] max-h-[200px] border-2 border-emerald-500 rounded-3xl bg-transparent flex flex-col justify-between overflow-hidden shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
+                            <div className="relative w-[90%] h-[45%] max-w-[360px] max-h-[160px] border-2 border-emerald-500 rounded-3xl bg-transparent flex flex-col justify-between overflow-hidden shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
                                 
                                 {/* Corner styling */}
                                 <div className="absolute top-0 left-0 w-5 h-5 border-t-4 border-l-4 border-emerald-400 rounded-tl" />

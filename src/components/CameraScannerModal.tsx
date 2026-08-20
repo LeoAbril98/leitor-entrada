@@ -29,13 +29,17 @@ const getBestBackCamera = (devices: CameraDevice[]): string | null => {
 
     if (backCameras.length === 0) return null;
 
-    // Prioritize the main Wide camera. Avoid ultra-wide (0.5x) or telephoto (3x/5x) lenses
+    // Prioritize the main Wide camera. Avoid ultra-wide (0.5x), telephoto (3x/5x), and virtual dual/triple cameras.
     const mainBackCamera = backCameras.find(device => {
         const label = device.label.toLowerCase();
         return !label.includes('ultra') && 
                !label.includes('tele') && 
                !label.includes('0.5x') && 
-               !label.includes('zoom');
+               !label.includes('zoom') &&
+               !label.includes('dupla') &&
+               !label.includes('tripla') &&
+               !label.includes('dual') &&
+               !label.includes('triple');
     });
 
     // Fall back to first back camera if specific main camera is not identified

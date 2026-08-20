@@ -157,12 +157,14 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 cameraSelector,
                 {
                     fps: 12, // 12 FPS: balanced decoding frequency without CPU throttling
-                    videoConstraints,
-                    // By leaving out "qrbox", html5-qrcode scans the ENTIRE video feed,
-                    // so the barcode can be read anywhere on the screen!
-                    experimentalFeatures: {
-                        useBarCodeDetectorIfSupported: true
-                    }
+                    qrbox: (width, height) => {
+                        // A generous scanning box (450x180) to allow scan area flexibility without CPU lag
+                        const boxWidth = Math.min(width * 0.85, 450);
+                        const boxHeight = Math.min(height * 0.45, 180);
+                        return { width: boxWidth, height: boxHeight };
+                    },
+                    videoConstraints
+                    // Omitted "experimentalFeatures" to bypass Apple's buggy native BarcodeDetector API on iOS 18
                 },
                 (decodedText) => {
                     if (hasScannedRef.current) return;
@@ -385,8 +387,8 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                     {/* Scanning overlay with laser line */}
                     {isScanning && !isScannedSuccess && (
                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                            {/* Aiming Guide Box (guide only - scanner runs full screen) */}
-                            <div className="relative w-[85%] h-[50%] max-w-[420px] max-h-[220px] border border-white/20 rounded-3xl bg-transparent flex flex-col justify-between overflow-hidden">
+                            {/* Aiming Guide Box (aligned with qrbox config) */}
+                            <div className="relative w-[85%] h-[45%] max-w-[450px] max-h-[180px] border border-white/20 rounded-3xl bg-transparent flex flex-col justify-between overflow-hidden shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
                                 
                                 {/* Corner styling */}
                                 <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-emerald-500 rounded-tl" />

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
-import { X, Camera, Zap, ZapOff, AlertTriangle } from 'lucide-react';
+import { X, Camera, Zap, ZapOff, RefreshCw, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface CameraScannerModalProps {

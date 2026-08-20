@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import { createClient } from '@supabase/supabase-js'
+import type { WheelSpecOverride } from '../utils/wheelSpecsStore';
 
 export const clearLocalInventoryCache = () => {
     localStorage.removeItem('@MK_INVENTORY_CACHE');
@@ -1329,5 +1330,99 @@ export async function uploadPhotoToStorage(file: Blob, fileName: string): Promis
     } catch (error) {
         console.error('Erro ao fazer upload da imagem para o Supabase Storage:', error);
         return null;
+    }
+}
+
+/**
+ * Funções para Sincronização de Cubos e Anéis (Wheel Specs Overrides)
+ */
+export async function getCloudWheelSpecs(): Promise<WheelSpecOverride[]> {
+    if (USE_LOCAL_DB) return [];
+    try {
+        const { data, error } = await supabase
+            .from('wheel_specs_overrides')
+            .select('*');
+        
+        if (error) throw error;
+        
+        // Map from DB columns (snake_case) to Frontend (camelCase)
+        return (data || []).map(row => ({
+            id: row.id,
+            model: row.model,
+            aro: row.aro || undefined,
+            pcd: row.pcd,
+            type: row.type as 'ANEL' | 'CUBO',
+            mm: row.mm,
+            ringColor: row.ring_color || undefined
+        }));
+    } catch (err) {
+        console.warn('Erro ao buscar especificações de rodas da nuvem:', err);
+        return [];
+    }
+}
+
+export async function saveCloudWheelSpec(override: WheelSpecOverride): Promise<boolean> {
+    if (USE_LOCAL_DB) return true;
+    try {
+        const { error } = await supabase
+            .from('wheel_specs_overrides')
+            .upsert({
+                id: override.id,
+                model: override.model,
+                aro: override.aro || null,
+                pcd: override.pcd,
+                type: override.type,
+                mm: override.mm,
+                ring_color: override.ringColor || null,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'id' });
+        
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Erro ao salvar especificação de roda na nuvem:', err);
+        return false;
+    }
+}
+
+export async function deleteCloudWheelSpec(id: string): Promise<boolean> {
+    if (USE_LOCAL_DB) return true;
+    try {
+        const { error } = await supabase
+            .from('wheel_specs_overrides')
+            .delete()
+            .eq('id', id);
+        
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Erro ao excluir especificação de roda da nuvem:', err);
+        return false;
+    }
+}
+
+export async function saveCloudWheelSpecsBatch(overrides: WheelSpecOverride[]): Promise<boolean> {
+    if (USE_LOCAL_DB || overrides.length === 0) return true;
+    try {
+        const rows = overrides.map(override => ({
+            id: override.id,
+            model: override.model,
+            aro: override.aro || null,
+            pcd: override.pcd,
+            type: override.type,
+            mm: override.mm,
+            ring_color: override.ringColor || null,
+            updated_at: new Date().toISOString()
+        }));
+
+        const { error } = await supabase
+            .from('wheel_specs_overrides')
+            .upsert(rows, { onConflict: 'id' });
+        
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Erro ao salvar especificações de rodas em lote na nuvem:', err);
+        return false;
     }
 }

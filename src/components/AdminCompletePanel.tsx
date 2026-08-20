@@ -79,7 +79,8 @@ import {
     getCloudAudio,
     getAllCloudSketches,
     getAllCloudAudios,
-    archiveAndClearPedidos
+    archiveAndClearPedidos,
+    getCloudWheelSpecs
 } from '../lib/supabase';
 import {
     getModelAndFinish,
@@ -89,7 +90,7 @@ import {
 } from '../utils/photoUtils';
 import { SketchModal } from './SketchModal';
 import { WheelLegendCard } from './WheelLegendCard';
-import { WheelSpecsManagerModal } from './WheelSpecsManagerModal';
+import { getWheelSpecOverrides } from '../utils/wheelSpecsStore';
 import { AudioRecorderModal } from './AudioRecorderModal';
 import { AudioPlayerModal } from './AudioPlayerModal';
 import { saveSketch, getSketch, getAllSketches, deleteSketch, saveAudio, getAudio, getAllAudioKeys, deleteAudio } from '../lib/sketchStore';
@@ -610,7 +611,6 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
     const [itemCosts, setItemCosts] = useState<Record<string, number>>({});
     const [itemCostsSearchQuery, setItemCostsSearchQuery] = useState('');
     const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
-    const [isWheelSpecsOpen, setIsWheelSpecsOpen] = useState(false);
     const [isPhotoUploading, setIsPhotoUploading] = useState(false);
     const [importReport, setImportReport] = useState<ImportReport | null>(null);
     const [uploadSummaries, setUploadSummaries] = useState<Record<string, UploadSummary>>(loadUploadSummaries);
@@ -844,6 +844,21 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         setItemCosts(costs);
     };
 
+    const loadWheelSpecsCloud = async () => {
+        try {
+            const cloudSpecs = await getCloudWheelSpecs();
+            if (cloudSpecs && cloudSpecs.length > 0) {
+                const local = getWheelSpecOverrides();
+                const specMap = new Map<string, any>();
+                local.forEach(item => specMap.set(item.id, item));
+                cloudSpecs.forEach(item => specMap.set(item.id, item));
+                localStorage.setItem('leitor_wheel_specs_mappings_v5', JSON.stringify(Array.from(specMap.values())));
+            }
+        } catch (e) {
+            console.error('Erro ao pré-carregar especificações de rodas da nuvem:', e);
+        }
+    };
+
     useEffect(() => {
         loadCatalogOrder().then(setCatalogOrder);
         getGlobalTags().then(setGlobalTags);
@@ -853,6 +868,7 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         loadExportMappings();
         loadSketches();
         loadAudios();
+        loadWheelSpecsCloud();
     }, []);
 
     const fetchAndApplyCloudRows = useCallback(async (showToast = false) => {
@@ -2760,14 +2776,6 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                 >
                                     <RefreshCw className={cn("w-4 h-4", isCheckingCloud && "animate-spin")} />
                                     <span className="hidden sm:inline">Sincronizar Nuvem</span>
-                                </button>
-                                <button
-                                    onClick={() => setIsWheelSpecsOpen(true)}
-                                    title="Configurar Cubos e Anéis por modelo e furação"
-                                    className="h-10 px-3 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-lg font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm active:scale-95 transition-all"
-                                >
-                                    <Disc className="w-4 h-4 text-purple-500" />
-                                    <span className="hidden sm:inline">Cubos & Anéis</span>
                                 </button>
                                 <button
                                     onClick={() => setIsExportModalOpen(true)}
@@ -4872,11 +4880,6 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                 title={activeAudioItem?.title || ''}
                 audioUrl={activeAudioItem ? audios[activeAudioItem.codigo] : ''}
                 readOnly={true}
-            />
-
-            <WheelSpecsManagerModal
-                isOpen={isWheelSpecsOpen}
-                onClose={() => setIsWheelSpecsOpen(false)}
             />
         </>
     );

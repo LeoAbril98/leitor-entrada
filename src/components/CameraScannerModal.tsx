@@ -109,6 +109,17 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             setIsTorchOn(false);
             setTorchSupported(false);
 
+            const localVideoConstraints: any = {
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            };
+
+            if (typeof cameraSelector === 'string') {
+                localVideoConstraints.deviceId = cameraSelector;
+            } else {
+                localVideoConstraints.facingMode = cameraSelector.facingMode;
+            }
+
             await scanner.start(
                 cameraSelector,
                 {
@@ -119,11 +130,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                         const boxHeight = Math.min(height * 0.6, 200);
                         return { width: boxWidth, height: boxHeight };
                     },
-                    // Request high resolution to ensure crisp barcode lines from distance
-                    videoConstraints: {
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    },
+                    videoConstraints: localVideoConstraints,
                     formatsToSupport: [
                         Html5QrcodeSupportedFormats.CODE_128,
                         Html5QrcodeSupportedFormats.CODE_39,

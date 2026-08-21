@@ -1426,3 +1426,197 @@ export async function saveCloudWheelSpecsBatch(overrides: WheelSpecOverride[]): 
         return false;
     }
 }
+
+/**
+ * Funções para Mapeamentos de Códigos da Carga CM (Supabase)
+ */
+export interface CargaCodeMappingRow {
+    doc_text: string;
+    stock_code: string;
+    stock_desc?: string | null;
+    updated_at?: string;
+}
+
+export async function getCloudCargaCodeMappings(): Promise<Record<string, string>> {
+    if (USE_LOCAL_DB) return {};
+    try {
+        const { data, error } = await supabase
+            .from('carga_cm_code_mappings')
+            .select('doc_text, stock_code');
+
+        if (error) throw error;
+        
+        const map: Record<string, string> = {};
+        (data || []).forEach((row: any) => {
+            if (row.doc_text && row.stock_code) {
+                map[row.doc_text.toUpperCase().trim()] = row.stock_code;
+            }
+        });
+        return map;
+    } catch (err) {
+        console.warn('Tabela carga_cm_code_mappings indisponível no Supabase (usando fallback local):', err);
+        return {};
+    }
+}
+
+export async function saveCloudCargaCodeMapping(doc_text: string, stock_code: string, stock_desc?: string): Promise<boolean> {
+    if (USE_LOCAL_DB) return true;
+    try {
+        const cleanDocText = doc_text.toUpperCase().trim();
+        const { error } = await supabase
+            .from('carga_cm_code_mappings')
+            .upsert({
+                doc_text: cleanDocText,
+                stock_code: stock_code,
+                stock_desc: stock_desc || null,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'doc_text' });
+
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.warn('Erro ao salvar vínculo na nuvem (usando local):', err);
+        return false;
+    }
+}
+
+export async function deleteCloudCargaCodeMapping(doc_text: string): Promise<boolean> {
+    if (USE_LOCAL_DB) return true;
+    try {
+        const cleanDocText = doc_text.toUpperCase().trim();
+        const { error } = await supabase
+            .from('carga_cm_code_mappings')
+            .delete()
+            .eq('doc_text', cleanDocText);
+
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.warn('Erro ao deletar vínculo na nuvem:', err);
+        return false;
+    }
+}
+
+export async function clearAllCloudCargaCodeMappings(): Promise<boolean> {
+    if (USE_LOCAL_DB) return true;
+    try {
+        const { error } = await supabase
+            .from('carga_cm_code_mappings')
+            .delete()
+            .neq('doc_text', '__dummy__');
+
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.warn('Erro ao limpar mapeamentos na nuvem:', err);
+        return false;
+    }
+}
+
+/**
+ * Funções para Sincronização em Nuvem da Lista do Manifesto CM (Padrão PC -> Celular)
+ */
+export async function getCloudCargaItems(): Promise<{ items: any[], docName: string } | null> {
+    if (USE_LOCAL_DB) return null;
+    try {
+        const { data, error } = await supabase
+            .from('carga_cm_itens')
+            .select('*')
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.warn('Tabela carga_cm_itens indisponível ou com erro no Supabase:', error.message);
+            return null;
+        }
+        if (!data || data.length === 0) return null;
+
+        const docName = data[0]?.doc_name || 'CAMINHAO DO DIA (Curitiba p CM)';
+        const items = data.map(row => ({
+            id: row.id,
+            codigo: row.codigo,
+            descricao: row.descricao,
+            cliente: row.cliente || 'Sem obs',
+            qtdEsperada: Number(row.qtd_esperada) || 1,
+            qtdConferida: Number(row.qtd_conferida) || 0,
+            destino: row.destino || 'CURITIBA P CM'
+        }));
+
+        return { items, docName };
+    } catch (err: any) {
+        console.warn('Exceção ao buscar carga do Supabase (usando local):', err?.message || err);
+        return null;
+    }
+}
+
+export async function saveCloudCargaItems(items: any[], docName: string): Promise<boolean> {
+    if (USE_LOCAL_DB) return true;
+    try {
+        // 1. Limpar lista anterior da nuvem
+        const { error: delError } = await supabase.from('carga_cm_itens').delete().neq('id', '__dummy__');
+        if (delError) {
+            console.warn('Alerta ao limpar carga anterior no Supabase:', delError.message);
+        }
+
+        if (items.length === 0) return true;
+
+        // 2. Inserir lote com conversão segura de campos (sem exigir updated_at se a coluna não existir no Supabase)
+        const payload = items.map(item => ({
+            id: item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            codigo: String(item.codigo || ''),
+            descricao: String(item.descricao || ''),
+            cliente: item.cliente ? String(item.cliente) : 'Sem obs',
+            qtd_esperada: Number(item.qtdEsperada) || 1,
+            qtd_conferida: Number(item.qtdConferida) || 0,
+            destino: item.destino ? String(item.destino) : 'CURITIBA P CM',
+            doc_name: docName || 'Carga CM'
+        }));
+
+        const { error } = await supabase
+            .from('carga_cm_itens')
+            .insert(payload);
+
+        if (error) {
+            console.error('Erro de schema ao inserir no Supabase:', error);
+            throw error;
+        }
+        return true;
+    } catch (err: any) {
+        console.warn('Erro ao salvar carga no Supabase:', err?.message || err);
+        return false;
+    }
+}
+
+export async function updateCloudCargaItemQty(id: string, qtdConferida: number): Promise<boolean> {
+    if (USE_LOCAL_DB) return true;
+    try {
+        const { error } = await supabase
+            .from('carga_cm_itens')
+            .update({ 
+                qtd_conferida: qtdConferida
+            })
+            .eq('id', id);
+
+        if (error) throw error;
+        return true;
+    } catch (err: any) {
+        console.warn('Erro ao atualizar bipagem na nuvem:', err?.message || err);
+        return false;
+    }
+}
+
+export async function clearCloudCargaItems(): Promise<boolean> {
+    if (USE_LOCAL_DB) return true;
+    try {
+        const { error } = await supabase
+            .from('carga_cm_itens')
+            .delete()
+            .neq('id', '__dummy__');
+
+        if (error) throw error;
+        return true;
+    } catch (err: any) {
+        console.warn('Erro ao zerar carga na nuvem:', err?.message || err);
+        return false;
+    }
+}
+

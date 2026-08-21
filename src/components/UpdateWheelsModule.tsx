@@ -91,7 +91,7 @@ export const UpdateWheelsModule: React.FC<UpdateWheelsModuleProps> = ({ onBackTo
         if (view === 'scanning' && currentLocation && !isManualAddOpen) {
             const focusInput = () => {
                 if (document.activeElement?.tagName !== 'INPUT' || document.activeElement === inputRef.current) {
-                    inputRef.current?.focus();
+                    inputRef.current?.focus({ preventScroll: true });
                 }
             };
             focusInput();

@@ -55,7 +55,7 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
         if (!isManualAddOpen) {
             const focusInput = () => {
                 if (document.activeElement?.tagName !== 'INPUT' || document.activeElement === inputRef.current) {
-                    inputRef.current?.focus();
+                    inputRef.current?.focus({ preventScroll: true });
                 }
             };
             focusInput();

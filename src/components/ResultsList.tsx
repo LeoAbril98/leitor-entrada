@@ -136,7 +136,12 @@ export function ResultsList({ groupedData, searchTerm, setSearchTerm, onRemoveGr
                                             {/* Botões rápidos de Quantidade */}
                                             <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 gap-1">
                                                 <button
-                                                    onClick={() => onEditQuantity(item.codigo, item.quantidade - 1, false)}
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        onEditQuantity(item.codigo, item.quantidade - 1, false);
+                                                    }}
                                                     className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                                                     title="Diminuir"
                                                 >
@@ -144,7 +149,12 @@ export function ResultsList({ groupedData, searchTerm, setSearchTerm, onRemoveGr
                                                 </button>
                                                 <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1"></div>
                                                 <button
-                                                    onClick={() => onEditQuantity(item.codigo, item.quantidade + 1, false)}
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        onEditQuantity(item.codigo, item.quantidade + 1, false);
+                                                    }}
                                                     className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                                                     title="Aumentar"
                                                 >
@@ -153,7 +163,12 @@ export function ResultsList({ groupedData, searchTerm, setSearchTerm, onRemoveGr
                                             </div>
 
                                             <button
-                                                onClick={() => onEditQuantity(item.codigo, item.quantidade, true)}
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    onEditQuantity(item.codigo, item.quantidade, true);
+                                                }}
                                                 className="p-2 text-indigo-400 dark:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-colors shrink-0"
                                                 title="Digitar quantidade"
                                             >
@@ -161,7 +176,12 @@ export function ResultsList({ groupedData, searchTerm, setSearchTerm, onRemoveGr
                                             </button>
 
                                             <button
-                                                onClick={() => onRemoveGroup(item.codigo)}
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    onRemoveGroup(item.codigo);
+                                                }}
                                                 className="p-2 text-red-400 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-colors shrink-0"
                                                 title="Remover item da contagem"
                                             >

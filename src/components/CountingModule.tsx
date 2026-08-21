@@ -104,17 +104,16 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
     if (client) localStorage.setItem('@MK_SAVED_CLIENT', client);
   }, [readings, origin, client]);
 
-  // Auto-focus input field
+  // Auto-focus input field (apenas quando no topo para não pular a rolagem)
   useEffect(() => {
     if (view === 'counting' && !isManualAddOpen && !isExportModalOpen) {
       const focusInput = () => {
-        // Only focus if there is no active selection in another text input to prevent stealing focus 
-        // from other inputs accidentally if modals state glitches, but especially because the modals use inputs
+        if (window.scrollY > 120) return;
         if (
           document.activeElement?.tagName !== 'INPUT' ||
           document.activeElement === inputRef.current
         ) {
-          inputRef.current?.focus();
+          inputRef.current?.focus({ preventScroll: true });
         }
       };
       focusInput();
@@ -244,8 +243,12 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
 
   const removeReadingGroup = (codigo: string) => {
     if (window.confirm('Tem certeza que deseja remover TODAS as leituras deste item?')) {
+      const currentScroll = window.scrollY;
       setReadings(prev => prev.filter(r => r.codigo !== codigo));
       toast.success('Item removido da contagem');
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: currentScroll, behavior: 'instant' as ScrollBehavior });
+      });
     }
   };
 
@@ -273,6 +276,8 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
       return;
     }
 
+    const currentScroll = window.scrollY;
+
     setReadings(prev => {
       // Filtrar leituras que não são deste código
       const outrasLeituras = prev.filter(r => r.codigo !== codigo);
@@ -296,6 +301,10 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
 
       // Re-ordena pelo timestamp (descrente, mais novo primeiro) para o fluxo da UI se manter igual
       return result.sort((a, b) => b.timestamp - a.timestamp);
+    });
+
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: currentScroll, behavior: 'instant' as ScrollBehavior });
     });
 
     if (promptUser) {

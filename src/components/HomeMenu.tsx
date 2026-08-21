@@ -10,14 +10,15 @@ import {
     Database, 
     ChevronRight,
     Loader2,
-    Check
+    Check,
+    ClipboardCheck
 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { getInventory, getLastUpdate, clearLocalInventoryCache } from '../lib/supabase';
 import { cn } from '../utils';
 
 interface HomeMenuProps {
-    onSelectMode: (mode: 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'admin-login') => void;
+    onSelectMode: (mode: 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'conference' | 'admin-login') => void;
 }
 
 const SYNC_STEPS = [
@@ -285,8 +286,8 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                     </motion.div>
                 </div>
 
-                {/* Grid 4 Cards Larga (Evita Scroll Vertical no PC/Tablet) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 xl:gap-5 w-full">
+                {/* Grid Cards Responsive */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-3 xl:gap-4 w-full">
                     <motion.button
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -312,6 +313,27 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
+                        onClick={() => onSelectMode('conference')}
+                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 xl:p-6 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 dark:hover:shadow-none transition-all text-left flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-3 active:scale-95 animate-fade-in"
+                    >
+                        <div className="w-12 h-12 min-w-12 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform animate-fade-in">
+                            <ClipboardCheck className="w-6 h-6 animate-fade-in" />
+                        </div>
+                        <div className="flex-1 animate-fade-in">
+                            <h2 className="text-base sm:text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 mb-0.5 sm:mb-1 animate-fade-in">
+                                Conferência
+                            </h2>
+                            <p className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs md:text-sm leading-snug font-medium animate-fade-in">
+                                Verifique a quantidade de estoque em relação ao sistema.
+                            </p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600 shrink-0 ml-auto sm:hidden animate-fade-in" />
+                    </motion.button>
+
+                    <motion.button
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
                         onClick={() => onSelectMode('locator')}
                         className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 xl:p-6 hover:border-emerald-600 dark:hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-500/10 dark:hover:shadow-none transition-all text-left flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-3 active:scale-95 animate-fade-in"
                     >
@@ -332,7 +354,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                     <motion.button
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
+                        transition={{ delay: 0.6 }}
                         onClick={() => onSelectMode('pendencies')}
                         className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 xl:p-6 hover:border-amber-600 dark:hover:border-amber-500 hover:shadow-xl hover:shadow-amber-500/10 dark:hover:shadow-none transition-all text-left flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-3 active:scale-95 animate-fade-in"
                     >
@@ -353,7 +375,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                     <motion.button
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6 }}
+                        transition={{ delay: 0.7 }}
                         onClick={() => onSelectMode('update-wheels')}
                         className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 xl:p-6 hover:border-violet-600 dark:hover:border-violet-500 hover:shadow-xl hover:shadow-violet-500/10 dark:hover:shadow-none transition-all text-left flex flex-row sm:flex-col items-center sm:items-start gap-4 sm:gap-3 active:scale-95 animate-fade-in"
                     >

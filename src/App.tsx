@@ -10,11 +10,12 @@ import { AdminSettingsPanel } from './components/AdminSettingsPanel';
 import { AdminCompletePanel } from './components/AdminCompletePanel';
 
 import { UpdateWheelsModule } from './components/UpdateWheelsModule';
+import { ConferenceModule } from './components/ConferenceModule';
 import { HistoryModule } from './components/HistoryModule';
 import { getPhotoOverrides } from './lib/supabase';
 import { setPhotoOverrides } from './utils/photoUtils';
 
-type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history' | 'admin-settings' | 'admin-complete';
+type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'conference' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history' | 'admin-settings' | 'admin-complete';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('menu');
@@ -66,6 +67,10 @@ export default function App() {
 
   if (mode === 'update-wheels') {
     return <UpdateWheelsModule onBackToMenu={handleBackToMenu} />;
+  }
+
+  if (mode === 'conference') {
+    return <ConferenceModule onBackToMenu={handleBackToMenu} />;
   }
 
   if (mode === 'admin-login') {

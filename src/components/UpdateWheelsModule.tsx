@@ -173,18 +173,29 @@ export const UpdateWheelsModule: React.FC<UpdateWheelsModuleProps> = ({ onBackTo
     };
 
     const consolidatedData = useMemo(() => {
-        const groups: Record<string, Set<string>> = {};
+        const groups: Record<string, { locais: Set<string>, latestTimestamp: number }> = {};
+        
         readings.forEach(r => {
-            if (!groups[r.roda]) groups[r.roda] = new Set();
-            groups[r.roda].add(r.local);
+            if (!groups[r.roda]) {
+                groups[r.roda] = { locais: new Set(), latestTimestamp: r.timestamp };
+            }
+            groups[r.roda].locais.add(r.local);
+            // Garante que o timestamp seja sempre o da última bipagem daquela roda
+            if (r.timestamp > groups[r.roda].latestTimestamp) {
+                groups[r.roda].latestTimestamp = r.timestamp;
+            }
         });
 
         return Object.entries(groups)
-            .map(([roda, locaisSet]): ConsolidatedWheel => ({
+            .map(([roda, data]) => ({
                 roda,
-                locais: Array.from(locaisSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+                locais: Array.from(data.locais).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })),
+                latestTimestamp: data.latestTimestamp
             }))
-            .sort((a, b) => a.roda.localeCompare(b.roda));
+            // ORDENAÇÃO: Maior timestamp (mais recente) no topo
+            .sort((a, b) => b.latestTimestamp - a.latestTimestamp)
+            // Remove o campo temporário para manter compatibilidade com o tipo ConsolidatedWheel
+            .map(({ roda, locais }): ConsolidatedWheel => ({ roda, locais }));
     }, [readings]);
 
     const expectedWheels = useMemo(() => {
@@ -193,8 +204,6 @@ export const UpdateWheelsModule: React.FC<UpdateWheelsModuleProps> = ({ onBackTo
         return stock.filter(item => {
             if (!item.local) return false;
             const itemLocal = item.local.toUpperCase();
-            // Verifica se o local digitado está contido no local do banco (ex: "8E" em "8E/C2")
-            // ou se são idênticos
             return itemLocal.includes(search);
         });
     }, [stock, currentLocation]);

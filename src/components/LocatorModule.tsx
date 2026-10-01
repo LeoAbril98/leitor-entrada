@@ -1,27 +1,37 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
-import { 
-    ArrowLeft, 
-    MapPin, 
-    Search, 
-    Package2, 
-    RefreshCcw, 
-    Camera, 
-    Maximize2, 
-    X, 
-    Copy, 
+import {
+    ArrowLeft,
+    MapPin,
+    Search,
+    Package2,
+    RefreshCcw,
+    Camera,
+    Maximize2,
+    X,
+    Copy,
     Check,
     Barcode,
-    Layers
+    Layers,
+    History,
+    Truck,
+    Volume2,
+    VolumeX,
+    SlidersHorizontal
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScannerInput } from './ScannerInput';
 import { ManualAddModal } from './ManualAddModal';
 import { CameraScannerModal } from './CameraScannerModal';
 import { WheelVariationsSelector } from './WheelVariationsSelector';
+import { LocatorBottomNav } from './LocatorBottomNav';
+import { LocatorHistoryModal, LocatorHistoryItem } from './LocatorHistoryModal';
+import { VoiceSettingsModal } from './VoiceSettingsModal';
 import { getInventory } from '../lib/supabase';
 import { StockItem } from '../types';
 import { getWheelPhotoUrl } from '../utils/photoUtils';
+import { getRomaneios, fetchAndSyncRomaneios, Romaneio } from '../services/romaneioService';
+import { getBestPtBrVoice, formatTextForSpeech } from '../utils/speechVoiceUtils';
 
 interface LocatorModuleProps {
     onBackToMenu: () => void;
@@ -36,6 +46,35 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
     const [isCameraOpen, setIsCameraOpen] = useState(false);
     const [isPhotoZoomOpen, setIsPhotoZoomOpen] = useState(false);
     const [copiedCode, setCopiedCode] = useState(false);
+    const [history, setHistory] = useState<LocatorHistoryItem[]>([]);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [romaneios, setRomaneios] = useState<Romaneio[]>([]);
+    const [isVoiceEnabled, setIsVoiceEnabled] = useState(() => {
+        try {
+            const saved = localStorage.getItem('@LOCATOR_VOICE_ENABLED');
+            return saved !== null ? saved === 'true' : true;
+        } catch {
+            return true;
+        }
+    });
+    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+    const [selectedVoiceURI, setSelectedVoiceURI] = useState(() => {
+        try {
+            return localStorage.getItem('@LOCATOR_VOICE_URI') || '';
+        } catch {
+            return '';
+        }
+    });
+    const [voiceRate, setVoiceRate] = useState(() => {
+        try {
+            const saved = localStorage.getItem('@LOCATOR_VOICE_RATE');
+            return saved ? parseFloat(saved) : 1.0;
+        } catch {
+            return 1.0;
+        }
+    });
+    const [isVoiceConfigOpen, setIsVoiceConfigOpen] = useState(false);
+    const [isTestingVoice, setIsTestingVoice] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -49,6 +88,45 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
         if (successSound.current) successSound.current.load();
         if (errorSound.current) errorSound.current.load();
 
+        // Carregar e monitorar vozes para síntese de fala de alta qualidade
+        const loadVoices = () => {
+            if ('speechSynthesis' in window) {
+                const available = window.speechSynthesis.getVoices();
+                if (available.length > 0) {
+                    setVoices(available);
+                    setSelectedVoiceURI(current => {
+                        if (current && available.some(v => v.voiceURI === current)) {
+                            return current;
+                        }
+                        const best = getBestPtBrVoice(available);
+                        const bestURI = best ? best.voiceURI : '';
+                        if (bestURI) {
+                            try {
+                                localStorage.setItem('@LOCATOR_VOICE_URI', bestURI);
+                            } catch { }
+                        }
+                        return bestURI;
+                    });
+                }
+            }
+        };
+
+        if ('speechSynthesis' in window) {
+            loadVoices();
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        // Carregar histórico local limitado aos últimos 10 itens
+        try {
+            const savedHistory = localStorage.getItem('@LOCATOR_HISTORY');
+            if (savedHistory) {
+                const parsed = JSON.parse(savedHistory);
+                setHistory(Array.isArray(parsed) ? parsed.slice(0, 10) : []);
+            }
+        } catch (e) {
+            console.error('Erro ao ler histórico de localização', e);
+        }
+
         const fetchStock = async () => {
             try {
                 const data = await getInventory();
@@ -60,10 +138,22 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
             }
         };
         fetchStock();
+
+        // Carregar romaneios para checar se item está no caminhão
+        try {
+            setRomaneios(getRomaneios());
+            fetchAndSyncRomaneios().then((list) => {
+                if (list && list.length > 0) {
+                    setRomaneios(list);
+                }
+            }).catch(() => { });
+        } catch (e) {
+            console.error('Erro ao ler romaneios no localizador:', e);
+        }
     }, []);
 
     useEffect(() => {
-        if (!isManualAddOpen && !isPhotoZoomOpen) {
+        if (!isManualAddOpen && !isPhotoZoomOpen && !isHistoryOpen && !isCameraOpen) {
             const focusInput = () => {
                 if (document.activeElement?.tagName !== 'INPUT' || document.activeElement === inputRef.current) {
                     inputRef.current?.focus({ preventScroll: true });
@@ -73,7 +163,221 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
             const interval = setInterval(focusInput, 1000);
             return () => clearInterval(interval);
         }
-    }, [isManualAddOpen, isPhotoZoomOpen]);
+    }, [isManualAddOpen, isPhotoZoomOpen, isHistoryOpen, isCameraOpen]);
+
+    const addToHistory = (item: StockItem) => {
+        setHistory((prev) => {
+            const filtered = prev.filter(h => h.codigo !== item.codigo);
+            const updated: LocatorHistoryItem[] = [
+                {
+                    id: `${item.codigo}-${Date.now()}`,
+                    codigo: item.codigo,
+                    descricao: item.descricao,
+                    local: item.local || '---',
+                    quantidade: item.quantidade ?? 0,
+                    timestamp: Date.now(),
+                },
+                ...filtered,
+            ].slice(0, 10);
+            try {
+                localStorage.setItem('@LOCATOR_HISTORY', JSON.stringify(updated));
+            } catch (e) {
+                console.error('Erro ao gravar histórico', e);
+            }
+            return updated;
+        });
+    };
+
+    const handleClearHistory = () => {
+        setHistory([]);
+        try {
+            localStorage.removeItem('@LOCATOR_HISTORY');
+            toast.success('Histórico limpo');
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleResetQuery = () => {
+        if (scannedItem) {
+            setScannedItem(null);
+            setInputValue('');
+            toast.success('Pronto para nova consulta');
+        } else {
+            setInputValue('');
+        }
+        inputRef.current?.focus();
+    };
+
+    // Verificar se o item pesquisado está no romaneio do caminhão
+    const romaneioMatch = useMemo(() => {
+        if (!scannedItem || romaneios.length === 0) return null;
+
+        const targetCode = String(scannedItem.codigo).trim().toUpperCase();
+        const cleanNum = (str: string) => str.replace(/^0+/, '');
+        const cleanTargetCode = cleanNum(targetCode);
+
+        let totalQtd = 0;
+        let romaneioTitulo = '';
+        let foundAny = false;
+
+        for (const r of romaneios) {
+            const matches = (r.itens || []).filter(it => {
+                const itCode = String(it.codigo).trim().toUpperCase();
+                const itOrig = it.codigoOriginal ? String(it.codigoOriginal).trim().toUpperCase() : '';
+                return (
+                    itCode === targetCode ||
+                    cleanNum(itCode) === cleanTargetCode ||
+                    itOrig === targetCode ||
+                    cleanNum(itOrig) === cleanTargetCode
+                );
+            });
+
+            if (matches.length > 0) {
+                foundAny = true;
+                if (!romaneioTitulo) romaneioTitulo = r.titulo || r.numero || 'Carga Atual';
+                for (const m of matches) {
+                    totalQtd += Number(m.quantidade) || 0;
+                }
+            }
+        }
+
+        if (!foundAny || totalQtd <= 0) return null;
+
+        const textoBase = `${scannedItem.descricao || ''} ${targetCode}`.toUpperCase();
+        const isCaixaDupla = textoBase.includes('13X') || textoBase.includes('14X') || textoBase.includes('15X6');
+        const caixas = isCaixaDupla ? Math.ceil(totalQtd / 2) : totalQtd;
+
+        return {
+            quantidade: totalQtd,
+            caixas,
+            romaneioTitulo,
+        };
+    }, [scannedItem, romaneios]);
+
+    const getTruckQtdForItem = (item: StockItem | null): number => {
+        if (!item || romaneios.length === 0) return 0;
+        const targetCode = String(item.codigo).trim().toUpperCase();
+        const cleanNum = (str: string) => str.replace(/^0+/, '');
+        const cleanTargetCode = cleanNum(targetCode);
+
+        let totalQtd = 0;
+        for (const r of romaneios) {
+            const matches = (r.itens || []).filter(it => {
+                const itCode = String(it.codigo).trim().toUpperCase();
+                const itOrig = it.codigoOriginal ? String(it.codigoOriginal).trim().toUpperCase() : '';
+                return (
+                    itCode === targetCode ||
+                    cleanNum(itCode) === cleanTargetCode ||
+                    itOrig === targetCode ||
+                    cleanNum(itOrig) === cleanTargetCode
+                );
+            });
+            for (const m of matches) {
+                totalQtd += Number(m.quantidade) || 0;
+            }
+        }
+        return totalQtd;
+    };
+
+    const toggleVoice = () => {
+        setIsVoiceEnabled(prev => {
+            const next = !prev;
+            try {
+                localStorage.setItem('@LOCATOR_VOICE_ENABLED', String(next));
+            } catch { }
+            if (next) {
+                toast.success('Voz sintetizada ativada');
+            } else {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+                toast('Voz silenciada', { icon: '🔇' });
+            }
+            return next;
+        });
+    };
+
+    const getResolvedVoice = (): SpeechSynthesisVoice | null => {
+        if (!('speechSynthesis' in window) || voices.length === 0) return null;
+        if (selectedVoiceURI) {
+            const found = voices.find(v => v.voiceURI === selectedVoiceURI);
+            if (found) return found;
+        }
+        return getBestPtBrVoice(voices);
+    };
+
+    const speakItem = (item: StockItem, truckQtd?: number) => {
+        if (!isVoiceEnabled || !('speechSynthesis' in window)) return;
+        try {
+            window.speechSynthesis.cancel();
+
+            const texto = formatTextForSpeech(item.local || '', item.quantidade ?? 0, truckQtd);
+            const utterance = new SpeechSynthesisUtterance(texto);
+            utterance.lang = 'pt-BR';
+            utterance.rate = voiceRate || 1.0;
+
+            const voice = getResolvedVoice();
+            if (voice) {
+                utterance.voice = voice;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        } catch (e) {
+            console.warn('Erro na síntese de voz:', e);
+        }
+    };
+
+    const handleTestVoice = () => {
+        if (!('speechSynthesis' in window)) {
+            toast.error('Navegador não suporta síntese de voz');
+            return;
+        }
+
+        if (isTestingVoice) {
+            window.speechSynthesis.cancel();
+            setIsTestingVoice(false);
+            return;
+        }
+
+        try {
+            window.speechSynthesis.cancel();
+            const textoExemplo = "Rua 15 D, 60 unidades em estoque, e 24 chegando no caminhão.";
+            const utterance = new SpeechSynthesisUtterance(textoExemplo);
+            utterance.lang = 'pt-BR';
+            utterance.rate = voiceRate || 1.0;
+
+            const voice = getResolvedVoice();
+            if (voice) {
+                utterance.voice = voice;
+            }
+
+            utterance.onstart = () => setIsTestingVoice(true);
+            utterance.onend = () => setIsTestingVoice(false);
+            utterance.onerror = () => setIsTestingVoice(false);
+
+            window.speechSynthesis.speak(utterance);
+        } catch (e) {
+            console.warn('Erro ao testar voz:', e);
+            setIsTestingVoice(false);
+        }
+    };
+
+    const handleSelectVoice = (uri: string) => {
+        setSelectedVoiceURI(uri);
+        try {
+            localStorage.setItem('@LOCATOR_VOICE_URI', uri);
+        } catch { }
+        toast.success('Voz selecionada');
+    };
+
+    const handleChangeRate = (rate: number) => {
+        setVoiceRate(rate);
+        try {
+            localStorage.setItem('@LOCATOR_VOICE_RATE', String(rate));
+        } catch { }
+        toast.success(`Velocidade: ${rate}x`);
+    };
 
     const handleSearch = (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -84,12 +388,14 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
 
         if (found) {
             setScannedItem(found);
+            addToHistory(found);
             setInputValue('');
             if (successSound.current) {
                 successSound.current.currentTime = 0;
                 successSound.current.play().catch(() => { });
             }
             toast.success('Item localizado');
+            speakItem(found, getTruckQtdForItem(found));
         } else {
             setScannedItem(null);
             setScanError(true);
@@ -108,12 +414,14 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
         const found = stock.find(item => item.codigo === codigo);
         if (found) {
             setScannedItem(found);
+            addToHistory(found);
             setInputValue('');
             if (successSound.current) {
                 successSound.current.currentTime = 0;
                 successSound.current.play().catch(() => { });
             }
             toast.success('Item localizado');
+            speakItem(found, getTruckQtdForItem(found));
         } else {
             setScannedItem(null);
             setScanError(true);
@@ -136,7 +444,7 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
     };
 
     return (
-        <div className={`min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors pb-12 ${scanError ? "bg-red-500/20 dark:bg-red-900/40" : ""}`}>
+        <div className={`min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors pb-28 sm:pb-32 md:pb-12 ${scanError ? "bg-red-500/20 dark:bg-red-900/40" : ""}`}>
             {scanError && (
                 <div className="fixed inset-0 z-50 pointer-events-none border-8 border-red-500/50 animate-pulse" />
             )}
@@ -161,17 +469,68 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                         </h1>
                     </div>
 
-                    {stock.length > 0 && (
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-200/50 dark:border-slate-700/50">
-                            <Layers className="w-3.5 h-3.5 text-emerald-500" />
-                            <span>{stock.length.toLocaleString('pt-BR')} itens</span>
+                    <div className="flex items-center gap-2">
+                        {/* Grupo de Ativar/Desativar Voz & Ajustes de Voz */}
+                        <div className="flex items-center">
+                            <button
+                                onClick={toggleVoice}
+                                className={`flex items-center gap-1.5 text-xs font-bold px-2.5 sm:px-3 py-1.5 rounded-l-xl border border-r-0 transition-all shadow-2xs active:scale-95 ${isVoiceEnabled
+                                    ? "bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200/80 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300"
+                                    : "bg-slate-100 dark:bg-slate-800 border-slate-200/80 dark:border-slate-700 text-slate-400 dark:text-slate-500"
+                                    }`}
+                                title={isVoiceEnabled ? "Voz ativada (clique para silenciar)" : "Voz silenciada (clique para ativar)"}
+                            >
+                                {isVoiceEnabled ? (
+                                    <>
+                                        <Volume2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                                        <span className="hidden sm:inline">Voz Ativa</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <VolumeX className="w-3.5 h-3.5 text-slate-400" />
+                                        <span className="hidden sm:inline">Voz Mudo</span>
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setIsVoiceConfigOpen(true)}
+                                className={`p-1.5 sm:px-2 py-1.5 rounded-r-xl border text-xs font-bold transition-all shadow-2xs active:scale-95 flex items-center gap-1 ${isVoiceEnabled
+                                    ? "bg-indigo-100/80 hover:bg-indigo-200/80 dark:bg-indigo-900/60 dark:hover:bg-indigo-900 border-indigo-200/80 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300"
+                                    : "bg-slate-200/70 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border-slate-200/80 dark:border-slate-700 text-slate-500 dark:text-slate-400"
+                                    }`}
+                                title="Ajustes de Voz (escolher voz mais fluida, velocidade e testar áudio)"
+                            >
+                                <SlidersHorizontal className="w-3.5 h-3.5" />
+                            </button>
                         </div>
-                    )}
+
+                        {/* Botão de Histórico visível no desktop */}
+                        <button
+                            onClick={() => setIsHistoryOpen(true)}
+                            className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 rounded-xl border border-slate-200/60 dark:border-slate-700 transition-colors shadow-sm"
+                            title="Histórico de Consultas"
+                        >
+                            <History className="w-3.5 h-3.5 text-blue-500" />
+                            <span>Histórico</span>
+                            {history.length > 0 && (
+                                <span className="ml-0.5 px-1.5 py-0.2 bg-blue-500 text-white text-[10px] rounded-full font-black">
+                                    {history.length}
+                                </span>
+                            )}
+                        </button>
+
+                        {stock.length > 0 && (
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-full border border-slate-200/50 dark:border-slate-700/50">
+                                <Layers className="w-3.5 h-3.5 text-emerald-500" />
+                                <span>{stock.length.toLocaleString('pt-BR')} itens</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </header>
 
             <main className="max-w-5xl mx-auto px-4 mt-3 sm:mt-6">
-                {/* BARRA DE PESQUISA & AÇÕES EM LINHA ÚNICA COMPACTA */}
+                {/* BARRA DE PESQUISA & AÇÕES */}
                 <section className="mb-3 sm:mb-4">
                     <div className="flex gap-2 items-center">
                         <div className="flex-1 min-w-0">
@@ -182,21 +541,22 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                                 onSubmit={handleSearch}
                             />
                         </div>
+                        {/* Botões visíveis em telas médias/desktop. No mobile, ficam acessíveis na Bottom Navigation Bar */}
                         <button
                             onClick={() => setIsCameraOpen(true)}
-                            className="h-16 w-14 sm:w-auto sm:px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 transition-all shadow-md shadow-emerald-600/10 active:scale-95 shrink-0"
+                            className="hidden sm:flex h-16 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/10 active:scale-95 shrink-0"
                             title="Ler com Câmera"
                         >
                             <Camera className="w-5 h-5" />
-                            <span className="text-[10px] sm:text-xs">Câmera</span>
+                            <span className="text-xs">Câmera</span>
                         </button>
                         <button
                             onClick={() => setIsManualAddOpen(true)}
-                            className="h-16 w-14 sm:w-auto sm:px-4 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl font-black text-xs uppercase tracking-wider flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 shrink-0"
+                            className="hidden sm:flex h-16 px-4 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl font-black text-xs uppercase tracking-wider items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 shrink-0"
                             title="Busca Manual"
                         >
                             <Search className="w-5 h-5 text-slate-400" />
-                            <span className="text-[10px] sm:text-xs">Busca</span>
+                            <span className="text-xs">Busca</span>
                         </button>
                     </div>
                 </section>
@@ -220,7 +580,7 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
 
                                     {/* Foto + Descrição */}
                                     <div className="flex items-center gap-3.5">
-                                        <div 
+                                        <div
                                             onClick={() => setIsPhotoZoomOpen(true)}
                                             className="cursor-pointer relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 bg-gradient-to-b from-slate-100 to-slate-200/60 dark:from-slate-800 dark:to-slate-950 rounded-2xl p-2 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shadow-md group hover:border-emerald-400 transition-all"
                                         >
@@ -285,11 +645,20 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
 
                                         {/* CARD LOCALIZAÇÃO */}
                                         <div className="bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-transparent dark:from-emerald-950/50 dark:via-emerald-900/20 dark:to-transparent p-4 rounded-2xl border-2 border-emerald-500/30 dark:border-emerald-500/20">
-                                            <div className="flex items-center gap-2 mb-1.5 text-emerald-800 dark:text-emerald-300">
-                                                <MapPin className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                                                <span className="text-xs font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                                                    Localização
-                                                </span>
+                                            <div className="flex items-center justify-between gap-1 mb-1.5 text-emerald-800 dark:text-emerald-300">
+                                                <div className="flex items-center gap-2">
+                                                    <MapPin className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                                    <span className="text-xs font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                                                        Localização
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={() => speakItem(scannedItem, getTruckQtdForItem(scannedItem))}
+                                                    className="p-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 transition-all active:scale-90"
+                                                    title="Ouvir localização novamente"
+                                                >
+                                                    <Volume2 className="w-3.5 h-3.5" />
+                                                </button>
                                             </div>
                                             <p className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight break-words font-mono leading-none">
                                                 {scannedItem.local || '---'}
@@ -297,14 +666,49 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                                         </div>
                                     </div>
 
-                                    {/* Botão Nova Consulta — visível só no mobile abaixo do grid */}
-                                    <button
-                                        onClick={() => setScannedItem(null)}
-                                        className="md:hidden w-full h-12 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md shadow-slate-900/10 dark:shadow-none"
-                                    >
-                                        <RefreshCcw className="w-4 h-4" />
-                                        <span>Nova Consulta</span>
-                                    </button>
+                                    {/* BLOCO RODA NO CAMINHÃO (QUANDO HOUVER NO ROMANEIO) */}
+                                    {romaneioMatch && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            className="bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 dark:from-amber-950/40 dark:via-amber-900/20 dark:to-transparent p-3.5 sm:p-4 rounded-2xl border-2 border-amber-500/40 dark:border-amber-500/30 shadow-xs relative overflow-hidden"
+                                        >
+                                            <div className="flex items-center justify-between gap-2 mb-2">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 dark:bg-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-2xs">
+                                                        <Truck className="w-4 h-4" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-amber-950 dark:text-amber-200 block leading-tight">
+                                                            Roda no Caminhão
+                                                        </span>
+                                                        <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 dark:text-amber-400 block leading-tight truncate max-w-[190px] sm:max-w-xs">
+                                                            Chegando: {romaneioMatch.romaneioTitulo}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-amber-500/20 dark:bg-amber-500/30 text-amber-900 dark:text-amber-200 border border-amber-400/50 shrink-0">
+                                                    Na Carga
+                                                </span>
+                                            </div>
+
+                                            <div className="flex items-baseline justify-between pt-2 border-t border-amber-300/40 dark:border-amber-800/40">
+                                                <div className="flex items-baseline gap-1.5">
+                                                    <span className="text-3xl sm:text-4xl font-black text-amber-950 dark:text-amber-100 tracking-tight leading-none">
+                                                        {romaneioMatch.quantidade}
+                                                    </span>
+                                                    <span className="text-xs font-black uppercase text-amber-700 dark:text-amber-400">
+                                                        un chegando
+                                                    </span>
+                                                </div>
+
+                                                <span className="text-xs sm:text-sm font-bold text-amber-800 dark:text-amber-300">
+                                                    ({romaneioMatch.caixas} {romaneioMatch.caixas === 1 ? 'cx' : 'cx'})
+                                                </span>
+                                            </div>
+                                        </motion.div>
+                                    )}
                                 </div>
 
                                 {/* ── COLUNA DIREITA: Variações + botão (desktop) ── */}
@@ -315,16 +719,18 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                                         allStock={stock}
                                         onSelectVariation={(item) => {
                                             setScannedItem(item);
+                                            addToHistory(item);
                                             if (successSound.current) {
                                                 successSound.current.currentTime = 0;
-                                                successSound.current.play().catch(() => {});
+                                                successSound.current.play().catch(() => { });
                                             }
+                                            speakItem(item, getTruckQtdForItem(item));
                                         }}
                                     />
 
                                     {/* Botão Nova Consulta — visível só no desktop */}
                                     <button
-                                        onClick={() => setScannedItem(null)}
+                                        onClick={handleResetQuery}
                                         className="hidden md:flex w-full h-12 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-wider items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md shadow-slate-900/10 dark:shadow-none mt-auto"
                                     >
                                         <RefreshCcw className="w-4 h-4" />
@@ -414,6 +820,51 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                 isOpen={isCameraOpen}
                 onClose={() => setIsCameraOpen(false)}
                 onScan={handleManualSearch}
+            />
+
+            {/* BARRA DE NAVEGAÇÃO INFERIOR MOBILE */}
+            <div className="md:hidden">
+                <LocatorBottomNav
+                    onGoHome={onBackToMenu}
+                    onOpenSearch={() => setIsManualAddOpen(true)}
+                    onOpenScanner={() => setIsCameraOpen(true)}
+                    onOpenHistory={() => setIsHistoryOpen(true)}
+                    onResetQuery={handleResetQuery}
+                    hasScannedItem={!!scannedItem}
+                    historyCount={history.length}
+                    isSearchOpen={isManualAddOpen}
+                    isHistoryOpen={isHistoryOpen}
+                />
+            </div>
+
+            {/* MODAL DE HISTÓRICO DE CONSULTAS RECENTES */}
+            <LocatorHistoryModal
+                isOpen={isHistoryOpen}
+                onClose={() => setIsHistoryOpen(false)}
+                history={history}
+                onSelectItem={handleManualSearch}
+                onClearHistory={handleClearHistory}
+            />
+
+            {/* MODAL DE AJUSTES DE VOZ SINTETIZADA */}
+            <VoiceSettingsModal
+                isOpen={isVoiceConfigOpen}
+                onClose={() => {
+                    setIsVoiceConfigOpen(false);
+                    if ('speechSynthesis' in window) {
+                        window.speechSynthesis.cancel();
+                    }
+                    setIsTestingVoice(false);
+                }}
+                voices={voices}
+                selectedVoiceURI={selectedVoiceURI}
+                onSelectVoice={handleSelectVoice}
+                voiceRate={voiceRate}
+                onChangeRate={handleChangeRate}
+                isVoiceEnabled={isVoiceEnabled}
+                onToggleVoice={toggleVoice}
+                onTestVoice={handleTestVoice}
+                isSpeaking={isTestingVoice}
             />
         </div>
     );

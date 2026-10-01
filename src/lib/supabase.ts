@@ -1345,30 +1345,50 @@ export interface CargaCodeMappingRow {
 
 export async function getCloudCargaCodeMappings(): Promise<Record<string, string>> {
     if (USE_LOCAL_DB) return {};
+    let mappings: Record<string, string> = {};
+
     try {
         const { data, error } = await supabase
             .from('carga_cm_code_mappings')
             .select('doc_text, stock_code');
 
-        if (error) throw error;
-        
-        const map: Record<string, string> = {};
-        (data || []).forEach((row: any) => {
-            if (row.doc_text && row.stock_code) {
-                map[row.doc_text.toUpperCase().trim()] = row.stock_code;
-            }
-        });
-        return map;
+        if (!error && data) {
+            data.forEach((row: any) => {
+                if (row.doc_text && row.stock_code) {
+                    mappings[row.doc_text.toUpperCase().trim()] = row.stock_code;
+                }
+            });
+        }
     } catch (err) {
-        console.warn('Tabela carga_cm_code_mappings indisponível no Supabase (usando fallback local):', err);
-        return {};
+        console.warn('Tabela carga_cm_code_mappings indisponível no Supabase (usando fallback):', err);
     }
+
+    // Mirror no Storage do Supabase (para garantir compatibilidade imediata em todos os aparelhos)
+    try {
+        const { data: fileData, error: fileError } = await supabase.storage
+            .from('fotos')
+            .download('sync/code_mappings_data.json');
+
+        if (!fileError && fileData) {
+            const text = await fileData.text();
+            const parsed = JSON.parse(text);
+            if (parsed && typeof parsed === 'object') {
+                mappings = { ...parsed, ...mappings };
+            }
+        }
+    } catch (storageErr) {
+        // Arquivo de sincronização ainda não criado
+    }
+
+    return mappings;
 }
 
 export async function saveCloudCargaCodeMapping(doc_text: string, stock_code: string, stock_desc?: string): Promise<boolean> {
     if (USE_LOCAL_DB) return true;
+    const cleanDocText = doc_text.toUpperCase().trim();
+    let tableSuccess = false;
+
     try {
-        const cleanDocText = doc_text.toUpperCase().trim();
         const { error } = await supabase
             .from('carga_cm_code_mappings')
             .upsert({
@@ -1378,12 +1398,28 @@ export async function saveCloudCargaCodeMapping(doc_text: string, stock_code: st
                 updated_at: new Date().toISOString()
             }, { onConflict: 'doc_text' });
 
-        if (error) throw error;
-        return true;
+        if (!error) tableSuccess = true;
     } catch (err) {
-        console.warn('Erro ao salvar vínculo na nuvem (usando local):', err);
-        return false;
+        console.warn('Erro ao salvar vínculo na tabela carga_cm_code_mappings:', err);
     }
+
+    // Salvar também no Storage mirror para sincronização imediata em múltiplos dispositivos
+    try {
+        const saved = localStorage.getItem('@MK_WHEEL_CODE_MAPPINGS');
+        const currentMap = saved ? JSON.parse(saved) : {};
+        currentMap[cleanDocText] = stock_code;
+        const blob = new Blob([JSON.stringify(currentMap, null, 2)], { type: 'application/json' });
+        await supabase.storage
+            .from('fotos')
+            .upload('sync/code_mappings_data.json', blob, {
+                contentType: 'application/json',
+                upsert: true
+            });
+    } catch (storageErr) {
+        console.warn('Erro ao espelhar vínculo no storage:', storageErr);
+    }
+
+    return tableSuccess;
 }
 
 export async function deleteCloudCargaCodeMapping(doc_text: string): Promise<boolean> {
@@ -1522,6 +1558,188 @@ export async function clearCloudCargaItems(): Promise<boolean> {
         return true;
     } catch (err: any) {
         console.warn('Erro ao zerar carga na nuvem:', err?.message || err);
+        return false;
+    }
+}
+
+/**
+ * Funções para Sincronização em Nuvem dos Romaneios (Multi-dispositivos: PC, Celular, Tablet)
+ * Estratégia Híbrida: Tabela SQL 'romaneios' + Espelho em Storage 'sync/romaneios_data.json'
+ */
+export async function getCloudRomaneios(): Promise<any[] | null> {
+    if (USE_LOCAL_DB) return null;
+
+    // 1. Tentar ler diretamente da tabela SQL 'romaneios' no Supabase
+    try {
+        const { data, error } = await supabase
+            .from('romaneios')
+            .select('*')
+            .order('data_atualizacao', { ascending: false });
+
+        if (!error && Array.isArray(data) && data.length > 0) {
+            return data.map((row: any) => ({
+                id: row.id,
+                numero: row.numero,
+                titulo: row.titulo,
+                clienteOuDestino: row.cliente_ou_destino || '',
+                status: row.status || 'pendente',
+                totalItens: Number(row.total_itens) || (Array.isArray(row.itens) ? row.itens.length : 0),
+                totalPecas: Number(row.total_pecas) || 0,
+                totalConferido: Number(row.total_conferido) || 0,
+                itens: Array.isArray(row.itens) ? row.itens : [],
+                arquivos: Array.isArray(row.arquivos) ? row.arquivos : [],
+                dataCriacao: row.data_criacao || row.created_at || new Date().toISOString(),
+                dataAtualizacao: row.data_atualizacao || row.updated_at || new Date().toISOString()
+            }));
+        }
+
+        if (error) {
+            console.warn('Tabela romaneios no Supabase não respondeu (tentando Storage mirror):', error.message);
+        }
+    } catch (err: any) {
+        console.warn('Exceção ao consultar tabela romaneios:', err?.message || err);
+    }
+
+    // 2. Fallback resiliente via Supabase Storage (permite funcionar instantaneamente mesmo sem migração SQL)
+    try {
+        const { data: fileData, error: fileError } = await supabase.storage
+            .from('fotos')
+            .download('sync/romaneios_data.json');
+
+        if (!fileError && fileData) {
+            const text = await fileData.text();
+            const parsed = JSON.parse(text);
+            if (Array.isArray(parsed)) {
+                return parsed;
+            }
+        }
+    } catch (storageErr) {
+        console.warn('Storage mirror de romaneios ainda não disponível:', storageErr);
+    }
+
+    return null;
+}
+
+export async function saveCloudRomaneio(romaneio: any, fullListSnapshot?: any[]): Promise<boolean> {
+    if (USE_LOCAL_DB) return true;
+    let savedInTable = false;
+
+    // 1. Tentar salvar/atualizar na tabela 'romaneios' do Supabase
+    try {
+        const payload = {
+            id: romaneio.id,
+            numero: romaneio.numero,
+            titulo: romaneio.titulo,
+            cliente_ou_destino: romaneio.clienteOuDestino || '',
+            status: romaneio.status || 'pendente',
+            total_itens: Number(romaneio.totalItens) || (Array.isArray(romaneio.itens) ? romaneio.itens.length : 0),
+            total_pecas: Number(romaneio.totalPecas) || 0,
+            total_conferido: Number(romaneio.totalConferido) || 0,
+            itens: Array.isArray(romaneio.itens) ? romaneio.itens : [],
+            arquivos: Array.isArray(romaneio.arquivos) ? romaneio.arquivos : [],
+            data_criacao: romaneio.dataCriacao || new Date().toISOString(),
+            data_atualizacao: romaneio.dataAtualizacao || new Date().toISOString()
+        };
+
+        const { error } = await supabase
+            .from('romaneios')
+            .upsert(payload, { onConflict: 'id' });
+
+        if (!error) {
+            savedInTable = true;
+        } else {
+            console.warn('Alerta ao upsert na tabela romaneios:', error.message);
+        }
+    } catch (err: any) {
+        console.warn('Exceção ao salvar na tabela romaneios:', err?.message || err);
+    }
+
+    // 2. Sempre espelhar a lista completa no Storage do Supabase para sincronização instantânea
+    if (fullListSnapshot && Array.isArray(fullListSnapshot)) {
+        await saveCloudRomaneiosMirror(fullListSnapshot);
+    }
+
+    return savedInTable;
+}
+
+export async function saveCloudRomaneiosMirror(romaneios: any[]): Promise<boolean> {
+    if (USE_LOCAL_DB) return true;
+    try {
+        const blob = new Blob([JSON.stringify(romaneios, null, 2)], { type: 'application/json' });
+        const { error } = await supabase.storage
+            .from('fotos')
+            .upload('sync/romaneios_data.json', blob, {
+                contentType: 'application/json',
+                upsert: true
+            });
+
+        if (error) {
+            console.warn('Aviso ao atualizar mirror de romaneios no storage:', error.message);
+            return false;
+        }
+        return true;
+    } catch (err: any) {
+        console.warn('Erro ao salvar mirror de romaneios no storage:', err?.message || err);
+        return false;
+    }
+}
+
+export async function saveCloudRomaneiosBatch(romaneios: any[]): Promise<boolean> {
+    if (USE_LOCAL_DB) return true;
+    try {
+        // Salvar espelho em storage
+        await saveCloudRomaneiosMirror(romaneios);
+
+        if (romaneios.length === 0) return true;
+
+        const payload = romaneios.map(r => ({
+            id: r.id,
+            numero: r.numero,
+            titulo: r.titulo,
+            cliente_ou_destino: r.clienteOuDestino || '',
+            status: r.status || 'pendente',
+            total_itens: Number(r.totalItens) || (Array.isArray(r.itens) ? r.itens.length : 0),
+            total_pecas: Number(r.totalPecas) || 0,
+            total_conferido: Number(r.totalConferido) || 0,
+            itens: Array.isArray(r.itens) ? r.itens : [],
+            arquivos: Array.isArray(r.arquivos) ? r.arquivos : [],
+            data_criacao: r.dataCriacao || new Date().toISOString(),
+            data_atualizacao: r.dataAtualizacao || new Date().toISOString()
+        }));
+
+        const { error } = await supabase
+            .from('romaneios')
+            .upsert(payload, { onConflict: 'id' });
+
+        if (error) {
+            console.warn('Alerta ao salvar lote de romaneios no Supabase:', error.message);
+        }
+        return true;
+    } catch (err: any) {
+        console.warn('Erro ao salvar lote de romaneios:', err?.message || err);
+        return false;
+    }
+}
+
+export async function deleteCloudRomaneio(id: string, updatedListSnapshot?: any[]): Promise<boolean> {
+    if (USE_LOCAL_DB) return true;
+    try {
+        const { error } = await supabase
+            .from('romaneios')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.warn('Alerta ao deletar romaneio do Supabase:', error.message);
+        }
+
+        if (updatedListSnapshot && Array.isArray(updatedListSnapshot)) {
+            await saveCloudRomaneiosMirror(updatedListSnapshot);
+        }
+
+        return true;
+    } catch (err: any) {
+        console.warn('Erro ao deletar romaneio do Supabase:', err?.message || err);
         return false;
     }
 }

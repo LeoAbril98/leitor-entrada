@@ -18,6 +18,8 @@ import { ResultsList } from './ResultsList';
 import { ExportTable } from './ExportTable';
 import { ExportModal, ExportStatus } from './ExportModal';
 import { ManualAddModal } from './ManualAddModal';
+import { CameraScannerModal } from './CameraScannerModal';
+import { CountingBottomNav } from './CountingBottomNav';
 
 export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) => {
   const [view, setView] = useState<'setup' | 'counting'>('setup');
@@ -39,6 +41,7 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
   const [searchTerm, setSearchTerm] = useState('');
   const [customStock, setCustomStock] = useState<StockItem[]>([]);
   const [isManualAddOpen, setIsManualAddOpen] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   // Export Modal State
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -106,7 +109,7 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
 
   // Auto-focus input field (apenas quando no topo para não pular a rolagem)
   useEffect(() => {
-    if (view === 'counting' && !isManualAddOpen && !isExportModalOpen) {
+    if (view === 'counting' && !isManualAddOpen && !isExportModalOpen && !isCameraOpen) {
       const focusInput = () => {
         if (window.scrollY > 120) return;
         if (
@@ -121,7 +124,7 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
       const interval = setInterval(focusInput, 1000);
       return () => clearInterval(interval);
     }
-  }, [view, isManualAddOpen, isExportModalOpen]);
+  }, [view, isManualAddOpen, isExportModalOpen, isCameraOpen]);
 
   const handleStartCounting = () => {
     if (!origin) {
@@ -162,9 +165,9 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
     setIsSyncing(false);
   };
 
-  const handleAddReading = (e?: React.FormEvent) => {
+  const handleAddReading = (e?: React.FormEvent, directCode?: string) => {
     e?.preventDefault();
-    const code = inputValue.trim();
+    const code = (directCode || inputValue).trim();
     if (!code) return;
 
     const newReading: Reading = {
@@ -174,7 +177,9 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
     };
 
     setReadings(prev => [newReading, ...prev]);
-    setInputValue('');
+    if (!directCode) {
+      setInputValue('');
+    }
 
     // Sincronizar com a nuvem se não estiver em modo local
     if (!USE_LOCAL_DB) {
@@ -199,6 +204,10 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
       }
       toast.error(`Não encontrado: ${code}`, { duration: 1500 });
     }
+  };
+
+  const handleCameraScan = (scannedCode: string) => {
+    handleAddReading(undefined, scannedCode);
   };
 
   const handleManualAdd = (codigo: string, quantity: number) => {
@@ -578,7 +587,7 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
 
   return (
     <div className={cn(
-      "min-h-screen transition-colors pb-20",
+      "min-h-screen transition-colors pb-28 sm:pb-32 md:pb-20",
       scanError ? "bg-red-500/20 dark:bg-red-900/40" : "bg-slate-50 dark:bg-slate-950"
     )}>
       {scanError && (
@@ -603,8 +612,8 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
         lastReading={lastReading}
       />
 
-      <main className="max-w-5xl mx-auto px-4 mt-8">
-        <section className="mb-8 flex gap-3">
+      <main className="max-w-5xl mx-auto px-4 mt-3 sm:mt-6">
+        <section className="mb-3 sm:mb-6 flex gap-3">
           <div className="flex-1">
             <ScannerInput
               ref={inputRef}
@@ -613,13 +622,13 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
               onSubmit={handleAddReading}
             />
           </div>
+          {/* Botão de busca manual visível em telas sm/desktop; no mobile fica na Bottom Nav */}
           <button
             onClick={() => setIsManualAddOpen(true)}
-            className="h-16 px-6 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
+            className="hidden sm:flex h-16 px-6 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl font-bold items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
             title="Adicionar item manualmente"
           >
-            <span className="hidden sm:inline">Busca Manual</span>
-            <Barcode className="w-6 h-6 sm:hidden" />
+            <span>Busca Manual</span>
           </button>
         </section>
 
@@ -632,14 +641,26 @@ export const CountingModule = ({ onBackToMenu }: { onBackToMenu: () => void }) =
         />
       </main>
 
-      <div className="fixed bottom-6 right-6 sm:hidden">
-        <button
-          onClick={() => inputRef.current?.focus()}
-          className="w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-300 flex items-center justify-center active:scale-90 transition-transform"
-        >
-          <Barcode className="w-6 h-6" />
-        </button>
+      {/* BARRA DE NAVEGAÇÃO INFERIOR MOBILE */}
+      <div className="md:hidden">
+        <CountingBottomNav
+          onGoHome={onBackToMenu}
+          onOpenSearch={() => setIsManualAddOpen(true)}
+          onOpenScanner={() => setIsCameraOpen(true)}
+          onUndo={undoLastReading}
+          onExport={handleExportClick}
+          readingsCount={readings.length}
+          canUndo={readings.length > 0}
+          isSearchOpen={isManualAddOpen}
+        />
       </div>
+
+      {/* Modal da Câmera para Escaneamento Mobile */}
+      <CameraScannerModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onScan={handleCameraScan}
+      />
 
       <div className="fixed top-0 left-[-9999px] z-[-10]">
         {chunks.map((chunk, i) => (

@@ -189,7 +189,20 @@ export function getModelVariations(
     variationsInSelectedAro.forEach(v => {
         if (v.furacao) furacaoSet.add(v.furacao);
     });
-    const availableFuracoes = Array.from(furacaoSet).sort((a, b) => a.localeCompare(b));
+    const availableFuracoes = Array.from(furacaoSet).sort((a, b) => {
+        const matchA = a.match(/([34568])\s*[X\*\-]\s*([\d\.,]+)/i);
+        const matchB = b.match(/([34568])\s*[X\*\-]\s*([\d\.,]+)/i);
+        if (matchA && matchB) {
+            const holesA = parseInt(matchA[1], 10) || 0;
+            const holesB = parseInt(matchB[1], 10) || 0;
+            if (holesA !== holesB) return holesA - holesB;
+
+            const pcdA = parseFloat(matchA[2].replace(',', '.')) || 0;
+            const pcdB = parseFloat(matchB[2].replace(',', '.')) || 0;
+            if (pcdA !== pcdB) return pcdA - pcdB;
+        }
+        return a.localeCompare(b, 'pt-BR', { numeric: true, sensitivity: 'base' });
+    });
 
     // 3. Acabamentos: APENAS os que existem no Aro selecionado (e furação atual se houver)
     const variationsInSelectedAroAndFuracao = currentVariation.furacao

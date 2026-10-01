@@ -12,10 +12,12 @@ import { AdminCompletePanel } from './components/AdminCompletePanel';
 import { UpdateWheelsModule } from './components/UpdateWheelsModule';
 import { ConferenceModule } from './components/ConferenceModule';
 import { HistoryModule } from './components/HistoryModule';
+import { RomaneioModule } from './components/RomaneioModule';
+import { AdminRomaneioPanel } from './components/AdminRomaneioPanel';
 import { getPhotoOverrides } from './lib/supabase';
 import { setPhotoOverrides } from './utils/photoUtils';
 
-type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'conference' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history' | 'admin-settings' | 'admin-complete';
+type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'conference' | 'romaneio' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history' | 'admin-settings' | 'admin-complete' | 'admin-romaneio';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('menu');
@@ -30,6 +32,13 @@ export default function App() {
       setMode('admin-complete');
     } else if (path === '/pendencias' || path === '/pendencia' || path === '/p') {
       setMode('pendencies');
+    }
+
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else if (savedTheme === 'light') {
+      document.documentElement.classList.remove('dark');
     }
 
     // Carregar overrides de fotos do Supabase assim que o app inicia
@@ -89,10 +98,19 @@ export default function App() {
           if (mod === 'pendencies') setMode('admin-management');
           if (mod === 'settings') setMode('admin-settings');
           if (mod === 'complete') setMode('admin-complete');
+          if (mod === 'romaneio') setMode('admin-romaneio');
         }}
         onLogout={handleBackToMenu}
       />
     );
+  }
+
+  if (mode === 'admin-romaneio') {
+    return <AdminRomaneioPanel onBack={() => setMode('admin-dashboard')} />;
+  }
+
+  if (mode === 'romaneio') {
+    return <RomaneioModule onBackToMenu={handleBackToMenu} />;
   }
 
   if (mode === 'admin-management') {

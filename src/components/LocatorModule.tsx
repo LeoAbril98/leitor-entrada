@@ -1,17 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
-import { ArrowLeft, MapPin, Search, Package2, RefreshCcw, Hash, Disc, Camera } from 'lucide-react';
+import { 
+    ArrowLeft, 
+    MapPin, 
+    Search, 
+    Package2, 
+    RefreshCcw, 
+    Camera, 
+    Maximize2, 
+    X, 
+    Copy, 
+    Check,
+    Barcode,
+    Layers
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScannerInput } from './ScannerInput';
 import { ManualAddModal } from './ManualAddModal';
 import { CameraScannerModal } from './CameraScannerModal';
+import { WheelVariationsSelector } from './WheelVariationsSelector';
 import { getInventory } from '../lib/supabase';
 import { StockItem } from '../types';
-import { getWheelPhotoUrl, parseWheelSpecs } from '../utils/photoUtils';
-import { Settings } from 'lucide-react';
-import { WheelSpecsManagerModal } from './WheelSpecsManagerModal';
-import { WheelLegendCard } from './WheelLegendCard';
-import { cn } from '../utils';
+import { getWheelPhotoUrl } from '../utils/photoUtils';
 
 interface LocatorModuleProps {
     onBackToMenu: () => void;
@@ -23,8 +33,9 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
     const [scannedItem, setScannedItem] = useState<StockItem | null>(null);
     const [scanError, setScanError] = useState(false);
     const [isManualAddOpen, setIsManualAddOpen] = useState(false);
-    const [isSpecsManagerOpen, setIsSpecsManagerOpen] = useState(false);
     const [isCameraOpen, setIsCameraOpen] = useState(false);
+    const [isPhotoZoomOpen, setIsPhotoZoomOpen] = useState(false);
+    const [copiedCode, setCopiedCode] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -52,7 +63,7 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
     }, []);
 
     useEffect(() => {
-        if (!isManualAddOpen) {
+        if (!isManualAddOpen && !isPhotoZoomOpen) {
             const focusInput = () => {
                 if (document.activeElement?.tagName !== 'INPUT' || document.activeElement === inputRef.current) {
                     inputRef.current?.focus({ preventScroll: true });
@@ -62,7 +73,7 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
             const interval = setInterval(focusInput, 1000);
             return () => clearInterval(interval);
         }
-    }, [isManualAddOpen]);
+    }, [isManualAddOpen, isPhotoZoomOpen]);
 
     const handleSearch = (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -117,201 +128,279 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
         }
     };
 
+    const handleCopyCode = (codigo: string) => {
+        navigator.clipboard.writeText(codigo);
+        setCopiedCode(true);
+        toast.success(`Código #${codigo} copiado!`);
+        setTimeout(() => setCopiedCode(false), 2000);
+    };
+
     return (
-        <div className={`min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors ${scanError ? "bg-red-500/20 dark:bg-red-900/40" : ""}`}>
+        <div className={`min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors pb-12 ${scanError ? "bg-red-500/20 dark:bg-red-900/40" : ""}`}>
             {scanError && (
                 <div className="fixed inset-0 z-50 pointer-events-none border-8 border-red-500/50 animate-pulse" />
             )}
             <Toaster position="top-center" />
 
-            <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-sm transition-colors">
-                <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
-                    <button
-                        onClick={onBackToMenu}
-                        className="p-2 shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm font-bold flex items-center justify-center gap-2"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                        <span className="hidden sm:inline">Menu</span>
-                    </button>
-                    <div>
-                        <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                            <MapPin className="text-emerald-500 w-6 h-6" /> Localização
+            {/* HEADER */}
+            <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 sticky top-0 z-20 shadow-sm transition-colors">
+                <div className="max-w-5xl mx-auto px-4 py-3.5 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={onBackToMenu}
+                            className="p-2 shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-bold flex items-center gap-2 shadow-sm"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                            <span className="hidden sm:inline text-sm">Menu</span>
+                        </button>
+                        <h1 className="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <span className="p-1.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-lg text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
+                                <MapPin className="w-4 h-4" />
+                            </span>
+                            Localização
                         </h1>
                     </div>
 
-                    <button
-                        onClick={() => setIsSpecsManagerOpen(true)}
-                        className="ml-auto text-xs font-black bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300 px-3.5 py-2 rounded-xl flex items-center gap-2 border border-indigo-200 dark:border-indigo-800 transition-colors shadow-sm"
-                        title="Configurar Cubos e Anéis por modelo e furação"
-                    >
-                        <Settings className="w-4 h-4 text-indigo-500" />
-                        <span className="hidden sm:inline">Mapear Rodas</span>
-                    </button>
+                    {stock.length > 0 && (
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-200/50 dark:border-slate-700/50">
+                            <Layers className="w-3.5 h-3.5 text-emerald-500" />
+                            <span>{stock.length.toLocaleString('pt-BR')} itens</span>
+                        </div>
+                    )}
                 </div>
             </header>
 
-            <main className="max-w-3xl mx-auto px-4 mt-8">
-                <section className="mb-8 flex flex-col sm:flex-row gap-3">
-                    <div className="flex-1 bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
-                        <h2 className="text-slate-500 dark:text-slate-400 font-semibold mb-4 flex items-center gap-2">
-                            <Search className="w-5 h-5" /> Bipar código de barras
-                        </h2>
-                        <ScannerInput
-                            ref={inputRef}
-                            value={inputValue}
-                            onChange={setInputValue}
-                            onSubmit={handleSearch}
-                        />
-                    </div>
-                    <div className="flex sm:flex-col gap-3 shrink-0">
+            <main className="max-w-5xl mx-auto px-4 mt-3 sm:mt-6">
+                {/* BARRA DE PESQUISA & AÇÕES EM LINHA ÚNICA COMPACTA */}
+                <section className="mb-3 sm:mb-4">
+                    <div className="flex gap-2 items-center">
+                        <div className="flex-1 min-w-0">
+                            <ScannerInput
+                                ref={inputRef}
+                                value={inputValue}
+                                onChange={setInputValue}
+                                onSubmit={handleSearch}
+                            />
+                        </div>
                         <button
                             onClick={() => setIsCameraOpen(true)}
-                            className="flex-1 h-16 sm:w-48 bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl font-bold flex items-center justify-center gap-2.5 transition-all shadow-md shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-[0.98]"
+                            className="h-16 w-14 sm:w-auto sm:px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 transition-all shadow-md shadow-emerald-600/10 active:scale-95 shrink-0"
+                            title="Ler com Câmera"
                         >
-                            <Camera className="w-6 h-6" />
-                            <span>Ler com Câmera</span>
+                            <Camera className="w-5 h-5" />
+                            <span className="text-[10px] sm:text-xs">Câmera</span>
                         </button>
                         <button
                             onClick={() => setIsManualAddOpen(true)}
-                            className="flex-1 h-16 sm:w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-3xl font-bold flex items-center justify-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all shadow-sm active:scale-[0.98]"
+                            className="h-16 w-14 sm:w-auto sm:px-4 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl font-black text-xs uppercase tracking-wider flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 shrink-0"
+                            title="Busca Manual"
                         >
-                            <Search className="w-5 h-5" />
-                            <span>Busca Manual</span>
+                            <Search className="w-5 h-5 text-slate-400" />
+                            <span className="text-[10px] sm:text-xs">Busca</span>
                         </button>
                     </div>
                 </section>
 
                 <AnimatePresence mode="wait">
                     {scannedItem ? (
+                        /* CARD HERO — RESPONSIVO: 1 col mobile, 2 col desktop */
                         <motion.div
                             key={scannedItem.codigo}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
+                            initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-xl border border-emerald-100 dark:border-emerald-900/30 overflow-hidden relative"
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200/80 dark:border-slate-800 relative overflow-hidden"
                         >
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 dark:bg-emerald-900/20 rounded-bl-full -z-10" />
+                            {/* GRID 1 coluna mobile / 2 colunas desktop */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 md:divide-x md:divide-slate-100 md:dark:divide-slate-800">
 
-                            <div className="flex gap-4 mb-8">
-                                <div className="w-20 h-20 shrink-0 bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-md">
-                                    <img 
-                                        src={getWheelPhotoUrl(scannedItem.descricao, scannedItem.codigo)} 
-                                        alt={scannedItem.descricao}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).src = "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO";
+                                {/* ── COLUNA ESQUERDA: Produto + Estoque + Localização ── */}
+                                <div className="p-4 sm:p-5 flex flex-col gap-4">
+
+                                    {/* Foto + Descrição */}
+                                    <div className="flex items-center gap-3.5">
+                                        <div 
+                                            onClick={() => setIsPhotoZoomOpen(true)}
+                                            className="cursor-pointer relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 bg-gradient-to-b from-slate-100 to-slate-200/60 dark:from-slate-800 dark:to-slate-950 rounded-2xl p-2 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shadow-md group hover:border-emerald-400 transition-all"
+                                        >
+                                            <img
+                                                src={getWheelPhotoUrl(scannedItem.descricao, scannedItem.codigo)}
+                                                alt={scannedItem.descricao}
+                                                className="w-full h-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-200"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = "https://placehold.co/150x150/e2e8f0/64748b?text=SEM+FOTO";
+                                                }}
+                                            />
+                                            <span className="absolute bottom-1 right-1 p-1 bg-white/90 dark:bg-slate-900/90 rounded-md text-slate-500 shadow-sm opacity-80 group-hover:opacity-100">
+                                                <Maximize2 className="w-3 h-3" />
+                                            </span>
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                                <button
+                                                    onClick={() => handleCopyCode(scannedItem.codigo)}
+                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-xs font-mono font-bold text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700 transition-all active:scale-95"
+                                                >
+                                                    {copiedCode ? (
+                                                        <>
+                                                            <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                                            <span className="text-emerald-600 dark:text-emerald-400">Copiado!</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Barcode className="w-3.5 h-3.5 text-slate-400" />
+                                                            <span>#{scannedItem.codigo}</span>
+                                                            <Copy className="w-3 h-3 text-slate-400 ml-0.5 opacity-70" />
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                            <h2 className="text-base sm:text-xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-snug line-clamp-2">
+                                                {scannedItem.descricao}
+                                            </h2>
+                                        </div>
+                                    </div>
+
+                                    {/* Estoque + Localização lado a lado no desktop, empilhados no mobile */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {/* CARD ESTOQUE */}
+                                        <div className="bg-slate-50 dark:bg-slate-800/70 p-4 rounded-2xl border-2 border-slate-200/80 dark:border-slate-700/60">
+                                            <div className="flex items-center gap-2 mb-1.5 text-slate-600 dark:text-slate-300">
+                                                <Package2 className="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400" />
+                                                <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                                                    Estoque
+                                                </span>
+                                            </div>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+                                                    {scannedItem.quantidade}
+                                                </span>
+                                                <span className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase">
+                                                    {scannedItem.quantidade === 1 ? "un" : "un"}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* CARD LOCALIZAÇÃO */}
+                                        <div className="bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-transparent dark:from-emerald-950/50 dark:via-emerald-900/20 dark:to-transparent p-4 rounded-2xl border-2 border-emerald-500/30 dark:border-emerald-500/20">
+                                            <div className="flex items-center gap-2 mb-1.5 text-emerald-800 dark:text-emerald-300">
+                                                <MapPin className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                                <span className="text-xs font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                                                    Localização
+                                                </span>
+                                            </div>
+                                            <p className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight break-words font-mono leading-none">
+                                                {scannedItem.local || '---'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Botão Nova Consulta — visível só no mobile abaixo do grid */}
+                                    <button
+                                        onClick={() => setScannedItem(null)}
+                                        className="md:hidden w-full h-12 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md shadow-slate-900/10 dark:shadow-none"
+                                    >
+                                        <RefreshCcw className="w-4 h-4" />
+                                        <span>Nova Consulta</span>
+                                    </button>
+                                </div>
+
+                                {/* ── COLUNA DIREITA: Variações + botão (desktop) ── */}
+                                <div className="p-4 sm:p-5 flex flex-col gap-4 bg-slate-50/50 dark:bg-slate-800/20 md:bg-transparent md:dark:bg-transparent">
+                                    {/* SELETOR DE VARIAÇÕES */}
+                                    <WheelVariationsSelector
+                                        currentItem={scannedItem}
+                                        allStock={stock}
+                                        onSelectVariation={(item) => {
+                                            setScannedItem(item);
+                                            if (successSound.current) {
+                                                successSound.current.currentTime = 0;
+                                                successSound.current.play().catch(() => {});
+                                            }
                                         }}
                                     />
-                                </div>
-                                <div>
-                                    <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase leading-tight tracking-tight">
-                                        {scannedItem.descricao}
-                                    </h3>
-                                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-mono mt-1 text-sm bg-slate-100 dark:bg-slate-800 w-fit px-2 py-0.5 rounded-lg">
-                                        <Hash className="w-3.5 h-3.5" /> {scannedItem.codigo}
-                                    </div>
-                                </div>
-                            </div>
 
-                            {/* GRID DE QUANTIDADE E LOCALIZAÇÃO NO TOPO */}
-                            <div className="grid grid-cols-2 gap-4 mb-6">
-                                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 shadow-sm">
-                                    <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] mb-2">Quantidade</p>
-                                    <p className="text-4xl font-black text-emerald-700 dark:text-emerald-300">
-                                        {scannedItem.quantidade}
-                                    </p>
-                                </div>
-                                
-                                <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">Localização</p>
-                                    <p className="text-4xl font-black text-slate-800 dark:text-slate-100">
-                                        {scannedItem.local || '---'}
-                                    </p>
+                                    {/* Botão Nova Consulta — visível só no desktop */}
+                                    <button
+                                        onClick={() => setScannedItem(null)}
+                                        className="hidden md:flex w-full h-12 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-wider items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md shadow-slate-900/10 dark:shadow-none mt-auto"
+                                    >
+                                        <RefreshCcw className="w-4 h-4" />
+                                        <span>Nova Consulta</span>
+                                    </button>
                                 </div>
                             </div>
-
-                            {/* ESPECIFICAÇÕES TÉCNICAS DA RODA ABAIXO */}
-                            {(() => {
-                                const specs = parseWheelSpecs(scannedItem.descricao, scannedItem.codigo);
-                                return (
-                                    <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
-                                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-700/50 pb-2">
-                                            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                                                <Disc className="w-3.5 h-3.5 text-indigo-500" /> Especificações da Roda
-                                            </span>
-                                            {specs.linha && (
-                                                <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50">
-                                                    {specs.linha}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                            <div className="flex flex-col bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                                                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Aro / Tala</span>
-                                                <span className="text-sm font-black text-slate-800 dark:text-slate-100">{specs.aroTala || '---'}</span>
-                                            </div>
-
-                                            <div className="flex flex-col bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                                                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Furação (PCD)</span>
-                                                <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">{specs.furacao || '---'}</span>
-                                            </div>
-
-                                            <div className="flex flex-col bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                                                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Offset (ET)</span>
-                                                <span className="text-sm font-black text-slate-800 dark:text-slate-100">{specs.offset || '---'}</span>
-                                            </div>
-
-                                            <div className="flex flex-col bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                                                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Cubo / Anel</span>
-                                                <span className={cn(
-                                                    "text-xs font-black px-2 py-0.5 rounded-md w-fit mt-0.5",
-                                                    specs.cuboTipo === 'anel' ? "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border border-amber-300/50" :
-                                                    specs.cuboTipo === 'cubo' ? "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border border-blue-300/50" :
-                                                    "text-slate-700 dark:text-slate-300"
-                                                )}>
-                                                    {specs.cuboAnel || '---'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })()}
-
-                            {/* CARD DE LEGENDA DO ANEL / CUBO (CATÁLOGO) EM BAIXO */}
-                            <WheelLegendCard 
-                                description={scannedItem.descricao} 
-                                itemCodigo={scannedItem.codigo} 
-                                className="mb-6"
-                            />
-
-                            <button
-                                onClick={() => setScannedItem(null)}
-                                className="mt-8 w-full h-14 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-2xl font-black flex items-center justify-center gap-3 hover:opacity-90 transition-all active:scale-[0.98] shadow-lg shadow-slate-200 dark:shadow-none"
-                            >
-                                <RefreshCcw className="w-5 h-5" /> NOVA CONSULTA
-                            </button>
                         </motion.div>
                     ) : (
+                        /* EMPTY STATE COMPACTO */
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="bg-transparent border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[300px]"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center flex flex-col items-center justify-center min-h-[240px] relative overflow-hidden"
                         >
-                            <div className="w-20 h-20 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center mb-4">
-                                <MapPin className="w-10 h-10 text-slate-300 dark:text-slate-700" />
+                            {/* Anéis de Pulso Radar */}
+                            <div className="relative mb-3">
+                                <div className="absolute inset-0 rounded-full bg-emerald-500/10 dark:bg-emerald-400/10 animate-ping" />
+                                <div className="w-16 h-16 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/60 dark:to-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 rounded-full flex items-center justify-center shadow-inner relative z-10">
+                                    <Barcode className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+                                </div>
                             </div>
-                            <p className="text-slate-500 dark:text-slate-400 font-bold text-xl">
-                                Aguardando bipagem...
-                            </p>
-                            <p className="text-slate-400 dark:text-slate-600 text-sm mt-2">
-                                Insira o código para ver o estoque e local.
+
+                            <h3 className="text-base font-black text-slate-800 dark:text-slate-100 mb-1">
+                                Pronto para Bipagem
+                            </h3>
+                            <p className="text-slate-400 dark:text-slate-500 text-xs max-w-xs mx-auto leading-relaxed">
+                                Aponte o leitor de código de barras ou use a câmera para visualizar imediatamente a localização e quantidade.
                             </p>
                         </motion.div>
                     )}
                 </AnimatePresence>
-
             </main>
+
+            {/* MODAL DE ZOOM DA FOTO */}
+            <AnimatePresence>
+                {isPhotoZoomOpen && scannedItem && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setIsPhotoZoomOpen(false)}
+                        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm p-4 flex items-center justify-center cursor-zoom-out"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative cursor-default"
+                        >
+                            <button
+                                onClick={() => setIsPhotoZoomOpen(false)}
+                                className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500 hover:text-slate-800 dark:hover:text-slate-100 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            <div className="w-full aspect-square bg-slate-50 dark:bg-slate-950 rounded-2xl overflow-hidden flex items-center justify-center p-4 mb-4 border border-slate-100 dark:border-slate-800">
+                                <img
+                                    src={getWheelPhotoUrl(scannedItem.descricao, scannedItem.codigo)}
+                                    alt={scannedItem.descricao}
+                                    className="w-full h-full object-contain drop-shadow-xl"
+                                />
+                            </div>
+
+                            <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 text-center">
+                                {scannedItem.descricao}
+                            </h3>
+                            <p className="text-sm font-mono text-center text-slate-400 mt-1">
+                                #{scannedItem.codigo}
+                            </p>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <ManualAddModal
                 isOpen={isManualAddOpen}
@@ -319,12 +408,6 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                 stock={stock}
                 onAdd={handleManualSearch}
                 mode="search"
-            />
-
-            <WheelSpecsManagerModal
-                isOpen={isSpecsManagerOpen}
-                onClose={() => setIsSpecsManagerOpen(false)}
-                stock={stock}
             />
 
             <CameraScannerModal

@@ -79,8 +79,7 @@ import {
     getCloudAudio,
     getAllCloudSketches,
     getAllCloudAudios,
-    archiveAndClearPedidos,
-    getCloudWheelSpecs
+    archiveAndClearPedidos
 } from '../lib/supabase';
 import {
     getModelAndFinish,
@@ -89,8 +88,6 @@ import {
     setPhotoOverrides
 } from '../utils/photoUtils';
 import { SketchModal } from './SketchModal';
-import { WheelLegendCard } from './WheelLegendCard';
-import { getWheelSpecOverrides } from '../utils/wheelSpecsStore';
 import { AudioRecorderModal } from './AudioRecorderModal';
 import { AudioPlayerModal } from './AudioPlayerModal';
 import { saveSketch, getSketch, getAllSketches, deleteSketch, saveAudio, getAudio, getAllAudioKeys, deleteAudio } from '../lib/sketchStore';
@@ -844,21 +841,6 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         setItemCosts(costs);
     };
 
-    const loadWheelSpecsCloud = async () => {
-        try {
-            const cloudSpecs = await getCloudWheelSpecs();
-            if (cloudSpecs && cloudSpecs.length > 0) {
-                const local = getWheelSpecOverrides();
-                const specMap = new Map<string, any>();
-                local.forEach(item => specMap.set(item.id, item));
-                cloudSpecs.forEach(item => specMap.set(item.id, item));
-                localStorage.setItem('leitor_wheel_specs_mappings_v5', JSON.stringify(Array.from(specMap.values())));
-            }
-        } catch (e) {
-            console.error('Erro ao pré-carregar especificações de rodas da nuvem:', e);
-        }
-    };
-
     useEffect(() => {
         loadCatalogOrder().then(setCatalogOrder);
         getGlobalTags().then(setGlobalTags);
@@ -868,7 +850,6 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
         loadExportMappings();
         loadSketches();
         loadAudios();
-        loadWheelSpecsCloud();
     }, []);
 
     const fetchAndApplyCloudRows = useCallback(async (showToast = false) => {
@@ -4544,11 +4525,6 @@ export const AdminCompletePanel: React.FC<AdminCompletePanelProps> = ({ onBack, 
                                             onError={(event) => (event.currentTarget.src = 'https://placehold.co/300x300/e2e8f0/64748b?text=SEM+FOTO')}
                                         />
                                     </div>
-                                    <WheelLegendCard 
-                                        description={photoTarget.description} 
-                                        itemCodigo={photoTarget.codigo} 
-                                        className="mt-3" 
-                                    />
                                 </div>
 
                                 <div className="flex flex-col justify-center gap-4">

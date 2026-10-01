@@ -13,12 +13,14 @@ export function hasMapping(description: string | null | undefined): boolean {
 
 export const finishMapping: Record<string, string> = {
   'PRETO DIAMANTADO': 'BD',
+  'BLACK DIAMOND SMOKE': 'BDS',
   'BLACK DIAMOND': 'BD',
   'FACE BLACK DIAMOND': 'FBD',
   'LIP BLACK F': 'LBF',
   'PRETO': 'B',
   'BLACK': 'B',
   'PRETO FOSCO': 'BF',
+  'BLACK FOSCO': 'BF',
   'BRONZE FOSCO': 'BF',
   'PRETA FOSCO DIAM': 'BFD',
   'PRATA': 'SS',
@@ -96,6 +98,7 @@ export const finishMapping: Record<string, string> = {
   'B': 'B',
   'BF': 'BF',
   'BFD': 'BFD',
+  'BDS': 'BDS',
   'SS': 'SS',
   'GB': 'GB',
   'HG': 'HG',
@@ -135,12 +138,16 @@ export function setPhotoOverrides(
  * Extrai o código do modelo e o acabamento de uma descrição.
  */
 export function getModelAndFinish(description: string) {
-    const descUpper = description.toUpperCase();
+    // Normaliza a string para evitar erros com espaços duplos
+    const descUpper = description.toUpperCase().replace(/\s+/g, ' ').trim();
     const modelCode = descUpper.split(' ')[0];
     
     let finishAbbr: string = '';
+    
     for (const key of sortedFinishKeys) {
-        if (descUpper.includes(key)) {
+        // Limpa a chave também por garantia
+        const trimmedKey = key.trim().toUpperCase().replace(/\s+/g, ' ');
+        if (descUpper.includes(trimmedKey)) {
             finishAbbr = finishMapping[key];
             break;
         }
@@ -245,4 +252,3 @@ export function getWheelPhotoUrl(description: string, itemCodigo?: string): stri
 
     return finalUrl;
 }
-

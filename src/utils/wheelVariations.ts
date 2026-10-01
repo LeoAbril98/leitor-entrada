@@ -104,27 +104,30 @@ export function extractFuracao(description?: string): string {
 
 /**
  * Extrai o Acabamento de uma descrição usando a lista de acabamentos conhecidos.
- * Ex: "BLACK DIAMOND", "HYPER GLOSS", "BD", "POLIDA", "BRUTA"
+ * Ex: "BLACK DIAMOND SMOKE", "BLACK DIAMOND", "BLACK FOSCO", "BLACK"
  */
 export function extractAcabamento(description?: string): string {
     if (!description) return '';
-    const upper = description.toUpperCase();
+    
+    // Normaliza a string: deixa tudo maiúsculo e transforma espaços duplos/triplos em apenas um espaço
+    const upper = description.toUpperCase().replace(/\s+/g, ' ').trim();
 
-    // 1. ORDENAR DA MAIOR STRING PARA A MENOR
-    // Isso garante que "BLACK DIAMOND SMOKE" seja testado antes de "BLACK DIAMOND" e "BLACK"
+    // Ordena do maior para o menor
     const keysSortedByLength = [...sortedFinishKeys].sort((a, b) => {
         return b.trim().length - a.trim().length;
     });
 
     for (const key of keysSortedByLength) {
-        const trimmed = key.trim();
-        if (trimmed.length <= 2) {
-            const regex = new RegExp(`\\b${trimmed}\\b`, 'i');
+        // Limpa a chave da lista também, por garantia
+        const trimmedKey = key.trim().toUpperCase().replace(/\s+/g, ' ');
+        
+        if (trimmedKey.length <= 2) {
+            const regex = new RegExp(`\\b${trimmedKey}\\b`, 'i');
             if (regex.test(upper)) {
-                return trimmed;
+                return key.trim(); 
             }
-        } else if (upper.includes(trimmed)) {
-            return trimmed;
+        } else if (upper.includes(trimmedKey)) {
+            return key.trim(); // Achou! Retorna exatamente como está escrito na lista
         }
     }
 

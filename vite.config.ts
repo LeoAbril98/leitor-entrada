@@ -21,10 +21,26 @@ export default defineConfig(({mode}) => {
           name: 'Leitor Contagem',
           short_name: 'Leitor',
           description: 'App para controle de contagens e volumes',
-          theme_color: '#4f46e5',
-          background_color: '#f8fafc',
+          theme_color: '#ffffff',
+          background_color: '#ffffff',
           display: 'standalone',
           icons: [
+            {
+              src: 'pwa-192x192.png',
+              sizes: '192x192',
+              type: 'image/png'
+            },
+            {
+              src: 'pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png'
+            },
+            {
+              src: 'pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'any maskable'
+            },
             {
               src: 'pwa-192x192.svg',
               sizes: '192x192',

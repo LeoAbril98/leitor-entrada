@@ -14,10 +14,7 @@ import {
     Barcode,
     Layers,
     History,
-    Truck,
-    Volume2,
-    VolumeX,
-    SlidersHorizontal
+    Truck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScannerInput } from './ScannerInput';
@@ -26,12 +23,10 @@ import { CameraScannerModal } from './CameraScannerModal';
 import { WheelVariationsSelector } from './WheelVariationsSelector';
 import { LocatorBottomNav } from './LocatorBottomNav';
 import { LocatorHistoryModal, LocatorHistoryItem } from './LocatorHistoryModal';
-import { VoiceSettingsModal } from './VoiceSettingsModal';
 import { getInventory } from '../lib/supabase';
 import { StockItem } from '../types';
 import { getWheelPhotoUrl } from '../utils/photoUtils';
 import { getRomaneios, fetchAndSyncRomaneios, Romaneio } from '../services/romaneioService';
-import { getBestPtBrVoice, formatTextForSpeech } from '../utils/speechVoiceUtils';
 
 interface LocatorModuleProps {
     onBackToMenu: () => void;
@@ -49,32 +44,6 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
     const [history, setHistory] = useState<LocatorHistoryItem[]>([]);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [romaneios, setRomaneios] = useState<Romaneio[]>([]);
-    const [isVoiceEnabled, setIsVoiceEnabled] = useState(() => {
-        try {
-            const saved = localStorage.getItem('@LOCATOR_VOICE_ENABLED');
-            return saved !== null ? saved === 'true' : true;
-        } catch {
-            return true;
-        }
-    });
-    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-    const [selectedVoiceURI, setSelectedVoiceURI] = useState(() => {
-        try {
-            return localStorage.getItem('@LOCATOR_VOICE_URI') || '';
-        } catch {
-            return '';
-        }
-    });
-    const [voiceRate, setVoiceRate] = useState(() => {
-        try {
-            const saved = localStorage.getItem('@LOCATOR_VOICE_RATE');
-            return saved ? parseFloat(saved) : 1.0;
-        } catch {
-            return 1.0;
-        }
-    });
-    const [isVoiceConfigOpen, setIsVoiceConfigOpen] = useState(false);
-    const [isTestingVoice, setIsTestingVoice] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -87,34 +56,6 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
         errorSound.current = new Audio('/sounds/error.mp3');
         if (successSound.current) successSound.current.load();
         if (errorSound.current) errorSound.current.load();
-
-        // Carregar e monitorar vozes para síntese de fala de alta qualidade
-        const loadVoices = () => {
-            if ('speechSynthesis' in window) {
-                const available = window.speechSynthesis.getVoices();
-                if (available.length > 0) {
-                    setVoices(available);
-                    setSelectedVoiceURI(current => {
-                        if (current && available.some(v => v.voiceURI === current)) {
-                            return current;
-                        }
-                        const best = getBestPtBrVoice(available);
-                        const bestURI = best ? best.voiceURI : '';
-                        if (bestURI) {
-                            try {
-                                localStorage.setItem('@LOCATOR_VOICE_URI', bestURI);
-                            } catch { }
-                        }
-                        return bestURI;
-                    });
-                }
-            }
-        };
-
-        if ('speechSynthesis' in window) {
-            loadVoices();
-            window.speechSynthesis.onvoiceschanged = loadVoices;
-        }
 
         // Carregar histórico local limitado aos últimos 10 itens
         try {
@@ -280,104 +221,7 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
         return totalQtd;
     };
 
-    const toggleVoice = () => {
-        setIsVoiceEnabled(prev => {
-            const next = !prev;
-            try {
-                localStorage.setItem('@LOCATOR_VOICE_ENABLED', String(next));
-            } catch { }
-            if (next) {
-                toast.success('Voz sintetizada ativada');
-            } else {
-                if ('speechSynthesis' in window) {
-                    window.speechSynthesis.cancel();
-                }
-                toast('Voz silenciada', { icon: '🔇' });
-            }
-            return next;
-        });
-    };
 
-    const getResolvedVoice = (): SpeechSynthesisVoice | null => {
-        if (!('speechSynthesis' in window) || voices.length === 0) return null;
-        if (selectedVoiceURI) {
-            const found = voices.find(v => v.voiceURI === selectedVoiceURI);
-            if (found) return found;
-        }
-        return getBestPtBrVoice(voices);
-    };
-
-    const speakItem = (item: StockItem, truckQtd?: number) => {
-        if (!isVoiceEnabled || !('speechSynthesis' in window)) return;
-        try {
-            window.speechSynthesis.cancel();
-
-            const texto = formatTextForSpeech(item.local || '', item.quantidade ?? 0, truckQtd);
-            const utterance = new SpeechSynthesisUtterance(texto);
-            utterance.lang = 'pt-BR';
-            utterance.rate = voiceRate || 1.0;
-
-            const voice = getResolvedVoice();
-            if (voice) {
-                utterance.voice = voice;
-            }
-
-            window.speechSynthesis.speak(utterance);
-        } catch (e) {
-            console.warn('Erro na síntese de voz:', e);
-        }
-    };
-
-    const handleTestVoice = () => {
-        if (!('speechSynthesis' in window)) {
-            toast.error('Navegador não suporta síntese de voz');
-            return;
-        }
-
-        if (isTestingVoice) {
-            window.speechSynthesis.cancel();
-            setIsTestingVoice(false);
-            return;
-        }
-
-        try {
-            window.speechSynthesis.cancel();
-            const textoExemplo = "Rua 15 D, 60 unidades em estoque, e 24 chegando no caminhão.";
-            const utterance = new SpeechSynthesisUtterance(textoExemplo);
-            utterance.lang = 'pt-BR';
-            utterance.rate = voiceRate || 1.0;
-
-            const voice = getResolvedVoice();
-            if (voice) {
-                utterance.voice = voice;
-            }
-
-            utterance.onstart = () => setIsTestingVoice(true);
-            utterance.onend = () => setIsTestingVoice(false);
-            utterance.onerror = () => setIsTestingVoice(false);
-
-            window.speechSynthesis.speak(utterance);
-        } catch (e) {
-            console.warn('Erro ao testar voz:', e);
-            setIsTestingVoice(false);
-        }
-    };
-
-    const handleSelectVoice = (uri: string) => {
-        setSelectedVoiceURI(uri);
-        try {
-            localStorage.setItem('@LOCATOR_VOICE_URI', uri);
-        } catch { }
-        toast.success('Voz selecionada');
-    };
-
-    const handleChangeRate = (rate: number) => {
-        setVoiceRate(rate);
-        try {
-            localStorage.setItem('@LOCATOR_VOICE_RATE', String(rate));
-        } catch { }
-        toast.success(`Velocidade: ${rate}x`);
-    };
 
     const handleSearch = (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -395,7 +239,6 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                 successSound.current.play().catch(() => { });
             }
             toast.success('Item localizado');
-            speakItem(found, getTruckQtdForItem(found));
         } else {
             setScannedItem(null);
             setScanError(true);
@@ -421,7 +264,6 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                 successSound.current.play().catch(() => { });
             }
             toast.success('Item localizado');
-            speakItem(found, getTruckQtdForItem(found));
         } else {
             setScannedItem(null);
             setScanError(true);
@@ -470,40 +312,6 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {/* Grupo de Ativar/Desativar Voz & Ajustes de Voz */}
-                        <div className="flex items-center">
-                            <button
-                                onClick={toggleVoice}
-                                className={`flex items-center gap-1.5 text-xs font-bold px-2.5 sm:px-3 py-1.5 rounded-l-xl border border-r-0 transition-all shadow-2xs active:scale-95 ${isVoiceEnabled
-                                    ? "bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200/80 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300"
-                                    : "bg-slate-100 dark:bg-slate-800 border-slate-200/80 dark:border-slate-700 text-slate-400 dark:text-slate-500"
-                                    }`}
-                                title={isVoiceEnabled ? "Voz ativada (clique para silenciar)" : "Voz silenciada (clique para ativar)"}
-                            >
-                                {isVoiceEnabled ? (
-                                    <>
-                                        <Volume2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                                        <span className="hidden sm:inline">Voz Ativa</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <VolumeX className="w-3.5 h-3.5 text-slate-400" />
-                                        <span className="hidden sm:inline">Voz Mudo</span>
-                                    </>
-                                )}
-                            </button>
-                            <button
-                                onClick={() => setIsVoiceConfigOpen(true)}
-                                className={`p-1.5 sm:px-2 py-1.5 rounded-r-xl border text-xs font-bold transition-all shadow-2xs active:scale-95 flex items-center gap-1 ${isVoiceEnabled
-                                    ? "bg-indigo-100/80 hover:bg-indigo-200/80 dark:bg-indigo-900/60 dark:hover:bg-indigo-900 border-indigo-200/80 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300"
-                                    : "bg-slate-200/70 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border-slate-200/80 dark:border-slate-700 text-slate-500 dark:text-slate-400"
-                                    }`}
-                                title="Ajustes de Voz (escolher voz mais fluida, velocidade e testar áudio)"
-                            >
-                                <SlidersHorizontal className="w-3.5 h-3.5" />
-                            </button>
-                        </div>
-
                         {/* Botão de Histórico visível no desktop */}
                         <button
                             onClick={() => setIsHistoryOpen(true)}
@@ -645,20 +453,11 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
 
                                         {/* CARD LOCALIZAÇÃO */}
                                         <div className="bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-transparent dark:from-emerald-950/50 dark:via-emerald-900/20 dark:to-transparent p-4 rounded-2xl border-2 border-emerald-500/30 dark:border-emerald-500/20">
-                                            <div className="flex items-center justify-between gap-1 mb-1.5 text-emerald-800 dark:text-emerald-300">
-                                                <div className="flex items-center gap-2">
-                                                    <MapPin className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                                                    <span className="text-xs font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                                                        Localização
-                                                    </span>
-                                                </div>
-                                                <button
-                                                    onClick={() => speakItem(scannedItem, getTruckQtdForItem(scannedItem))}
-                                                    className="p-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 transition-all active:scale-90"
-                                                    title="Ouvir localização novamente"
-                                                >
-                                                    <Volume2 className="w-3.5 h-3.5" />
-                                                </button>
+                                            <div className="flex items-center gap-2 mb-1.5 text-emerald-800 dark:text-emerald-300">
+                                                <MapPin className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                                <span className="text-xs font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                                                    Localização
+                                                </span>
                                             </div>
                                             <p className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight break-words font-mono leading-none">
                                                 {scannedItem.local || '---'}
@@ -724,7 +523,6 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                                                 successSound.current.currentTime = 0;
                                                 successSound.current.play().catch(() => { });
                                             }
-                                            speakItem(item, getTruckQtdForItem(item));
                                         }}
                                     />
 
@@ -844,27 +642,6 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                 history={history}
                 onSelectItem={handleManualSearch}
                 onClearHistory={handleClearHistory}
-            />
-
-            {/* MODAL DE AJUSTES DE VOZ SINTETIZADA */}
-            <VoiceSettingsModal
-                isOpen={isVoiceConfigOpen}
-                onClose={() => {
-                    setIsVoiceConfigOpen(false);
-                    if ('speechSynthesis' in window) {
-                        window.speechSynthesis.cancel();
-                    }
-                    setIsTestingVoice(false);
-                }}
-                voices={voices}
-                selectedVoiceURI={selectedVoiceURI}
-                onSelectVoice={handleSelectVoice}
-                voiceRate={voiceRate}
-                onChangeRate={handleChangeRate}
-                isVoiceEnabled={isVoiceEnabled}
-                onToggleVoice={toggleVoice}
-                onTestVoice={handleTestVoice}
-                isSpeaking={isTestingVoice}
             />
         </div>
     );

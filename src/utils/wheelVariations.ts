@@ -110,7 +110,13 @@ export function extractAcabamento(description?: string): string {
     if (!description) return '';
     const upper = description.toUpperCase();
 
-    for (const key of sortedFinishKeys) {
+    // 1. ORDENAR DA MAIOR STRING PARA A MENOR
+    // Isso garante que "BLACK DIAMOND SMOKE" seja testado antes de "BLACK DIAMOND" e "BLACK"
+    const keysSortedByLength = [...sortedFinishKeys].sort((a, b) => {
+        return b.trim().length - a.trim().length;
+    });
+
+    for (const key of keysSortedByLength) {
         const trimmed = key.trim();
         if (trimmed.length <= 2) {
             const regex = new RegExp(`\\b${trimmed}\\b`, 'i');

@@ -21,14 +21,15 @@ import {
     Shield,
     Sparkles,
     Truck,
-    ListTodo
+    ListTodo,
+    Tag
 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { getInventory, getLastUpdate, clearLocalInventoryCache } from '../lib/supabase';
 import { cn } from '../utils';
 
 interface HomeMenuProps {
-    onSelectMode: (mode: 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'conference' | 'admin-login' | 'romaneio') => void;
+    onSelectMode: (mode: 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'conference' | 'admin-login' | 'romaneio' | 'labels') => void;
 }
 
 const SYNC_STEPS = [
@@ -44,7 +45,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
     const [updatesToday, setUpdatesToday] = useState(0);
     const [supabaseUpdate, setSupabaseUpdate] = useState<string | null>(null);
     const [activeStepIndex, setActiveStepIndex] = useState(0);
-    const [activeModal, setActiveModal] = useState<'none' | 'ajustes' | 'perfil'>('none');
+    const [activeModal, setActiveModal] = useState<'none' | 'ajustes' | 'perfil' | 'expedicao'>('none');
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -286,39 +287,20 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                             </p>
                         </div>
 
-                        {/* 5. Módulo: Conferência (Mobile: full width | Desktop: 2 colunas lado a lado) */}
+                        {/* 5. Módulo: Área Expedição (Unifica Conferência e Sincronizar Locais) */}
                         <div
-                            onClick={() => onSelectMode('conference')}
-                            className="col-span-2 md:col-span-2 bg-white dark:bg-slate-900 rounded-[20px] sm:rounded-[22px] px-4 py-3.5 md:py-4 shadow-[0_4px_24px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] border border-slate-100/90 dark:border-slate-800/80 flex items-center gap-3.5 cursor-pointer active:scale-[0.98] transition-all hover:shadow-lg hover:-translate-y-0.5"
+                            onClick={() => setActiveModal('expedicao')}
+                            className="col-span-2 md:col-span-2 md:col-start-2 bg-white dark:bg-slate-900 rounded-[20px] sm:rounded-[22px] px-4 py-3.5 md:py-4 shadow-[0_4px_24px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] border border-slate-100/90 dark:border-slate-800/80 flex items-center gap-3.5 cursor-pointer active:scale-[0.98] transition-all hover:shadow-lg hover:-translate-y-0.5"
                         >
-                            <div className="w-11 h-11 sm:w-12 sm:h-12 md:w-13 md:h-13 rounded-[14px] bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-md shadow-sky-500/25 shrink-0">
-                                <ClipboardCheck className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
+                            <div className="w-11 h-11 sm:w-12 sm:h-12 md:w-13 md:h-13 rounded-[14px] bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/25 shrink-0">
+                                <Truck className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
                             </div>
                             <div className="flex-1 text-left min-w-0">
                                 <h3 className="font-bold text-slate-900 dark:text-white text-[14px] sm:text-[15px] md:text-[16px] tracking-tight leading-tight">
-                                    Conferência
+                                    Área Expedição
                                 </h3>
                                 <p className="text-[11px] sm:text-[12px] md:text-[13px] text-slate-400 dark:text-slate-500 leading-none mt-1 truncate font-medium">
-                                    Verificar e validar sistema
-                                </p>
-                            </div>
-                            <ChevronRight className="text-slate-300 dark:text-slate-600 w-5 h-5 shrink-0" />
-                        </div>
-
-                        {/* 6. Módulo: Sincronização de Locais (Mobile: full width | Desktop: 2 colunas lado a lado) */}
-                        <div
-                            onClick={() => onSelectMode('update-wheels')}
-                            className="col-span-2 md:col-span-2 bg-white dark:bg-slate-900 rounded-[20px] sm:rounded-[22px] px-4 py-3.5 md:py-4 shadow-[0_4px_24px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] border border-slate-100/90 dark:border-slate-800/80 flex items-center gap-3.5 cursor-pointer active:scale-[0.98] transition-all hover:shadow-lg hover:-translate-y-0.5"
-                        >
-                            <div className="w-11 h-11 sm:w-12 sm:h-12 md:w-13 md:h-13 rounded-[14px] bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-purple-500/25 shrink-0">
-                                <RotateCcw className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
-                            </div>
-                            <div className="flex-1 text-left min-w-0">
-                                <h3 className="font-bold text-slate-900 dark:text-white text-[14px] sm:text-[15px] md:text-[16px] tracking-tight leading-tight">
-                                    Sincronizar Locais
-                                </h3>
-                                <p className="text-[11px] sm:text-[12px] md:text-[13px] text-slate-400 dark:text-slate-500 leading-none mt-1 truncate font-medium">
-                                    Atualizar locais e ruas
+                                    Conferência e sincronizar locais
                                 </p>
                             </div>
                             <ChevronRight className="text-slate-300 dark:text-slate-600 w-5 h-5 shrink-0" />
@@ -395,7 +377,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-[24px] shadow-2xl p-6 z-50 border border-slate-100 dark:border-slate-800"
+                            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-[28px] shadow-2xl p-6 z-50 border border-slate-100 dark:border-slate-800"
                         >
 
                             {/* Modal: AJUSTES */}
@@ -572,6 +554,123 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                                     <button
                                         onClick={() => setActiveModal('none')}
                                         className="w-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-xl py-2.5 text-xs hover:bg-slate-200 transition-colors"
+                                    >
+                                        Fechar
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Modal: ÁREA EXPEDIÇÃO */}
+                            {activeModal === 'expedicao' && (
+                                <div>
+                                    <div className="flex items-center justify-between mb-5 pb-3.5 border-b border-slate-100 dark:border-slate-800">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 via-sky-500 to-blue-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/25">
+                                                <Truck className="w-6 h-6 stroke-[2.2]" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">
+                                                    Área de Expedição
+                                                </h3>
+                                                <p className="text-xs text-slate-400 font-medium">
+                                                    Selecione o módulo de trabalho
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setActiveModal('none')}
+                                            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                        >
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    </div>
+
+                                    <div className="flex flex-col gap-3 mb-5">
+                                        {/* Opção 1: Conferência */}
+                                        <div
+                                            onClick={() => {
+                                                setActiveModal('none');
+                                                onSelectMode('conference');
+                                            }}
+                                            className="group p-4 rounded-2xl bg-slate-50 dark:bg-slate-850 hover:bg-sky-50/70 dark:hover:bg-sky-950/40 border border-slate-100 dark:border-slate-700/60 hover:border-sky-300 dark:hover:border-sky-800/80 flex items-center gap-3.5 cursor-pointer active:scale-[0.98] transition-all duration-200 shadow-xs hover:shadow-md"
+                                        >
+                                            <div className="w-12 h-12 rounded-[14px] bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-md shadow-sky-500/25 shrink-0 group-hover:scale-105 transition-transform duration-200">
+                                                <ClipboardCheck className="w-6 h-6 stroke-[2.2]" />
+                                            </div>
+                                            <div className="flex-1 text-left min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                                                        Conferência
+                                                    </h4>
+                                                    <span className="px-2 py-0.5 bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 text-[10px] font-black uppercase rounded-md">
+                                                        Cargas
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5 leading-snug">
+                                                    Verificar e validar produtos para expedição
+                                                </p>
+                                            </div>
+                                            <ChevronRight className="text-slate-300 dark:text-slate-600 group-hover:text-sky-500 group-hover:translate-x-0.5 transition-all w-5 h-5 shrink-0" />
+                                        </div>
+
+                                        {/* Opção 2: Sincronizar Locais */}
+                                        <div
+                                            onClick={() => {
+                                                setActiveModal('none');
+                                                onSelectMode('update-wheels');
+                                            }}
+                                            className="group p-4 rounded-2xl bg-slate-50 dark:bg-slate-850 hover:bg-purple-50/70 dark:hover:bg-purple-950/40 border border-slate-100 dark:border-slate-700/60 hover:border-purple-300 dark:hover:border-purple-800/80 flex items-center gap-3.5 cursor-pointer active:scale-[0.98] transition-all duration-200 shadow-xs hover:shadow-md"
+                                        >
+                                            <div className="w-12 h-12 rounded-[14px] bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-purple-500/25 shrink-0 group-hover:scale-105 transition-transform duration-200">
+                                                <RotateCcw className="w-6 h-6 stroke-[2.2]" />
+                                            </div>
+                                            <div className="flex-1 text-left min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                                                        Sincronizar Locais
+                                                    </h4>
+                                                    <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-[10px] font-black uppercase rounded-md">
+                                                        Estoque
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5 leading-snug">
+                                                    Atualizar locais e ruas das rodas no sistema
+                                                </p>
+                                            </div>
+                                            <ChevronRight className="text-slate-300 dark:text-slate-600 group-hover:text-purple-500 group-hover:translate-x-0.5 transition-all w-5 h-5 shrink-0" />
+                                        </div>
+
+                                        {/* Opção 3: Gerar Etiquetas */}
+                                        <div
+                                            onClick={() => {
+                                                setActiveModal('none');
+                                                onSelectMode('labels');
+                                            }}
+                                            className="group p-4 rounded-2xl bg-slate-50 dark:bg-slate-850 hover:bg-amber-50/70 dark:hover:bg-amber-950/40 border border-slate-100 dark:border-slate-700/60 hover:border-amber-300 dark:hover:border-amber-800/80 flex items-center gap-3.5 cursor-pointer active:scale-[0.98] transition-all duration-200 shadow-xs hover:shadow-md"
+                                        >
+                                            <div className="w-12 h-12 rounded-[14px] bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-md shadow-orange-500/25 shrink-0 group-hover:scale-105 transition-transform duration-200">
+                                                <Tag className="w-6 h-6 stroke-[2.2]" />
+                                            </div>
+                                            <div className="flex-1 text-left min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                                                        Gerar Etiquetas
+                                                    </h4>
+                                                    <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase rounded-md">
+                                                        Térmica / A4
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5 leading-snug">
+                                                    Etiquetas de rodas, volumes de envio e prateleiras
+                                                </p>
+                                            </div>
+                                            <ChevronRight className="text-slate-300 dark:text-slate-600 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all w-5 h-5 shrink-0" />
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => setActiveModal('none')}
+                                        className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl py-2.5 text-xs transition-colors"
                                     >
                                         Fechar
                                     </button>

@@ -1303,6 +1303,26 @@ export async function savePhotoOverride(model: string, finish: string, photo_url
     }
 }
 
+export async function deletePhotoOverride(params: { model?: string; finish?: string; item_codigo?: string }) {
+    if (USE_LOCAL_DB) return true;
+    try {
+        let query = supabase.from('photo_overrides').delete();
+        if (params.item_codigo) {
+            query = query.eq('item_codigo', params.item_codigo);
+        } else if (params.model && params.finish) {
+            query = query.eq('model', params.model).eq('finish', params.finish).or('item_codigo.is.null,item_codigo.eq.');
+        } else {
+            return false;
+        }
+        const { error } = await query;
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Erro ao deletar override de foto:', err);
+        return false;
+    }
+}
+
 export async function uploadPhotoToStorage(file: Blob, fileName: string): Promise<string | null> {
     if (USE_LOCAL_DB) return "https://placehold.co/400x400?text=Upload+Simulado";
     try {

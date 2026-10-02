@@ -30,26 +30,16 @@ export const WheelVariationsSelector: React.FC<WheelVariationsSelectorProps> = (
         totalVariations, 
         currentVariation, 
         allVariations, 
-        availableAros, 
+        availableMedidas,
         availableFuracoes, 
+        availableETs,
         availableAcabamentos 
     } = modelData;
 
-    const handleSelectAro = (aro: string) => {
-        if (aro === currentVariation.aro) return;
-        const match = findBestVariationMatch(allVariations, { aro }, currentVariation);
-        if (match) onSelectVariation(match);
-    };
-
-    const handleSelectFuracao = (furacao: string) => {
-        if (furacao === currentVariation.furacao) return;
-        const match = findBestVariationMatch(allVariations, { furacao }, currentVariation);
-        if (match) onSelectVariation(match);
-    };
-
-    const handleSelectAcabamento = (acabamento: string) => {
-        if (acabamento === currentVariation.acabamento) return;
-        const match = findBestVariationMatch(allVariations, { acabamento }, currentVariation);
+    const handleSelect = (attribute: 'medida' | 'furacao' | 'et' | 'acabamento', value: string) => {
+        if (value === currentVariation[attribute]) return;
+        const target = { [attribute]: value };
+        const match = findBestVariationMatch(allVariations, target, currentVariation);
         if (match) onSelectVariation(match);
     };
 
@@ -65,47 +55,47 @@ export const WheelVariationsSelector: React.FC<WheelVariationsSelectorProps> = (
                         <span className="text-xs font-black uppercase tracking-wider text-indigo-950 dark:text-indigo-200">
                             Variações do Modelo
                         </span>
-                        <span className="px-2 py-0.2 rounded-full bg-indigo-600 text-white font-mono font-black text-[11px]">
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-600 text-white font-mono font-black text-[11px]">
                             {model}
                         </span>
                     </div>
                 </div>
 
                 <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60">
-                    {totalVariations} variações
+                    {totalVariations} opções
                 </span>
             </div>
 
             {/* SELETORES E-COMMERCE */}
             <div className="space-y-2.5">
-                {/* 1. SELETOR DE ARO */}
-                {availableAros.length > 0 && (
+                {/* 1. SELETOR DE ARO / TALA (Ex: 15X6, 15X7, 15X8, 18X6, 18X7, 18X8) */}
+                {availableMedidas.length > 0 && (
                     <div>
                         <div className="flex items-center justify-between mb-1">
                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                Aro
+                                Aro / Tala
                             </span>
-                            {currentVariation.aro && (
-                                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
-                                    {currentVariation.aro}
+                            {currentVariation.medida && (
+                                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 font-mono">
+                                    {currentVariation.medida}
                                 </span>
                             )}
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            {availableAros.map(aro => {
-                                const isCurrent = aro === currentVariation.aro;
+                            {availableMedidas.map(medida => {
+                                const isCurrent = medida === currentVariation.medida;
                                 return (
                                     <button
-                                        key={aro}
+                                        key={medida}
                                         type="button"
-                                        onClick={() => handleSelectAro(aro)}
-                                        className={`px-3 py-1.5 rounded-xl text-xs font-black tracking-tight transition-all active:scale-95 ${
+                                        onClick={() => handleSelect('medida', medida)}
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-black tracking-tight font-mono transition-all active:scale-95 ${
                                             isCurrent
                                                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-600/30'
                                                 : 'bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
                                         }`}
                                     >
-                                        {aro}
+                                        {medida}
                                     </button>
                                 );
                             })}
@@ -113,15 +103,15 @@ export const WheelVariationsSelector: React.FC<WheelVariationsSelectorProps> = (
                     </div>
                 )}
 
-                {/* 2. SELETOR DE FURAÇÃO (APENAS AS QUE EXISTEM NO ARO SELECIONADO) */}
+                {/* 2. SELETOR DE FURAÇÃO */}
                 {availableFuracoes.length > 0 && (
                     <div>
                         <div className="flex items-center justify-between mb-1">
                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                Furação {currentVariation.aro ? `(Aro ${currentVariation.aro})` : ''}
+                                Furação
                             </span>
                             {currentVariation.furacao && (
-                                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 font-mono">
                                     {currentVariation.furacao}
                                 </span>
                             )}
@@ -133,8 +123,8 @@ export const WheelVariationsSelector: React.FC<WheelVariationsSelectorProps> = (
                                     <button
                                         key={furacao}
                                         type="button"
-                                        onClick={() => handleSelectFuracao(furacao)}
-                                        className={`px-3 py-1.5 rounded-xl text-xs font-black tracking-tight transition-all active:scale-95 ${
+                                        onClick={() => handleSelect('furacao', furacao)}
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-black tracking-tight font-mono transition-all active:scale-95 ${
                                             isCurrent
                                                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-600/30'
                                                 : 'bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
@@ -148,12 +138,47 @@ export const WheelVariationsSelector: React.FC<WheelVariationsSelectorProps> = (
                     </div>
                 )}
 
-                {/* 3. SELETOR DE ACABAMENTO (APENAS OS QUE EXISTEM NO ARO SELECIONADO) */}
+                {/* 3. SELETOR DE OFFSET (ET) */}
+                {availableETs.length > 0 && (
+                    <div>
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                Offset (ET)
+                            </span>
+                            {currentVariation.et && (
+                                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 font-mono">
+                                    ET {currentVariation.et}
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            {availableETs.map(et => {
+                                const isCurrent = et === currentVariation.et;
+                                return (
+                                    <button
+                                        key={et}
+                                        type="button"
+                                        onClick={() => handleSelect('et', et)}
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-black tracking-tight font-mono transition-all active:scale-95 ${
+                                            isCurrent
+                                                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-600/30'
+                                                : 'bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                                        }`}
+                                    >
+                                        ET {et}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* 4. SELETOR DE ACABAMENTO */}
                 {availableAcabamentos.length > 0 && (
                     <div>
                         <div className="flex items-center justify-between mb-1">
                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                Acabamento {currentVariation.aro ? `(Aro ${currentVariation.aro})` : ''}
+                                Acabamento
                             </span>
                             {currentVariation.acabamento && (
                                 <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
@@ -168,7 +193,7 @@ export const WheelVariationsSelector: React.FC<WheelVariationsSelectorProps> = (
                                     <button
                                         key={acabamento}
                                         type="button"
-                                        onClick={() => handleSelectAcabamento(acabamento)}
+                                        onClick={() => handleSelect('acabamento', acabamento)}
                                         className={`px-3 py-1.5 rounded-xl text-xs font-black tracking-tight transition-all active:scale-95 ${
                                             isCurrent
                                                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-600/30'

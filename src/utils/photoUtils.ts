@@ -20,15 +20,24 @@ export const finishMapping: Record<string, string> = {
   'LIP BLACK F': 'LBF',
   'GOLD BLACK LIP': 'GBL',
   'GOLD BLACK LI': 'GBL',
+  'GOLD BLACK L': 'GBL',
 
   // --- BLACK DIAMOND & SMOKE ---
   'BLACK DIAMOND SMOKE': 'BDS',
+  'BLACK DIAM SMOKE': 'BDS', // ERP: cortado
   'BLACK DIA SMOKE': 'BDS',
   'BLACK DIAMOND S': 'BDS',
+  'BLACK D SMOKE': 'BDS', // ERP: abreviado
   'PRETO DIAM FUME': 'BDS',
   'PRETO DIAMANTADO': 'BD',
+  'PRETO DIAMANTA': 'BD', // ERP: cortado
+  'PRETO DIAMANT': 'BD', // ERP: cortado
   'BLACK DIAMOND': 'BD',
+  'BLACK DIAMON': 'BD', // ERP: cortado
+  'BLACK DIAM': 'BD', // ERP: cortado
   'FACE BLACK DIAMOND': 'FBD',
+  'FACE BLACK DIAMON': 'FBD', // ERP: cortado
+  'FACE BLACK DIAM': 'FBD', // ERP: cortado
   'PRETO D. SEM REB': 'BDSR',
   'PRETO BORDA DIAM': 'BBD',
 
@@ -37,7 +46,13 @@ export const finishMapping: Record<string, string> = {
   'PRETO FOSCO BORDA': 'BFBD',
   'PRETO FOSCO B DI': 'BFBD',
   'PRETO FOSCO B D': 'BFBD',
+  'PRETO FOSCO BOR': 'BFBD', // ERP: cortado
+  'PRETO F. BORDA': 'BFBD', // ERP: abreviado
+  'BLACK FOSCO BORD': 'BFBD', // ERP: cortado
   'BLACK FOSCO DIAMOND': 'BFD',
+  'BLACK FOSCO DIAMON': 'BFD', // ERP: cortado
+  'BLACK FOSCO DIA FL': 'BFD',
+  'BLACK FOSCO D': 'BFD', // ERP: cortado
   'PRETA FOSCO DIAM': 'BFD',
   'PRETO FOSCO DIAM': 'BFD',
   'PRETO FOS DIA': 'BFD',
@@ -50,41 +65,63 @@ export const finishMapping: Record<string, string> = {
 
   // --- PRATA / SILVER ---
   'SILVER DIAMOND': 'SD',
+  'SILVER DIAMONO': 'SD', // ERP: erro digitação
+  'SILVER DIAMON': 'SD', // ERP: cortado
+  'SILVER DIAM': 'SD', // ERP: cortado
   'PRATA DIAMANTAD': 'SD',
   'PRATA DIAMANT': 'SD',
   'PRATA DIAM': 'SD',
   'DIAM PRATA': 'DP',
-  'PRATA': 'SS',
   'SILVER STAR': 'SS',
+  'SIVER STAR': 'SS', // ERP: erro digitação
+  'PRATA': 'SS',
 
   // --- GRAFITE / GRAPHITE ---
   'GRAFITE BRILHO BORDA': 'GBBD',
+  'GRAFITE BORDA BRI': 'GBBD', // ERP: inversão
   'GRAFITE BRI BORDA': 'GBBD',
   'GRAFITE BRILHO BOR': 'GBBD',
   'GRAFITE BRILHO B': 'GBBD',
   'GRAFITE BRILH B': 'GBBD',
   'GRAFITE BRILHANT': 'GB',
+  'GRAFITE BRILHAN': 'GB', // ERP: cortado
+  'GRAFITE BRILHO': 'GB', // ERP: variação
   'GRAPHITE BRILHANT': 'GB',
   'GRAPHITE BRILHANTE': 'GB',
   'GRAPHITE DIAMO CLA': 'GDC',
   'GRAPHITE DIAM CLAR': 'GDC',
   'GRAPHITE DIAM ESC': 'GDE',
+  'GRAFITE FOSCO DIAM': 'GFD',
+  'GRAFHI FOSCO DIA': 'GFD', // ERP: erro digitação
   'GRAPHITE FOSCO DIAM': 'GFD',
+  'GRAPHITE F DIAMON': 'GFD', // ERP: abreviação
+  'GRAPHITE F DIAM': 'GFD', // ERP: abreviação
   'GRAPHITE FOS DIAM FL': 'GFD',
   'GRAPHITE FOS DIAM': 'GFD',
   'GRAPHITE FOSCO DIA': 'GFD',
   'GRAPHITE FOSCO DI': 'GFD',
+  'GRAFITE FOS D': 'GFD',
+  'GRAFIT FOSCO': 'GF', // ERP: erro digitação
+  'GRAFITE FOSCO': 'GF',
   'GRAFITE FOSC': 'GF',
-  'GRAPHITE FOSCO': 'GF',
   'GRAPHITE FOSCO F.L': 'GF',
-  'GRAPHITE DIAM': 'GD',
+  'GRAPHITE FOSCO': 'GF',
+  'GRAFIT': 'GB', // Fallback genérico
+  'GRAFITE': 'GB', // Fallback genérico
+  'GRAPHITE DIAMOND': 'GD',
+  'GRPHITE DIMAOND': 'GD', // ERP: erro digitação duplo
+  'GRAPHITE DI FL': 'GD', // ERP: abreviação
+  'GRAFITE DIAMA': 'GD',
+  'GRAFITE DIAMANTADO': 'GD',
+  'GRAFITE DIAM': 'GD', // ERP: cortado
   'GRAPHITE DIAMANTAD': 'GD',
   'GRAPHITE DIAM F.L': 'GD',
   'GRAPHITE DIAM FL': 'GD',
   'GRAF DIAM. F.L': 'GD',
+  'GRAPHITE DIAM': 'GD',
 
   // --- BRONZE ---
-  'BRONZE FOSCO': 'BFZ',
+  'BRONZE FOSCO': 'BZF', // Na base de dados utiliza as siglas BZF ou BFZ
   'BRONZE': 'BZ',
 
   // --- OURO / GOLD ---
@@ -92,7 +129,7 @@ export const finishMapping: Record<string, string> = {
   'OURO V DIAMANTA': 'OUROD',
   'OURO VELHO FOSCO': 'OVF',
   'OURO VELHO F': 'OVF',
-  'OURO VELHO': 'OURO',
+  'OURO VELHO': 'OV',
   'OURO BORDA DIAM.': 'OURO',
   'GOLD VITORIA': 'GV',
   'GOLD': 'GV',
@@ -107,6 +144,7 @@ export const finishMapping: Record<string, string> = {
   'HYPER GLOSS': 'HG',
   'HYPER GLOS': 'HG',
   'HYPER GL': 'HG',
+  'H GLOSS': 'HG', // ERP: abreviado
   'GLOSS SHADOW': 'GS',
   'GL SHADOW': 'GS',
   'GLOS SHADOW': 'GS',
@@ -127,43 +165,21 @@ export const finishMapping: Record<string, string> = {
   'CROMADA': 'CR',
   'FGF': 'FGF',
 
-  // --- SIGLAS DE FALLBACK (Garantia) ---
-  ' LBD ': 'LBD',
-  ' LBF ': 'LBF',
-  ' BDS ': 'BDS',
-  ' BD ': 'BD',
-  ' SS ': 'SS',
-  ' SD ': 'SD',
-  ' GB ': 'GB',
-  ' B ': 'B',
-  ' BF ': 'BF',
-  ' BFZ ': 'BFZ',
-  ' BZ ': 'BZ',
-  ' GF ': 'GF',
-  ' GD ': 'GD',
-  ' GFD ': 'GFD',
-  ' DD ': 'DD',
-  ' HD ': 'HD',
-  ' HG ': 'HG',
-  ' GL ': 'GL',
-  ' GS ': 'GS',
-  ' FGF ': 'FGF',
-  ' LVD ': 'LVD',
-  ' GBL ': 'GBL',
-  ' BG ': 'BG',
-  ' DP ': 'DP',
-  ' GDC ': 'GDC',
-  ' GDE ': 'GDE',
-  ' GBBD ': 'GBBD',
-  ' GV ': 'GV',
-  ' OVF ': 'OVF',
-  ' OUROD ': 'OUROD',
+  // --- SIGLAS PURAS / FALLBACK (Garantia) ---
+  ' LBD ': 'LBD', ' LBF ': 'LBF', ' BDS ': 'BDS', ' BD ': 'BD', 
+  ' SS ': 'SS', ' SD ': 'SD', ' GB ': 'GB', ' B ': 'B', 
+  ' BF ': 'BF', ' BFZ ': 'BFZ', ' BZF ': 'BZF', ' BZ ': 'BZ', 
+  ' GF ': 'GF', ' GD ': 'GD', ' GFD ': 'GFD', ' DD ': 'DD', 
+  ' HD ': 'HD', ' HG ': 'HG', ' GL ': 'GL', ' GS ': 'GS', 
+  ' FGF ': 'FGF', ' LVD ': 'LVD', ' GBL ': 'GBL', ' BG ': 'BG', 
+  ' DP ': 'DP', ' GDC ': 'GDC', ' GDE ': 'GDE', ' GBBD ': 'GBBD', 
+  ' GV ': 'GV', ' OVF ': 'OVF', ' OUROD ': 'OUROD', ' OV ': 'OV',
   
-  // Siglas curtas exatas
+  // Siglas curtas exatas na borda de palavra
   'GF': 'GF', 'GFD': 'GFD', 'GD': 'GD', 'BD': 'BD', 'B': 'B', 
   'BF': 'BF', 'BFD': 'BFD', 'SS': 'SS', 'GB': 'GB', 'HG': 'HG', 
   'GL': 'GL', 'GS': 'GS', 'FBD': 'FBD', 'SD': 'SD', 'BDS': 'BDS',
-  'LBD': 'LBD', 'LBF': 'LBF'
+  'LBD': 'LBD', 'LBF': 'LBF', 'OV': 'OV'
 };
 
 export const sortedFinishKeys = Object.keys(finishMapping).sort((a, b) => b.length - a.length);
@@ -203,11 +219,29 @@ export function getModelAndFinish(description: string) {
     const modelCode = descUpper.split(' ')[0];
     
     let finishAbbr: string = '';
+    const paddedDesc = ` ${descUpper} `;
     
     for (const key of sortedFinishKeys) {
-        // Limpa a chave também por garantia
+        // Se a chave possui espaços laterais explícitos (ex: ' B ', ' BD ')
+        if (key.startsWith(' ') || key.endsWith(' ')) {
+            if (paddedDesc.includes(key)) {
+                finishAbbr = finishMapping[key];
+                break;
+            }
+            continue;
+        }
+
         const trimmedKey = key.trim().toUpperCase().replace(/\s+/g, ' ');
-        if (descUpper.includes(trimmedKey)) {
+        
+        // Siglas curtas exatas (1 a 4 letras): requer limite de palavra (\b) para não bater dentro de outras palavras
+        // como a letra 'B' bater em 'BORDA', 'BRUTA' ou 'CROMADA'
+        if (trimmedKey.length <= 4 && !trimmedKey.includes(' ')) {
+            const regex = new RegExp(`\\b${trimmedKey}\\b`, 'i');
+            if (regex.test(descUpper)) {
+                finishAbbr = finishMapping[key];
+                break;
+            }
+        } else if (descUpper.includes(trimmedKey)) {
             finishAbbr = finishMapping[key];
             break;
         }
@@ -221,76 +255,35 @@ export function getModelAndFinish(description: string) {
     return { modelCode, finishAbbr };
 }
 
+export type PhotoStatusType = 
+    | 'override_item'   // Override manual salvo especificamente para este código
+    | 'override_model'  // Override manual salvo para a combinação Modelo + Acabamento
+    | 'exact'           // Foto exata encontrada no photoMap para o modelo e acabamento
+    | 'fallback'        // Usando foto provisória/genérica do modelo (falta foto deste acabamento)
+    | 'none';           // Nenhuma foto encontrada para este modelo
+
+export interface WheelPhotoDetails {
+    url: string;
+    status: PhotoStatusType;
+    statusLabel: string;
+    modelCode: string;
+    finishAbbr: string;
+    aro: string;
+    isPlaceholder: boolean;
+    availablePhotosCount: number;
+    hasOverride: boolean;
+    overrideScope?: 'item' | 'model';
+}
+
 /**
- * Resolve a URL da foto de uma roda baseada na sua descrição.
- * Transforma caminhos locais do photoMap em URLs públicas do Supabase Storage.
+ * Normaliza um caminho relativo de foto para URL pública do Supabase Storage.
  */
-export function getWheelPhotoUrl(description: string, itemCodigo?: string): string {
-    const placeholder = "https://placehold.co/150x150/e2e8f0/64748b?text=FOTO";
-    if (!description) return placeholder;
+export function normalizePhotoPath(rawPath: string): string {
+    if (!rawPath) return '';
+    if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) return rawPath;
 
-    // 0. Verificar Override Individual por Código
-    if (itemCodigo && itemOverrides[itemCodigo]) {
-        return itemOverrides[itemCodigo];
-    }
-
-    const descUpper = description.toUpperCase();
-    const { modelCode, finishAbbr } = getModelAndFinish(descUpper);
-    const modelPhotos = (photoMap as Record<string, Record<string, string>>)[modelCode] || {};
-    
-    // 1. Verificar Override por Modelo/Acabamento
-    if (finishAbbr && photoOverrides[modelCode]?.[finishAbbr]) {
-        return photoOverrides[modelCode][finishAbbr];
-    }
-
-    // 2. Extrair Acabamento (Já extraído acima)
-
-    // 2. Extrair Aro/Tala (ex: 15X4, 15X4,0, 15X10)
-    // Suporta X, x, * e separadores decimais ponto ou vírgula
-    const aroMatch = descUpper.match(/(\d{2}[XxX\*][\d\.,]+)|(\b\d{2}\b)/i);
-    // Normalização agressiva: 15X4,0 -> 15X4 | 15X7 -> 15X7
-    const normalizeSize = (s: string) => s.replace(/,/g, '.').replace(/\.0\b/g, '').replace(/\*/g, 'X').toUpperCase();
-    const itemAro = aroMatch ? normalizeSize(aroMatch[0]) : "";
-
-    // 3. Tentar encontrar a melhor foto
-    let bestPath = "";
-    
-    if (finishAbbr) {
-        const finishRegex = new RegExp(`\\b${finishAbbr}\\b`, 'i');
-        // Filtramos fotos do modelo que contenham o acabamento no nome/caminho como uma "palavra" inteira
-        const photosForFinish = Object.entries(modelPhotos).filter(([_, path]) => {
-            return finishRegex.test(path);
-        });
-
-        if (photosForFinish.length > 0) {
-            // Se temos várias fotos para este acabamento, tentamos filtrar pelo Aro/Tala
-            if (itemAro) {
-                // Normalizamos o caminho da foto também para comparar
-                const sizeMatch = photosForFinish.find(([_, path]) => {
-                    const normalizedPath = normalizeSize(path.toUpperCase());
-                    return normalizedPath.includes(itemAro);
-                });
-                
-                if (sizeMatch) bestPath = sizeMatch[1];
-            }
-            
-            // Se não achou pelo tamanho exato, tenta o primeiro do acabamento
-            if (!bestPath) bestPath = photosForFinish[0][1];
-        }
-    }
-
-    // 4. Fallback: Qualquer foto do modelo
-    const rawPath = bestPath || (Object.values(modelPhotos)[0] || "");
-
-    if (!rawPath) return placeholder;
-
-    // Se já for uma URL completa, retorna ela
-    if (rawPath.startsWith('http')) return rawPath;
-
-    // Transformar caminho local (/fotos/LINHA C/...) em URL do Supabase
-    // O script de upload remove /public e normaliza o nome
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    if (!supabaseUrl) return rawPath; // Fallback para local se não houver URL do Supabase
+    if (!supabaseUrl) return rawPath;
 
     // 1. Extrair caminho relativo (remove /fotos/ se existir)
     let relativePath = rawPath.replace(/^\/fotos\//, '');
@@ -298,17 +291,168 @@ export function getWheelPhotoUrl(description: string, itemCodigo?: string): stri
     // 2. Trocar extensão para .webp
     relativePath = relativePath.substring(0, relativePath.lastIndexOf('.')) + '.webp';
     
-    // 3. Normalizar (mesmo processo do upload-photos.mjs)
-    // Remove acentos e caracteres especiais
+    // 3. Normalizar
     let normalizedPath = relativePath.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     normalizedPath = normalizedPath.replace(/[^\w\s\/\.\-]/g, '');
 
     // 4. Montar URL pública (bucket 'fotos')
-    // O URL do Supabase geralmente termina em .co ou .net
     const publicBaseUrl = `${supabaseUrl}/storage/v1/object/public/fotos/`;
-    
-    // Precisamos codificar os espaços para a URL (mas não as barras)
-    const finalUrl = publicBaseUrl + normalizedPath.split('/').map(part => encodeURIComponent(part)).join('/');
+    return publicBaseUrl + normalizedPath.split('/').map(part => encodeURIComponent(part)).join('/');
+}
 
-    return finalUrl;
+/**
+ * Retorna os mapas de overrides ativos no momento.
+ */
+export function getActiveOverrides() {
+    return {
+        itemOverrides: { ...itemOverrides },
+        photoOverrides: { ...photoOverrides }
+    };
+}
+
+/**
+ * Retorna todos os detalhes de resolução da foto de uma roda, incluindo seu status de foto
+ * (sem foto, genérica, exata, ou com override).
+ */
+export function getWheelPhotoDetails(description: string, itemCodigo?: string): WheelPhotoDetails {
+    const placeholder = "https://placehold.co/300x300/e2e8f0/64748b?text=SEM+FOTO";
+    if (!description) {
+        return {
+            url: placeholder,
+            status: 'none',
+            statusLabel: 'Sem Foto',
+            modelCode: '',
+            finishAbbr: '',
+            aro: '',
+            isPlaceholder: true,
+            availablePhotosCount: 0,
+            hasOverride: false
+        };
+    }
+
+    const descUpper = description.toUpperCase().replace(/\s+/g, ' ').trim();
+    const { modelCode, finishAbbr } = getModelAndFinish(descUpper);
+    const modelPhotos = (photoMap as Record<string, Record<string, string>>)[modelCode] || {};
+    const availablePhotosCount = Object.keys(modelPhotos).length;
+
+    // Extrair Aro/Tala (ex: 15X4, 15X4,0, 15X10)
+    const aroMatch = descUpper.match(/(\d{2}[XxX\*][\d\.,]+)|(\b\d{2}\b)/i);
+    const normalizeSize = (s: string) => s.replace(/,/g, '.').replace(/\.0\b/g, '').replace(/\*/g, 'X').toUpperCase();
+    const itemAro = aroMatch ? normalizeSize(aroMatch[0]) : "";
+
+    // 0. Override Individual por Código
+    if (itemCodigo && itemOverrides[itemCodigo]) {
+        return {
+            url: itemOverrides[itemCodigo],
+            status: 'override_item',
+            statusLabel: 'Item Customizado',
+            modelCode,
+            finishAbbr,
+            aro: itemAro,
+            isPlaceholder: false,
+            availablePhotosCount,
+            hasOverride: true,
+            overrideScope: 'item'
+        };
+    }
+
+    // 1. Override por Modelo / Acabamento
+    if (finishAbbr && photoOverrides[modelCode]?.[finishAbbr]) {
+        return {
+            url: photoOverrides[modelCode][finishAbbr],
+            status: 'override_model',
+            statusLabel: 'Grupo Customizado',
+            modelCode,
+            finishAbbr,
+            aro: itemAro,
+            isPlaceholder: false,
+            availablePhotosCount,
+            hasOverride: true,
+            overrideScope: 'model'
+        };
+    }
+
+    // 2. Modelo sem nenhuma foto cadastrada no photoMap
+    if (availablePhotosCount === 0) {
+        return {
+            url: placeholder,
+            status: 'none',
+            statusLabel: 'Sem Foto',
+            modelCode,
+            finishAbbr,
+            aro: itemAro,
+            isPlaceholder: true,
+            availablePhotosCount: 0,
+            hasOverride: false
+        };
+    }
+
+    // 3. Tentar encontrar a melhor foto para o acabamento correspondente
+    let bestPath = "";
+    if (finishAbbr) {
+        const finishRegex = new RegExp(`\\b${finishAbbr}\\b`, 'i');
+        const photosForFinish = Object.entries(modelPhotos).filter(([_, path]) => {
+            return finishRegex.test(path);
+        });
+
+        if (photosForFinish.length > 0) {
+            if (itemAro) {
+                const sizeMatch = photosForFinish.find(([_, path]) => {
+                    const normalizedPath = normalizeSize(path.toUpperCase());
+                    return normalizedPath.includes(itemAro);
+                });
+                if (sizeMatch) bestPath = sizeMatch[1];
+            }
+            if (!bestPath) bestPath = photosForFinish[0][1];
+        }
+    }
+
+    if (bestPath) {
+        return {
+            url: normalizePhotoPath(bestPath),
+            status: 'exact',
+            statusLabel: 'Foto Exata',
+            modelCode,
+            finishAbbr,
+            aro: itemAro,
+            isPlaceholder: false,
+            availablePhotosCount,
+            hasOverride: false
+        };
+    }
+
+    // 4. Fallback: Qualquer foto do modelo (Genérica / Provisória)
+    const fallbackPath = Object.values(modelPhotos)[0];
+    if (fallbackPath) {
+        return {
+            url: normalizePhotoPath(fallbackPath),
+            status: 'fallback',
+            statusLabel: 'Foto Genérica',
+            modelCode,
+            finishAbbr,
+            aro: itemAro,
+            isPlaceholder: false,
+            availablePhotosCount,
+            hasOverride: false
+        };
+    }
+
+    return {
+        url: placeholder,
+        status: 'none',
+        statusLabel: 'Sem Foto',
+        modelCode,
+        finishAbbr,
+        aro: itemAro,
+        isPlaceholder: true,
+        availablePhotosCount: 0,
+        hasOverride: false
+    };
+}
+
+/**
+ * Resolve a URL da foto de uma roda baseada na sua descrição e código.
+ */
+export function getWheelPhotoUrl(description: string, itemCodigo?: string): string {
+    return getWheelPhotoDetails(description, itemCodigo).url;
 }

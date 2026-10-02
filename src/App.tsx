@@ -14,10 +14,11 @@ import { ConferenceModule } from './components/ConferenceModule';
 import { HistoryModule } from './components/HistoryModule';
 import { RomaneioModule } from './components/RomaneioModule';
 import { AdminRomaneioPanel } from './components/AdminRomaneioPanel';
+import { LabelsModule } from './components/LabelsModule';
 import { getPhotoOverrides } from './lib/supabase';
 import { setPhotoOverrides } from './utils/photoUtils';
 
-type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'conference' | 'romaneio' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history' | 'admin-settings' | 'admin-complete' | 'admin-romaneio';
+type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'conference' | 'romaneio' | 'labels' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history' | 'admin-settings' | 'admin-complete' | 'admin-romaneio';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('menu');
@@ -32,6 +33,8 @@ export default function App() {
       setMode('admin-complete');
     } else if (path === '/pendencias' || path === '/pendencia' || path === '/p') {
       setMode('pendencies');
+    } else if (path === '/etiquetas' || path === '/labels') {
+      setMode('labels');
     }
 
     const savedTheme = localStorage.getItem('theme');
@@ -111,6 +114,10 @@ export default function App() {
 
   if (mode === 'romaneio') {
     return <RomaneioModule onBackToMenu={handleBackToMenu} />;
+  }
+
+  if (mode === 'labels') {
+    return <LabelsModule onBackToMenu={handleBackToMenu} />;
   }
 
   if (mode === 'admin-management') {

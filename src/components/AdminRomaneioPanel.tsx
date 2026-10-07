@@ -22,15 +22,18 @@ import {
     Filter,
     HelpCircle,
     RefreshCw,
-    Cloud
+    Cloud,
+    Loader2
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { cn } from '../utils';
 import {
     Romaneio,
     RomaneioItem,
+    RomaneioTipo,
     getRomaneios,
     saveRomaneio,
+    updateRomaneio,
     deleteRomaneio,
     exportRomaneioToExcel,
     parseMultipleExcelRomaneios,
@@ -41,6 +44,8 @@ import {
 import { getInventory, saveCloudCargaCodeMapping } from '../lib/supabase';
 import { StockItem } from '../types';
 import { getWheelPhotoUrl } from '../utils/photoUtils';
+import { FlagPR, FlagSC } from './StateFlags';
+import { SCLoadOrdersAdmin } from './SCLoadOrdersAdmin';
 
 interface AdminRomaneioPanelProps {
     onBack: () => void;
@@ -90,6 +95,9 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
     const [formTitulo, setFormTitulo] = useState('');
     const [formNumero, setFormNumero] = useState('');
     const [formDestino, setFormDestino] = useState('');
+    const [pendingUploadTipo, setPendingUploadTipo] = useState<RomaneioTipo>('PR');
+    const [formTipo, setFormTipo] = useState<RomaneioTipo>('PR');
+    const [selectedTab, setSelectedTab] = useState<'TODOS' | 'PR' | 'SC'>('TODOS');
 
     // Anexar planilha a um romaneio existente
     const [targetRomaneioIdForAppend, setTargetRomaneioIdForAppend] = useState<string | null>(null);
@@ -97,6 +105,13 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const appendFileInputRef = useRef<HTMLInputElement | null>(null);
     const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+
+    const handleTriggerUpload = (tipo: RomaneioTipo) => {
+        setPendingUploadTipo(tipo);
+        setFormTipo(tipo);
+        fileInputRef.current?.click();
+    };
 
     // Carregar romaneios e catálogo ao montar
     const loadList = () => {
@@ -162,8 +177,9 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
             setSelectedFiles(validFiles);
             setParsedData(result);
             setFormTitulo(result.nomeSugerido);
-            setFormNumero(`ROM-${new Date().getFullYear()}-${String(romaneios.length + 1).padStart(3, '0')}`);
+            setFormNumero(`ROM-${pendingUploadTipo}-${new Date().getFullYear()}-${String(romaneios.length + 1).padStart(3, '0')}`);
             setFormDestino('');
+            setFormTipo(pendingUploadTipo);
             setPreviewFilterTab(result.totalNaoIdentificados > 0 ? 'unidentified' : 'all');
 
             if (result.totalNaoIdentificados > 0) {
@@ -369,6 +385,7 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
             const saved = saveRomaneio({
                 titulo: formTitulo,
                 numero: formNumero,
+                tipo: formTipo,
                 clienteOuDestino: formDestino,
                 itens: parsedData.itensConsolidados,
                 arquivos: parsedData.arquivosProcessados
@@ -387,27 +404,65 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
         }
     };
 
-    // Excluir Romaneio
-    const handleDelete = (id: string, titulo: string) => {
-        if (window.confirm(`Tem certeza que deseja excluir o romaneio "${titulo}"?`)) {
-            deleteRomaneio(id);
-            toast.success('Romaneio excluído com sucesso.');
+    // Excluir Romaneio com feedback visual e sincronização assíncrona
+    const handleDelete = async (id: string, titulo: string) => {
+        if (!window.confirm(`Tem certeza que deseja excluir o romaneio "${titulo}"?`)) return;
+
+        setDeletingId(id);
+        const toastId = toast.loading(`Excluindo romaneio...`);
+        try {
+            const success = await deleteRomaneio(id);
+            if (success) {
+                toast.success('Romaneio excluído com sucesso.', { id: toastId });
+            } else {
+                toast.error('Excluído localmente (verifique sua conexão com o Supabase).', { id: toastId });
+            }
             loadList();
             if (selectedRomaneioForView?.id === id) {
                 setSelectedRomaneioForView(null);
             }
+        } catch (error) {
+            console.error('Erro ao excluir romaneio:', error);
+            toast.error('Erro ao excluir romaneio.', { id: toastId });
+        } finally {
+            setDeletingId(null);
         }
     };
 
-    // Filtragem na busca
-    const filteredRomaneios = romaneios.filter(r => {
-        const q = searchTerm.toLowerCase();
-        return (
-            r.titulo.toLowerCase().includes(q) ||
-            r.numero.toLowerCase().includes(q) ||
-            (r.clienteOuDestino && r.clienteOuDestino.toLowerCase().includes(q))
-        );
-    });
+    // Alternar tipo da carga diretamente no card
+    const handleToggleTipo = (r: Romaneio, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const currentTipo: RomaneioTipo = r.tipo || (r.titulo.toUpperCase().includes('SC') ? 'SC' : 'PR');
+        const nextTipo: RomaneioTipo = currentTipo === 'PR' ? 'SC' : 'PR';
+        updateRomaneio(r.id, { tipo: nextTipo });
+        toast.success(`Carga alterada para ${nextTipo === 'PR' ? 'Paraná (PR)' : 'Santa Catarina (SC)'}!`, { duration: 2500 });
+        loadList();
+    };
+
+    const countPR = useMemo(() => {
+        return romaneios.filter(r => (r.tipo || (r.titulo.toUpperCase().includes('SC') ? 'SC' : 'PR')) === 'PR').length;
+    }, [romaneios]);
+
+    const countSC = useMemo(() => {
+        return romaneios.filter(r => (r.tipo || (r.titulo.toUpperCase().includes('SC') ? 'SC' : 'PR')) === 'SC').length;
+    }, [romaneios]);
+
+    // Filtragem na busca e por Aba (TODOS / PR / SC)
+    const filteredRomaneios = useMemo(() => {
+        return romaneios.filter(r => {
+            const rTipo = r.tipo || (r.titulo.toUpperCase().includes('SC') ? 'SC' : 'PR');
+            if (selectedTab !== 'TODOS' && rTipo !== selectedTab) {
+                return false;
+            }
+
+            const q = searchTerm.toLowerCase();
+            return (
+                r.titulo.toLowerCase().includes(q) ||
+                r.numero.toLowerCase().includes(q) ||
+                (r.clienteOuDestino && r.clienteOuDestino.toLowerCase().includes(q))
+            );
+        });
+    }, [romaneios, selectedTab, searchTerm]);
 
     return (
         <div className="min-h-screen bg-[#F4F7FE] dark:bg-slate-950 text-slate-800 dark:text-slate-100 p-4 sm:p-6 md:p-8 antialiased">
@@ -454,8 +509,8 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                         </div>
                     </div>
 
-                    {/* Botão Sincronizar Nuvem e Botão Importar Excel */}
-                    <div className="flex items-center gap-2.5 self-start sm:self-center flex-wrap">
+                    {/* Botão Sincronizar Nuvem */}
+                    <div className="flex items-center gap-2.5 self-start sm:self-center">
                         <button
                             onClick={handleSyncCloud}
                             disabled={isSyncingCloud}
@@ -465,26 +520,110 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                             <RefreshCw className={cn("w-4 h-4 text-emerald-500", isSyncingCloud && "animate-spin")} />
                             <span>{isSyncingCloud ? 'Sincronizando...' : 'Sincronizar Nuvem'}</span>
                         </button>
-
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            multiple
-                            accept=".xlsx, .xls, .csv"
-                            className="hidden"
-                            onChange={(e) => handleFilesSelected(e.target.files)}
-                        />
-
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isLoadingFiles}
-                            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-rose-500/25 active:scale-95 transition-all flex items-center gap-2"
-                        >
-                            <UploadCloud className="w-4 h-4 stroke-[2.5]" />
-                            <span>Importar Planilhas (Multi-Arquivos)</span>
-                        </button>
                     </div>
                 </header>
+
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".xlsx, .xls, .csv"
+                    className="hidden"
+                    onChange={(e) => handleFilesSelected(e.target.files)}
+                />
+
+                <SCLoadOrdersAdmin />
+
+                {/* CARDS VISUAIS DE UPLOAD POR ESTADO: PARANÁ (PR) & SANTA CATARINA (SC) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* CARD UPLOAD PARANÁ */}
+                    <div
+                        onClick={() => !isLoadingFiles && handleTriggerUpload('PR')}
+                        role="button"
+                        tabIndex={0}
+                        className="group relative overflow-hidden p-5 sm:p-6 rounded-[26px] border-2 border-blue-200/90 dark:border-blue-900/60 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-white dark:from-blue-950/40 dark:via-indigo-950/20 dark:to-slate-900 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-blue-500/10 cursor-pointer active:scale-[0.98] select-none"
+                    >
+                        <div className="flex items-start justify-between gap-3 mb-4">
+                            <div className="relative">
+                                <div className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
+                                    PR
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 ring-2 ring-white dark:ring-slate-900 rounded-[4px] overflow-hidden shadow-sm">
+                                    <FlagPR className="w-6 h-4" />
+                                </div>
+                            </div>
+
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                <FileSpreadsheet className="w-3.5 h-3.5" />
+                                {countPR} {countPR === 1 ? 'Carga Ativa' : 'Cargas Ativas'}
+                            </span>
+                        </div>
+
+                        <div>
+                            <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                <span>Upload Carga Paraná</span>
+                                <span className="text-xs px-2 py-0.5 rounded-md bg-blue-600 text-white font-black">PR</span>
+                            </h3>
+                            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
+                                Importe múltiplas planilhas da filial do Paraná. Gera romaneios com código <code className="font-bold text-blue-600 dark:text-blue-400">ROM-PR</code>.
+                            </p>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-blue-100 dark:border-blue-900/40 flex items-center justify-between">
+                            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 group-hover:underline flex items-center gap-1">
+                                <Plus className="w-4 h-4 stroke-[2.5]" />
+                                Selecionar Planilhas Excel
+                            </span>
+                            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/30 group-hover:translate-x-1 transition-transform">
+                                <UploadCloud className="w-4 h-4 stroke-[2.5]" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* CARD UPLOAD SANTA CATARINA */}
+                    <div
+                        onClick={() => !isLoadingFiles && handleTriggerUpload('SC')}
+                        role="button"
+                        tabIndex={0}
+                        className="group relative overflow-hidden p-5 sm:p-6 rounded-[26px] border-2 border-emerald-200/90 dark:border-emerald-900/60 bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-slate-900 hover:border-emerald-400 dark:hover:border-emerald-500 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 cursor-pointer active:scale-[0.98] select-none"
+                    >
+                        <div className="flex items-start justify-between gap-3 mb-4">
+                            <div className="relative">
+                                <div className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-emerald-500/30 group-hover:scale-105 transition-transform">
+                                    SC
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 ring-2 ring-white dark:ring-slate-900 rounded-[4px] overflow-hidden shadow-sm">
+                                    <FlagSC className="w-6 h-4" />
+                                </div>
+                            </div>
+
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                <FileSpreadsheet className="w-3.5 h-3.5" />
+                                {countSC} {countSC === 1 ? 'Carga Ativa' : 'Cargas Ativas'}
+                            </span>
+                        </div>
+
+                        <div>
+                            <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                <span>Upload Carga Santa Catarina</span>
+                                <span className="text-xs px-2 py-0.5 rounded-md bg-emerald-600 text-white font-black">SC</span>
+                            </h3>
+                            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
+                                Importe múltiplas planilhas da filial de SC. Gera romaneios com código <code className="font-bold text-emerald-600 dark:text-emerald-400">ROM-SC</code>.
+                            </p>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-emerald-100 dark:border-emerald-900/40 flex items-center justify-between">
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 group-hover:underline flex items-center gap-1">
+                                <Plus className="w-4 h-4 stroke-[2.5]" />
+                                Selecionar Planilhas Excel
+                            </span>
+                            <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 group-hover:translate-x-1 transition-transform">
+                                <UploadCloud className="w-4 h-4 stroke-[2.5]" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 {/* BARRA DE PESQUISA & ESTATÍSTICAS RÁPIDAS */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -512,6 +651,74 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                             </span>
                         </div>
                     </div>
+                </div>
+
+                {/* ABAS DE SELEÇÃO: TODOS / PR / SC */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs">
+                        <button
+                            type="button"
+                            onClick={() => setSelectedTab('TODOS')}
+                            className={cn(
+                                "px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2",
+                                selectedTab === 'TODOS'
+                                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                                    : "text-slate-500 hover:text-slate-800 dark:hover:text-white"
+                            )}
+                        >
+                            <span>Todas as Cargas</span>
+                            <span className={cn(
+                                "px-1.5 py-0.5 rounded-md text-[10px]",
+                                selectedTab === 'TODOS' ? "bg-white/20 dark:bg-black/20" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                            )}>
+                                {romaneios.length}
+                            </span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setSelectedTab('PR')}
+                            className={cn(
+                                "px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2",
+                                selectedTab === 'PR'
+                                    ? "bg-blue-600 text-white shadow-xs"
+                                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                            )}
+                        >
+                            <FlagPR className="w-4 h-2.5" />
+                            <span>Paraná (PR)</span>
+                            <span className={cn(
+                                "px-1.5 py-0.5 rounded-md text-[10px]",
+                                selectedTab === 'PR' ? "bg-white/20" : "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300"
+                            )}>
+                                {countPR}
+                            </span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setSelectedTab('SC')}
+                            className={cn(
+                                "px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2",
+                                selectedTab === 'SC'
+                                    ? "bg-emerald-600 text-white shadow-xs"
+                                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                            )}
+                        >
+                            <FlagSC className="w-4 h-2.5" />
+                            <span>Santa Catarina (SC)</span>
+                            <span className={cn(
+                                "px-1.5 py-0.5 rounded-md text-[10px]",
+                                selectedTab === 'SC' ? "bg-white/20" : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
+                            )}>
+                                {countSC}
+                            </span>
+                        </button>
+                    </div>
+
+                    <span className="text-xs font-bold text-slate-400">
+                        {filteredRomaneios.length} carga(s) {selectedTab !== 'TODOS' ? `em ${selectedTab}` : 'no total'}
+                    </span>
                 </div>
 
                 {/* LISTA DE ROMANEIOS IMPORTADOS */}
@@ -556,6 +763,29 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                                         {/* Topo do Card */}
                                         <div className="flex items-start justify-between gap-2 mb-3">
                                             <div className="flex flex-wrap items-center gap-1.5">
+                                                {/* Badge do Tipo (PR / SC) com clique para alternar */}
+                                                {(romaneio.tipo === 'SC' || romaneio.titulo.toUpperCase().includes('SC') || romaneio.numero.toUpperCase().includes('SC')) ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => handleToggleTipo(romaneio, e)}
+                                                        title="Carga de SC. Clique para alterar para PR se necessário."
+                                                        className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800 hover:scale-105 transition flex items-center gap-1.5 shadow-2xs"
+                                                    >
+                                                        <FlagSC className="w-3.5 h-2.5" />
+                                                        <span>SC</span>
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => handleToggleTipo(romaneio, e)}
+                                                        title="Carga de PR. Clique para alterar para SC se necessário."
+                                                        className="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 rounded-full border border-blue-300 dark:border-blue-800 hover:scale-105 transition flex items-center gap-1.5 shadow-2xs"
+                                                    >
+                                                        <FlagPR className="w-3.5 h-2.5" />
+                                                        <span>PR</span>
+                                                    </button>
+                                                )}
+
                                                 <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 px-2 py-0.5 rounded-full border border-rose-200/60 dark:border-rose-900/60">
                                                     {romaneio.numero}
                                                 </span>
@@ -657,10 +887,18 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
 
                                         <button
                                             onClick={() => handleDelete(romaneio.id, romaneio.titulo)}
-                                            className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                                            disabled={deletingId === romaneio.id}
+                                            className={cn(
+                                                "p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition",
+                                                deletingId === romaneio.id && "opacity-50 cursor-not-allowed"
+                                            )}
                                             title="Excluir Romaneio"
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            {deletingId === romaneio.id ? (
+                                                <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                                            ) : (
+                                                <Trash2 className="w-4 h-4" />
+                                            )}
                                         </button>
                                     </div>
                                 </motion.div>
@@ -704,6 +942,52 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
 
                             {/* Formulário de Identificação */}
                             <div className="py-4 space-y-4 flex-1 overflow-y-auto">
+                                {/* Seleção do Tipo: Paraná (PR) ou Santa Catarina (SC) */}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                                        Tipo / Destino da Carga *
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setFormTipo('PR');
+                                                if (formNumero.includes('-SC-')) {
+                                                    setFormNumero(formNumero.replace('-SC-', '-PR-'));
+                                                }
+                                            }}
+                                            className={cn(
+                                                "py-3 px-3.5 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2.5 transition border",
+                                                formTipo === 'PR'
+                                                    ? "bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-500/25"
+                                                    : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                            )}
+                                        >
+                                            <FlagPR className="w-5 h-3.5" />
+                                            <span>Paraná (PR)</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setFormTipo('SC');
+                                                if (formNumero.includes('-PR-')) {
+                                                    setFormNumero(formNumero.replace('-PR-', '-SC-'));
+                                                }
+                                            }}
+                                            className={cn(
+                                                "py-3 px-3.5 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2.5 transition border",
+                                                formTipo === 'SC'
+                                                    ? "bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-500/25"
+                                                    : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                            )}
+                                        >
+                                            <FlagSC className="w-5 h-3.5" />
+                                            <span>Santa Catarina (SC)</span>
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -894,7 +1178,7 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                                                 <tr>
                                                     <th className="p-2.5">Código</th>
                                                     <th className="p-2.5">Descrição</th>
-                                                    <th className="p-2.5 text-center">Qtd Romaneio</th>
+                                                    <th className="p-2.5 text-center">Qtd no Caminhão</th>
                                                     <th className="p-2.5 text-center">Local</th>
                                                     <th className="p-2.5 text-center">Estoque Banco</th>
                                                     <th className="p-2.5 text-center">Conferência / Vínculo</th>
@@ -1041,7 +1325,15 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                         >
                             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
                                 <div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className={cn(
+                                            "text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border",
+                                            selectedRomaneioForView.tipo === 'SC'
+                                                ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 border-emerald-200 dark:border-emerald-800"
+                                                : "text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border-blue-200 dark:border-blue-800"
+                                        )}>
+                                            {selectedRomaneioForView.tipo === 'SC' ? 'SC (Santa Catarina)' : 'PR (Paraná)'}
+                                        </span>
                                         <span className="text-[11px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950 px-2.5 py-0.5 rounded-md">
                                             {selectedRomaneioForView.numero}
                                         </span>
@@ -1065,6 +1357,19 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                                         <span>Exportar</span>
                                     </button>
                                     <button
+                                        onClick={() => handleDelete(selectedRomaneioForView.id, selectedRomaneioForView.titulo)}
+                                        disabled={deletingId === selectedRomaneioForView.id}
+                                        className="p-2.5 rounded-xl border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition flex items-center gap-1.5 text-xs font-bold disabled:opacity-50"
+                                        title="Excluir este Romaneio"
+                                    >
+                                        {deletingId === selectedRomaneioForView.id ? (
+                                            <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                                        ) : (
+                                            <Trash2 className="w-4 h-4" />
+                                        )}
+                                        <span className="hidden sm:inline">Excluir</span>
+                                    </button>
+                                    <button
                                         onClick={() => setSelectedRomaneioForView(null)}
                                         className="p-2.5 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                                     >
@@ -1080,7 +1385,7 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                                         <tr>
                                             <th className="p-3">Código</th>
                                             <th className="p-3">Descrição</th>
-                                            <th className="p-3 text-center">Qtd Carga</th>
+                                            <th className="p-3 text-center">Qtd no Caminhão</th>
                                             <th className="p-3 text-center">Conferido</th>
                                             <th className="p-3 text-center">Local</th>
                                             <th className="p-3 text-center">Estoque (Banco)</th>

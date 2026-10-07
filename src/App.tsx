@@ -13,12 +13,13 @@ import { UpdateWheelsModule } from './components/UpdateWheelsModule';
 import { ConferenceModule } from './components/ConferenceModule';
 import { HistoryModule } from './components/HistoryModule';
 import { RomaneioModule } from './components/RomaneioModule';
+import { SCLoadOrderModule } from './components/SCLoadOrderModule';
 import { AdminRomaneioPanel } from './components/AdminRomaneioPanel';
 import { LabelsModule } from './components/LabelsModule';
 import { getPhotoOverrides } from './lib/supabase';
 import { setPhotoOverrides } from './utils/photoUtils';
 
-type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'update-wheels' | 'conference' | 'romaneio' | 'labels' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history' | 'admin-settings' | 'admin-complete' | 'admin-romaneio';
+type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'sc-load-order' | 'update-wheels' | 'conference' | 'romaneio' | 'labels' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history' | 'admin-settings' | 'admin-complete' | 'admin-romaneio';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('menu');
@@ -33,6 +34,8 @@ export default function App() {
       setMode('admin-complete');
     } else if (path === '/pendencias' || path === '/pendencia' || path === '/p') {
       setMode('pendencies');
+    } else if (path === '/romaneio') {
+      setMode('romaneio');
     } else if (path === '/etiquetas' || path === '/labels') {
       setMode('labels');
     }
@@ -77,6 +80,10 @@ export default function App() {
     return <PendenciesModule onBackToMenu={handleBackToMenu} />;
   }
 
+  if (mode === 'sc-load-order') {
+    return <SCLoadOrderModule onBack={() => setMode('romaneio')} />;
+  }
+
   if (mode === 'update-wheels') {
     return <UpdateWheelsModule onBackToMenu={handleBackToMenu} />;
   }
@@ -113,7 +120,7 @@ export default function App() {
   }
 
   if (mode === 'romaneio') {
-    return <RomaneioModule onBackToMenu={handleBackToMenu} />;
+    return <RomaneioModule onBackToMenu={handleBackToMenu} onOpenSCOrder={() => setMode('sc-load-order')} />;
   }
 
   if (mode === 'labels') {

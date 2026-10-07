@@ -13,24 +13,30 @@ import {
     Truck,
     Database,
     RefreshCw,
-    Cloud
+    Cloud,
+    Check,
+    Layers
 } from 'lucide-react';
 import { cn } from '../utils';
 import {
     Romaneio,
     RomaneioItem,
+    RomaneioTipo,
     getRomaneios,
     getRomaneioById,
     exportRomaneioToExcel,
     fetchAndSyncRomaneios
 } from '../services/romaneioService';
-import { getInventory } from '../lib/supabase';
-import { StockItem } from '../types';
+import { getInventoryWithStateStock } from '../lib/supabase';
+import { StockFreshness } from './StockFreshness';
+import { matchesStockFilter, type StockFilter } from '../utils/stockFilters';
 import { extractAro, extractModel, extractFuracao } from '../utils/wheelVariations';
 import { getWheelPhotoUrl } from '../utils/photoUtils';
+import { FlagPR, FlagSC, FlagBR } from './StateFlags';
 
 interface RomaneioModuleProps {
     onBackToMenu: () => void;
+    onOpenSCOrder?: () => void;
 }
 
 // Cálculo de caixas baseado na regra da MKR Rodas (Aros 13, 14 e 15x6 são caixa dupla)
@@ -88,12 +94,18 @@ function sortWheelItems(a: RomaneioItem, b: RomaneioItem): number {
     return (a.codigo || '').localeCompare(b.codigo || '', 'pt-BR', { numeric: true, sensitivity: 'base' });
 }
 
-export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) => {
+export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, onOpenSCOrder }) => {
     const [romaneios, setRomaneios] = useState<Romaneio[]>([]);
     const [selectedRomaneioId, setSelectedRomaneioId] = useState<string | null>(null);
+    const [tipoFilter, setTipoFilter] = useState<'PR' | 'SC' | 'TODOS'>('PR');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedAroFilter, setSelectedAroFilter] = useState<string>('todos');
-    const [dbStockMap, setDbStockMap] = useState<Map<string, number>>(new Map());
+    const [dbStockMapPR, setDbStockMapPR] = useState<Map<string, number>>(new Map());
+    const [dbStockMapSC, setDbStockMapSC] = useState<Map<string, number>>(new Map());
+    const [scStockAvailable, setSCStockAvailable] = useState(false);
+    const [stockUpdatedPR, setStockUpdatedPR] = useState<string | null>(null);
+    const [stockUpdatedSC, setStockUpdatedSC] = useState<string | null>(null);
+    const [stockFilter, setStockFilter] = useState<StockFilter>('all');
     const [isSyncing, setIsSyncing] = useState<boolean>(false);
     const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -109,24 +121,53 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    // Contadores por tipo (PR e SC)
+    const countPR = useMemo(() => romaneios.filter(r => (r.tipo || 'PR') === 'PR').length, [romaneios]);
+    const countSC = useMemo(() => romaneios.filter(r => (r.tipo || 'PR') === 'SC').length, [romaneios]);
+
+    // Romaneios filtrados pelo tipo selecionado (PR ou SC)
+    const filteredRomaneios = useMemo(() => {
+        if (tipoFilter === 'TODOS') return romaneios;
+        return romaneios.filter(r => (r.tipo || 'PR') === tipoFilter);
+    }, [romaneios, tipoFilter]);
+
+    // Trocar aba de tipo e sincronizar o romaneio selecionado
+    const handleSelectTipo = (tipo: 'PR' | 'SC' | 'TODOS') => {
+        setTipoFilter(tipo);
+        setSearchTerm('');
+        setSelectedAroFilter('todos');
+        setStockFilter('all');
+        if (tipo === 'TODOS') {
+            setSelectedRomaneioId('consolidado-pr-sc');
+        } else {
+            const subset = romaneios.filter(r => (r.tipo || 'PR') === tipo);
+            if (subset.length > 0) {
+                setSelectedRomaneioId(subset[0].id);
+            } else {
+                setSelectedRomaneioId(null);
+            }
+        }
+    };
+
     // Carregar romaneios salvos do cache local
     const loadRomaneios = () => {
         const list = getRomaneios();
         setRomaneios(list);
-        if (list.length > 0 && !selectedRomaneioId) {
-            setSelectedRomaneioId(list[0].id);
-        }
     };
 
     // Sincronizar com a nuvem (Supabase)
     const handleManualSync = async () => {
         setIsSyncing(true);
         try {
-            const list = await fetchAndSyncRomaneios();
+            const [list, { prMap, scMap, scStockAvailable, stockUpdatedPR, stockUpdatedSC }] = await Promise.all([
+                fetchAndSyncRomaneios(),
+                getInventoryWithStateStock()
+            ]);
             setRomaneios(list);
-            if (list.length > 0) {
-                setSelectedRomaneioId(prev => (prev && list.some(r => r.id === prev) ? prev : list[0].id));
-            }
+            setDbStockMapPR(prMap);
+            setDbStockMapSC(scMap);
+            setSCStockAvailable(scStockAvailable);
+            setStockUpdatedPR(stockUpdatedPR); setStockUpdatedSC(stockUpdatedSC);
         } catch (e) {
             console.warn('Erro na sincronização com Supabase:', e);
         } finally {
@@ -139,29 +180,124 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
         // Buscar novidades da nuvem ao abrir
         handleManualSync();
 
-        // Carregar estoque em tempo real do banco de dados (MK / Supabase)
-        getInventory().then((inv) => {
-            if (inv && Array.isArray(inv)) {
-                const map = new Map<string, number>();
-                inv.forEach((it: StockItem) => {
-                    if (it.codigo) {
-                        map.set(it.codigo.trim().toUpperCase(), Number(it.quantidade) || 0);
-                    }
-                });
-                setDbStockMap(map);
-            }
-        }).catch(err => console.warn('Erro ao carregar estoque do banco:', err));
-
         const handleUpdate = () => loadRomaneios();
         window.addEventListener('mkr_romaneios_updated', handleUpdate);
         return () => window.removeEventListener('mkr_romaneios_updated', handleUpdate);
     }, []);
 
+    // Se só houver cargas de SC, alternar automaticamente para SC
+    useEffect(() => {
+        if (romaneios.length > 0) {
+            const hasPR = romaneios.some(r => (r.tipo || 'PR') === 'PR');
+            const hasSC = romaneios.some(r => (r.tipo || 'PR') === 'SC');
+            if (!hasPR && hasSC && tipoFilter === 'PR') {
+                setTipoFilter('SC');
+            }
+        }
+    }, [romaneios]);
+
+    // Romaneio consolidado combinando Paraná e Santa Catarina
+    const consolidatedRomaneio = useMemo<Romaneio | null>(() => {
+        if (romaneios.length === 0) return null;
+
+        const prRomaneios = romaneios.filter(r => (r.tipo || 'PR') === 'PR');
+        const scRomaneios = romaneios.filter(r => (r.tipo || 'PR') === 'SC');
+
+        // Mapear por estado + código para não juntar a mesma roda entre PR e SC.
+        const map = new Map<string, {
+            item: RomaneioItem;
+            qtdPR: number;
+            qtdSC: number;
+            total: number;
+            localPR: string;
+        }>();
+
+        const addRomaneioItem = (it: RomaneioItem, estado: 'PR' | 'SC') => {
+            const codigoKey = it.codigo.trim().toUpperCase();
+            const key = `${estado}:${codigoKey}`;
+            const quantidade = it.quantidade;
+
+            if (!map.has(key)) {
+                map.set(key, {
+                    item: {
+                        ...it,
+                        local: estado === 'PR' ? (it.local || '') : ''
+                    },
+                    qtdPR: estado === 'PR' ? quantidade : 0,
+                    qtdSC: estado === 'SC' ? quantidade : 0,
+                    total: quantidade,
+                    localPR: estado === 'PR' ? (it.local || '') : ''
+                });
+                return;
+            }
+
+            const cur = map.get(key)!;
+            cur.total += quantidade;
+            if (estado === 'PR') {
+                cur.qtdPR += quantidade;
+                if (!cur.localPR && it.local) cur.localPR = it.local;
+            } else {
+                cur.qtdSC += quantidade;
+            }
+        };
+
+        prRomaneios.forEach(r => {
+            r.itens?.forEach(it => {
+                addRomaneioItem(it, 'PR');
+            });
+        });
+
+        scRomaneios.forEach(r => {
+            r.itens?.forEach(it => {
+                addRomaneioItem(it, 'SC');
+            });
+        });
+
+        const itensConsolidados: RomaneioItem[] = Array.from(map.values()).map(({ item, qtdPR, qtdSC, total, localPR }) => {
+            const origemEstado: 'PR' | 'SC' = qtdSC > 0 ? 'SC' : 'PR';
+            return {
+                ...item,
+                id: `consolidated-${origemEstado}-${item.codigo}`,
+                quantidade: total,
+                qtdPR,
+                qtdSC,
+                origemEstado,
+                local: localPR
+            };
+        });
+
+        const totalPecas = itensConsolidados.reduce((acc, it) => acc + it.quantidade, 0);
+
+        return {
+            id: 'consolidado-pr-sc',
+            numero: 'PR + SC',
+            titulo: 'Cargas Consolidadas (Paraná + Santa Catarina)',
+            clienteOuDestino: `${prRomaneios.length} carga(s) PR • ${scRomaneios.length} carga(s) SC`,
+            dataCriacao: new Date().toISOString(),
+            dataAtualizacao: new Date().toISOString(),
+            status: 'pendente',
+            totalItens: itensConsolidados.length,
+            totalPecas,
+            totalConferido: 0,
+            itens: itensConsolidados,
+            arquivos: []
+        };
+    }, [romaneios]);
+
     // Romaneio ativo selecionado
     const activeRomaneio = useMemo(() => {
-        if (!selectedRomaneioId) return romaneios[0] || null;
-        return romaneios.find(r => r.id === selectedRomaneioId) || romaneios[0] || null;
-    }, [romaneios, selectedRomaneioId]);
+        if (tipoFilter === 'TODOS') {
+            return consolidatedRomaneio;
+        }
+        const list = romaneios.filter(r => (r.tipo || 'PR') === tipoFilter);
+        if (list.length === 0) return null;
+
+        if (selectedRomaneioId) {
+            const found = list.find(r => r.id === selectedRomaneioId);
+            if (found) return found;
+        }
+        return list[0] || null;
+    }, [tipoFilter, romaneios, selectedRomaneioId, consolidatedRomaneio]);
 
     // Agrupamento dos itens por ARO
     const { groupsByAro, totalRodas, totalCaixas, availableAros } = useMemo(() => {
@@ -169,13 +305,20 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
             return { groupsByAro: [], totalRodas: 0, totalCaixas: 0, availableAros: [] };
         }
 
+        const isSC = tipoFilter === 'SC';
+        const isPR = tipoFilter === 'PR';
+
         let sumRodas = 0;
         let sumCaixas = 0;
         const map = new Map<string, {
             aro: string;
             itens: (RomaneioItem & {
                 boxInfo: ReturnType<typeof calculateItemBoxes>;
-                estoqueReal: number;
+                estoquePR: number;
+                estoqueSC: number | null;
+                qtdPR: number;
+                qtdSC: number;
+                origemEstado: 'PR' | 'SC' | 'AMBOS';
                 photoUrl: string;
             })[];
         }>();
@@ -200,9 +343,22 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
                 return;
             }
 
-            const estoqueReal = dbStockMap.has(it.codigo)
-                ? dbStockMap.get(it.codigo)!
-                : (it.estoqueDb || 0);
+            const codigoKey = it.codigo.trim().toUpperCase();
+            const estoquePR = dbStockMapPR.get(codigoKey) ?? 0;
+            const estoqueSC = scStockAvailable ? dbStockMapSC.get(codigoKey) ?? 0 : null;
+            if (!matchesStockFilter(stockFilter, estoquePR, estoqueSC)) return;
+
+            const qtdPR = it.qtdPR !== undefined
+                ? it.qtdPR
+                : (isPR ? it.quantidade : 0);
+
+            const qtdSC = it.qtdSC !== undefined
+                ? it.qtdSC
+                : (isSC ? it.quantidade : 0);
+
+            const origemEstado: 'PR' | 'SC' | 'AMBOS' = it.origemEstado || (
+                qtdPR > 0 && qtdSC > 0 ? 'AMBOS' : (qtdSC > 0 ? 'SC' : 'PR')
+            );
 
             const photoUrl = getWheelPhotoUrl(it.descricao, it.codigo);
 
@@ -213,7 +369,11 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
             map.get(aroKey)!.itens.push({
                 ...it,
                 boxInfo,
-                estoqueReal,
+                estoquePR,
+                estoqueSC,
+                qtdPR,
+                qtdSC,
+                origemEstado,
                 photoUrl
             });
         });
@@ -249,7 +409,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
             totalCaixas: sumCaixas,
             availableAros: sortedArosList
         };
-    }, [activeRomaneio, searchTerm, selectedAroFilter, dbStockMap]);
+    }, [activeRomaneio, searchTerm, selectedAroFilter, dbStockMapPR, dbStockMapSC, scStockAvailable, tipoFilter, stockFilter]);
 
     // Data formatada
     const dataDisplay = activeRomaneio?.dataCriacao
@@ -333,6 +493,29 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
                                 {activeRomaneio ? (activeRomaneio.titulo || 'Romaneio de Carga') : 'Romaneio'}
                             </span>
                             {activeRomaneio && (
+                                <span className={cn(
+                                    "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shrink-0 border",
+                                    tipoFilter === 'TODOS'
+                                        ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800"
+                                        : (activeRomaneio.tipo || 'PR') === 'SC'
+                                            ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
+                                            : "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800"
+                                )}>
+                                    {tipoFilter === 'TODOS' ? (
+                                        <>
+                                            <FlagPR className="w-3.5 h-2.5" />
+                                            <FlagSC className="w-3.5 h-2.5" />
+                                            <span>PR + SC Juntos</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {(activeRomaneio.tipo || 'PR') === 'SC' ? <FlagSC className="w-3.5 h-2.5" /> : <FlagPR className="w-3.5 h-2.5" />}
+                                            <span>{(activeRomaneio.tipo || 'PR') === 'SC' ? 'SC' : 'PR'}</span>
+                                        </>
+                                    )}
+                                </span>
+                            )}
+                            {activeRomaneio && (
                                 <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60 shrink-0">
                                     {totalRodas} un • {totalCaixas} cx
                                 </span>
@@ -340,9 +523,59 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
                         </div>
                     </div>
 
-                    {/* Lado Direito: Ações (Trocar Carga, Nuvem, Imprimir, Excel) */}
+                    {/* Lado Direito: Ações (Filtro PR/SC, Trocar Carga, Nuvem, Imprimir, Excel) */}
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                        {romaneios.length > 1 && (
+                        {/* Seletor rápido PR / SC / Todos no topo */}
+                        {romaneios.length > 0 && (
+                            <div className="hidden sm:inline-flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80 text-[11px] font-bold">
+                                <button
+                                    onClick={() => handleSelectTipo('PR')}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-lg transition text-[11px] flex items-center gap-1.5",
+                                        tipoFilter === 'PR'
+                                            ? "bg-blue-600 text-white shadow-2xs font-black"
+                                            : "text-blue-700 dark:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30"
+                                    )}
+                                    title="Filtrar por cargas do Paraná (PR)"
+                                >
+                                    <FlagPR className="w-3.5 h-2.5" />
+                                    <span>PR</span>
+                                    {countPR > 0 && <span className="text-[9px] opacity-80">({countPR})</span>}
+                                </button>
+                                <button
+                                    onClick={() => handleSelectTipo('SC')}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-lg transition text-[11px] flex items-center gap-1.5",
+                                        tipoFilter === 'SC'
+                                            ? "bg-emerald-600 text-white shadow-2xs font-black"
+                                            : "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
+                                    )}
+                                    title="Filtrar por cargas de Santa Catarina (SC)"
+                                >
+                                    <FlagSC className="w-3.5 h-2.5" />
+                                    <span>SC</span>
+                                    {countSC > 0 && <span className="text-[9px] opacity-80">({countSC})</span>}
+                                </button>
+                                <button
+                                    onClick={() => handleSelectTipo('TODOS')}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-lg transition text-[11px] flex items-center gap-1.5",
+                                        tipoFilter === 'TODOS'
+                                            ? "bg-indigo-600 text-white shadow-2xs font-black"
+                                            : "text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30"
+                                    )}
+                                    title="Ver cargas do Paraná e Santa Catarina juntas com identificação roda a roda"
+                                >
+                                    <span className="flex -space-x-1 items-center">
+                                        <FlagPR className="w-3 h-2" />
+                                        <FlagSC className="w-3 h-2" />
+                                    </span>
+                                    <span>Ver os 2</span>
+                                </button>
+                            </div>
+                        )}
+
+                        {tipoFilter !== 'TODOS' && filteredRomaneios.length > 1 && (
                             <select
                                 value={selectedRomaneioId || ''}
                                 onChange={(e) => {
@@ -352,9 +585,9 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
                                 }}
                                 className="h-8 sm:h-9 px-2 sm:px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 shadow-2xs max-w-[120px] sm:max-w-[180px] truncate"
                             >
-                                {romaneios.map((r) => (
+                                {filteredRomaneios.map((r) => (
                                     <option key={r.id} value={r.id}>
-                                        {r.numero} - {r.titulo}
+                                        {(r.numero ? `${r.numero} - ` : '') + r.titulo}
                                     </option>
                                 ))}
                             </select>
@@ -395,8 +628,251 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
 
             <div className="max-w-5xl mx-auto p-2.5 sm:p-6 md:p-8 space-y-4 sm:space-y-6 w-full max-w-full print:max-w-none print:w-full print:p-0 print:m-0 print:space-y-1.5 print:overflow-visible">
 
+                {onOpenSCOrder && (
+                    <div className="flex justify-end print:hidden">
+                        <button onClick={onOpenSCOrder} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold">
+                            <Truck className="w-4 h-4" /> Pedir Rodas de SC
+                        </button>
+                    </div>
+                )}
+
+                {/* SELETOR HERO DE ESTADO (PARANÁ / SANTA CATARINA / TODOS) - ESTILO MÓDULO DE CONTAGEM */}
+                {romaneios.length > 0 && (
+                    <div className="space-y-3.5 print:hidden">
+                        {/* Grade de Cards de Estado (3 colunas: Paraná, Santa Catarina e Ver os 2 Juntos) */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-4xl mx-auto">
+                            {/* CARD PARANÁ */}
+                            <button
+                                type="button"
+                                onClick={() => handleSelectTipo('PR')}
+                                className={cn(
+                                    "relative p-3.5 sm:p-5 rounded-[22px] sm:rounded-[24px] border-2 transition-all duration-200 flex flex-col items-center text-center cursor-pointer active:scale-95 group",
+                                    tipoFilter === 'PR'
+                                        ? "border-blue-500 dark:border-blue-400 ring-2 ring-blue-500/20 bg-blue-50/70 dark:bg-blue-950/30 shadow-md"
+                                        : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-200 dark:hover:border-slate-700 hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
+                                )}
+                            >
+                                {tipoFilter === 'PR' && (
+                                    <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm">
+                                        <Check className="w-3 h-3 stroke-[3]" />
+                                    </span>
+                                )}
+
+                                {/* Container de Sigla com Bandeira do Paraná */}
+                                <div className="relative mb-2.5">
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-[18px] sm:rounded-[20px] bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white transition-transform group-hover:scale-105 shadow-md shadow-blue-500/25">
+                                        <span className="text-[18px] sm:text-[21px] font-black tracking-wider drop-shadow-sm font-sans select-none">
+                                            PR
+                                        </span>
+                                    </div>
+                                    <div className="absolute -bottom-1 -right-1 ring-2 ring-white dark:ring-slate-900 rounded-[4px] overflow-hidden shadow-sm">
+                                        <FlagPR className="w-5 h-3.5 sm:w-6 sm:h-4" />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-center gap-1.5">
+                                    <h3 className="font-extrabold text-slate-900 dark:text-white text-[14px] sm:text-[16px] tracking-tight">
+                                        Paraná (PR)
+                                    </h3>
+                                </div>
+                                <p className="text-[11px] sm:text-[12px] text-slate-400 dark:text-slate-500 font-medium leading-tight mt-0.5">
+                                    {countPR} {countPR === 1 ? 'carga cadastrada' : 'cargas cadastradas'}
+                                </p>
+                                <span className="mt-2 text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-100/60 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">
+                                    Local • Estoque PR
+                                </span>
+                            </button>
+
+                            {/* CARD SANTA CATARINA */}
+                            <button
+                                type="button"
+                                onClick={() => handleSelectTipo('SC')}
+                                className={cn(
+                                    "relative p-3.5 sm:p-5 rounded-[22px] sm:rounded-[24px] border-2 transition-all duration-200 flex flex-col items-center text-center cursor-pointer active:scale-95 group",
+                                    tipoFilter === 'SC'
+                                        ? "border-emerald-500 dark:border-emerald-400 ring-2 ring-emerald-500/20 bg-emerald-50/70 dark:bg-emerald-950/30 shadow-md"
+                                        : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-200 dark:hover:border-slate-700 hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
+                                )}
+                            >
+                                {tipoFilter === 'SC' && (
+                                    <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm">
+                                        <Check className="w-3 h-3 stroke-[3]" />
+                                    </span>
+                                )}
+
+                                {/* Container de Sigla com Bandeira de Santa Catarina */}
+                                <div className="relative mb-2.5">
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-[18px] sm:rounded-[20px] bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white transition-transform group-hover:scale-105 shadow-md shadow-emerald-500/25">
+                                        <span className="text-[18px] sm:text-[21px] font-black tracking-wider drop-shadow-sm font-sans select-none">
+                                            SC
+                                        </span>
+                                    </div>
+                                    <div className="absolute -bottom-1 -right-1 ring-2 ring-white dark:ring-slate-900 rounded-[4px] overflow-hidden shadow-sm">
+                                        <FlagSC className="w-5 h-3.5 sm:w-6 sm:h-4" />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-center gap-1.5">
+                                    <h3 className="font-extrabold text-slate-900 dark:text-white text-[14px] sm:text-[16px] tracking-tight">
+                                        Santa Catarina (SC)
+                                    </h3>
+                                </div>
+                                <p className="text-[11px] sm:text-[12px] text-slate-400 dark:text-slate-500 font-medium leading-tight mt-0.5">
+                                    {countSC} {countSC === 1 ? 'carga cadastrada' : 'cargas cadastradas'}
+                                </p>
+                                <span className="mt-2 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-100/60 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full">
+                                    Estoque SC • Estoque PR
+                                </span>
+                            </button>
+
+                            {/* CARD VER OS 2 JUNTOS */}
+                            <button
+                                type="button"
+                                onClick={() => handleSelectTipo('TODOS')}
+                                className={cn(
+                                    "relative p-3.5 sm:p-5 rounded-[22px] sm:rounded-[24px] border-2 transition-all duration-200 flex flex-col items-center text-center cursor-pointer active:scale-95 group",
+                                    tipoFilter === 'TODOS'
+                                        ? "border-indigo-500 dark:border-indigo-400 ring-2 ring-indigo-500/20 bg-indigo-50/70 dark:bg-indigo-950/30 shadow-md"
+                                        : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-200 dark:hover:border-slate-700 hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
+                                )}
+                            >
+                                {tipoFilter === 'TODOS' && (
+                                    <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm">
+                                        <Check className="w-3 h-3 stroke-[3]" />
+                                    </span>
+                                )}
+
+                                <div className="relative mb-2.5">
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-[18px] sm:rounded-[20px] bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 flex items-center justify-center text-white transition-transform group-hover:scale-105 shadow-md shadow-indigo-500/25">
+                                        <span className="text-[13px] sm:text-[15px] font-black tracking-tight drop-shadow-sm font-sans select-none">
+                                            PR+SC
+                                        </span>
+                                    </div>
+                                    <div className="absolute -bottom-1 -right-2 flex -space-x-1 ring-2 ring-white dark:ring-slate-900 rounded-[4px] overflow-hidden shadow-sm">
+                                        <FlagPR className="w-4 h-3 sm:w-5 sm:h-3.5" />
+                                        <FlagSC className="w-4 h-3 sm:w-5 sm:h-3.5" />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-center gap-1.5">
+                                    <h3 className="font-extrabold text-slate-900 dark:text-white text-[14px] sm:text-[16px] tracking-tight">
+                                        Ver os 2 Juntos
+                                    </h3>
+                                </div>
+                                <p className="text-[11px] sm:text-[12px] text-slate-400 dark:text-slate-500 font-medium leading-tight mt-0.5">
+                                    Consolidado ({countPR + countSC} cargas)
+                                </p>
+                                <span className="mt-2 text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-100/60 dark:bg-indigo-900/40 px-2 py-0.5 rounded-full">
+                                    Mostra qual é PR e SC
+                                </span>
+                            </button>
+                        </div>
+
+                        {/* SELETOR DE CARGA ATIVA DO ESTADO SELECIONADO OU RESUMO CONSOLIDADO */}
+                        {tipoFilter === 'TODOS' ? (
+                            <div className="bg-white dark:bg-slate-900 rounded-[20px] sm:rounded-[22px] p-3.5 sm:p-4 border border-indigo-200/90 dark:border-indigo-900/60 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center gap-1 shrink-0">
+                                        <FlagPR className="w-4 h-3" />
+                                        <FlagSC className="w-4 h-3" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block leading-tight">
+                                            Visualização Combinada • Paraná + Santa Catarina:
+                                        </span>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="text-sm font-black text-slate-900 dark:text-white truncate">
+                                                Cargas Consolidadas de Ambos os Estados
+                                            </span>
+                                            <span className="text-[11px] font-bold text-slate-400">
+                                                ({countPR} carga{countPR === 1 ? '' : 's'} PR • {countSC} carga{countSC === 1 ? '' : 's'} SC)
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 self-start sm:self-center">
+                                    Cada roda identifica se é do PR, SC ou de ambos
+                                </div>
+                            </div>
+                        ) : filteredRomaneios.length > 0 && (
+                            <div className="bg-white dark:bg-slate-900 rounded-[20px] sm:rounded-[22px] p-3.5 sm:p-4 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                                        {activeRomaneio?.tipo === 'SC' ? <FlagSC className="w-6 h-4" /> : <FlagPR className="w-6 h-4" />}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block leading-tight">
+                                            Carga Ativa na Tela ({tipoFilter === 'SC' ? 'Santa Catarina' : 'Paraná'}):
+                                        </span>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="text-sm font-black text-slate-900 dark:text-white truncate">
+                                                {activeRomaneio?.titulo || 'Sem título'}
+                                            </span>
+                                            <span className="text-[11px] font-bold text-slate-400">
+                                                ({activeRomaneio?.numero})
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Chips de troca rápida entre romaneios disponíveis do estado */}
+                                {filteredRomaneios.length > 1 && (
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="text-[11px] font-bold text-slate-400 mr-1 hidden lg:inline">Trocar:</span>
+                                        {filteredRomaneios.map((r) => {
+                                            const isCurrent = r.id === activeRomaneio?.id;
+                                            return (
+                                                <button
+                                                    key={r.id}
+                                                    onClick={() => {
+                                                        setSelectedRomaneioId(r.id);
+                                                        setSearchTerm('');
+                                                        setSelectedAroFilter('todos');
+                                                    }}
+                                                    className={cn(
+                                                        "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border active:scale-95 shadow-2xs",
+                                                        isCurrent
+                                                            ? r.tipo === 'SC'
+                                                                ? "bg-emerald-600 text-white border-emerald-700 font-black shadow-emerald-500/20"
+                                                                : "bg-blue-600 text-white border-blue-700 font-black shadow-blue-500/20"
+                                                            : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                                    )}
+                                                >
+                                                    {r.tipo === 'SC' ? <FlagSC className="w-4 h-2.5" /> : <FlagPR className="w-4 h-2.5" />}
+                                                    <span className="truncate max-w-[120px] sm:max-w-[160px]">{r.numero || r.titulo}</span>
+                                                    <span className="text-[10px] opacity-80">({r.totalPecas} un)</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* RELATÓRIO ESTILO FOLHA DE CARGA (Zero Scroll Lateral no Mobile) */}
-                {!activeRomaneio ? (
+                {romaneios.length > 0 && filteredRomaneios.length === 0 ? (
+                    <div className="bg-white dark:bg-slate-900 rounded-[24px] sm:rounded-[28px] p-8 sm:p-12 text-center border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-4">
+                            <Truck className="w-8 h-8" />
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                            Nenhum Romaneio de {tipoFilter === 'SC' ? 'Santa Catarina (SC)' : 'Paraná (PR)'}
+                        </h2>
+                        <p className="text-sm text-slate-400 dark:text-slate-500 mt-1 max-w-md mx-auto">
+                            Existem romaneios cadastrados no outro estado. Você pode alternar o estado abaixo ou importar novas planilhas no Painel Administrativo.
+                        </p>
+                        <div className="mt-4 flex justify-center gap-2">
+                            <button
+                                onClick={() => handleSelectTipo(tipoFilter === 'SC' ? 'PR' : 'SC')}
+                                className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 transition"
+                            >
+                                Ver Cargas do {tipoFilter === 'SC' ? 'Paraná (PR)' : 'Santa Catarina (SC)'}
+                            </button>
+                        </div>
+                    </div>
+                ) : !activeRomaneio ? (
                     <div className="bg-white dark:bg-slate-900 rounded-[24px] sm:rounded-[28px] p-8 sm:p-12 text-center border border-slate-200 dark:border-slate-800 shadow-sm">
                         <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-4">
                             <FileSpreadsheet className="w-8 h-8" />
@@ -427,8 +903,40 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <h1 className="text-lg sm:text-2xl font-black text-[#1E293B] dark:text-white tracking-tight uppercase truncate print:text-xl print:font-black print:tracking-normal">
-                                            RELATÓRIO DE CAMINHÃO
+                                            {tipoFilter === 'TODOS'
+                                                ? 'RELATÓRIO CONSOLIDADO • PARANÁ + SANTA CATARINA'
+                                                : tipoFilter === 'SC'
+                                                    ? 'RELATÓRIO DE CAMINHÃO • SANTA CATARINA (SC)'
+                                                    : 'RELATÓRIO DE CAMINHÃO • PARANÁ (PR)'}
                                         </h1>
+                                        {activeRomaneio && (
+                                            tipoFilter === 'TODOS' ? (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shrink-0 print:hidden bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800">
+                                                    <FlagPR className="w-3.5 h-2.5" />
+                                                    <FlagSC className="w-3.5 h-2.5" />
+                                                    <span>PR + SC JUNTOS</span>
+                                                </span>
+                                            ) : (
+                                                <span className={cn(
+                                                    "inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shrink-0 print:hidden",
+                                                    (activeRomaneio.tipo || 'PR') === 'SC'
+                                                        ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
+                                                        : "bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800"
+                                                )}>
+                                                    {(activeRomaneio.tipo || 'PR') === 'SC' ? (
+                                                        <>
+                                                            <FlagSC className="w-4 h-2.5" />
+                                                            <span>SANTA CATARINA (SC)</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <FlagPR className="w-4 h-2.5" />
+                                                            <span>PARANÁ (PR)</span>
+                                                        </>
+                                                    )}
+                                                </span>
+                                            )
+                                        )}
                                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40 shrink-0 print:hidden">
                                             <Cloud className="w-3 h-3" /> Supabase
                                         </span>
@@ -503,17 +1011,23 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
                         </div>
 
                         {/* FILTROS E BUSCA */}
+                        <StockFreshness pr={stockUpdatedPR} sc={stockUpdatedSC} scAvailable={scStockAvailable} />
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-1 print:hidden">
                             <div className="relative w-full sm:flex-1">
                                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                                 <input
                                     type="text"
-                                    placeholder="Filtrar por descrição..."
+                                    placeholder="Buscar codigo ou descricao..."
+                                    aria-label="Buscar no romaneio"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full h-10 sm:h-11 pl-10 pr-4 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-indigo-500"
                                 />
                             </div>
+
+                            <select aria-label="Filtrar estoque do romaneio" value={stockFilter} onChange={event => setStockFilter(event.target.value as StockFilter)} className="w-full sm:w-auto max-w-full h-10 sm:h-11 px-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+                                <option value="all">Todos os estoques</option><option value="sc">Com estoque SC</option><option value="pr">Com estoque PR</option><option value="none">Sem estoque PR e SC</option>
+                            </select>
 
                             {/* Dropdown Filtro por Aro */}
                             <div className="relative w-full sm:w-auto">
@@ -579,16 +1093,20 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
                                                     <table className="w-full text-left text-[14px] table-fixed">
                                                         <colgroup>
                                                             <col className="w-auto" />
-                                                            <col className="w-48 sm:w-52" />
-                                                            <col className="w-36 sm:w-40" />
-                                                            <col className="w-36 sm:w-40" />
+                                                            <col className="w-52 sm:w-56" />
+                                                            <col className="w-32 sm:w-36" />
+                                                            <col className="w-32 sm:w-36" />
                                                         </colgroup>
                                                         <thead className="text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider text-xs">
                                                             <tr>
                                                                 <th className="py-2.5 px-5 text-left">DESCRIÇÃO</th>
-                                                                <th className="py-2.5 px-4 text-center">QTD.</th>
-                                                                <th className="py-2.5 px-4 text-center">LOCAL</th>
-                                                                <th className="py-2.5 px-4 text-center">ESTOQUE</th>
+                                                                <th className="py-2.5 px-4 text-center">QUANTIDADE CAMINHÃO</th>
+                                                                {tipoFilter === 'PR' ? (
+                                                                    <th className="py-2.5 px-3 text-center">LOCAL</th>
+                                                                ) : (
+                                                                    <th className="py-2.5 px-3 text-center text-emerald-600 dark:text-emerald-400">ESTOQUE SC</th>
+                                                                )}
+                                                                <th className="py-2.5 px-3 text-center text-blue-600 dark:text-blue-400">ESTOQUE PR</th>
                                                             </tr>
                                                         </thead>
                                                     </table>
@@ -601,7 +1119,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
                                                 <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800/80 w-full print:hidden">
                                                     {group.itens.map((it) => (
                                                         <div key={it.id} className="p-3.5 sm:p-4 space-y-3 w-full hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                                                            {/* Topo: Foto Circular + Descrição Destaque + Código */}
+                                                            {/* Topo: Foto Circular + Descrição Destaque + Badges de Origem */}
                                                             <div className="flex items-start gap-3.5">
                                                                 <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 shrink-0 overflow-hidden flex items-center justify-center p-0.5 shadow-xs mt-0.5">
                                                                     <img
@@ -615,24 +1133,54 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
                                                                 </div>
 
                                                                 <div className="flex-1 min-w-0 self-center">
+                                                                    {/* BADGE DE ORIGEM NO MODO VER OS 2 JUNTOS */}
+                                                                    {tipoFilter === 'TODOS' && (
+                                                                        <div className="mb-1">
+                                                                            {it.origemEstado === 'PR' && (
+                                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                                                                    <FlagPR className="w-3 h-2" />
+                                                                                    <span>Carga PR</span>
+                                                                                </span>
+                                                                            )}
+                                                                            {it.origemEstado === 'SC' && (
+                                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                                                                    <FlagSC className="w-3 h-2" />
+                                                                                    <span>Carga SC</span>
+                                                                                </span>
+                                                                            )}
+                                                                            {it.origemEstado === 'AMBOS' && (
+                                                                                <div className="inline-flex items-center gap-1 flex-wrap">
+                                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-black uppercase bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                                                                        <FlagPR className="w-3 h-2" />
+                                                                                        <span>PR: {it.qtdPR} un</span>
+                                                                                    </span>
+                                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                                                                        <FlagSC className="w-3 h-2" />
+                                                                                        <span>SC: {it.qtdSC} un</span>
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+
                                                                     <h4 className="font-black text-slate-900 dark:text-white text-sm sm:text-base leading-snug break-words">
                                                                         {it.descricao || it.codigo}
                                                                     </h4>
+                                                                    <div className="text-[11px] font-mono text-slate-400 mt-0.5">
+                                                                        CÓD: {it.codigo}
+                                                                    </div>
                                                                 </div>
                                                             </div>
 
-                                                            {/* Bloco de Métricas Simplificado (Baixa Carga Cognitiva • Zero Truncamento) */}
-                                                            <div className="bg-slate-50/80 dark:bg-slate-800/40 rounded-xl p-2.5 space-y-2 border border-slate-200/60 dark:border-slate-800/60">
-                                                                {/* Linha 1: Quantidades com Caminhão em destaque amplo */}
-                                                                <div className="flex items-center justify-between gap-3">
-                                                                    {/* CAMINHÃO (Sem truncamento de caixas) */}
-                                                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                            {/* Quantidade e estoques por estado */}
+                                                                <div className="bg-slate-50/80 dark:bg-slate-800/40 rounded-xl p-2.5 space-y-2 border border-slate-200/60 dark:border-slate-800/60">
+                                                                    <div className="flex items-center gap-2">
                                                                         <div className="w-7 h-7 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                                                                             <Truck className="w-3.5 h-3.5" />
                                                                         </div>
                                                                         <div className="min-w-0 flex-1">
                                                                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block leading-tight">
-                                                                                Caminhão
+                                                                                Quantidade Caminhão
                                                                             </span>
                                                                             <span className="font-black text-sm text-slate-900 dark:text-white leading-tight block">
                                                                                 {it.boxInfo.displayQtd}
@@ -640,57 +1188,67 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
                                                                         </div>
                                                                     </div>
 
-                                                                    {/* ESTOQUE REAL (Limpo, sem sub-fundo pesado) */}
-                                                                    <div className="flex items-center gap-2 shrink-0">
-                                                                        <div className="w-7 h-7 rounded-lg bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-                                                                            <Database className="w-3.5 h-3.5" />
+                                                                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/50 dark:border-slate-700/40">
+                                                                        {tipoFilter === 'PR' ? (
+                                                                            <div className="flex items-center gap-1.5 p-1.5 min-w-0">
+                                                                                <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                                                                <div className="min-w-0">
+                                                                                    <span className="text-[9px] font-black uppercase text-slate-500 block leading-tight">Local</span>
+                                                                                    <span className="font-mono font-bold text-xs text-slate-900 dark:text-white break-words block">{it.local || 'SEM LOCAL'}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        ) : (
+                                                                        <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/40">
+                                                                            <div className="w-6 h-6 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                                                                <Database className="w-3 h-3" />
+                                                                            </div>
+                                                                            <div>
+                                                                                <span className="text-[9px] font-black uppercase text-emerald-700 dark:text-emerald-300 block leading-tight">
+                                                                                    Estoque SC
+                                                                                </span>
+                                                                                <span className="font-black text-xs text-emerald-900 dark:text-emerald-100 leading-tight block">
+                                                                                    {it.estoqueSC === null ? 'Indisponível' : `${it.estoqueSC} un`}
+                                                                                </span>
+                                                                            </div>
                                                                         </div>
-                                                                        <div>
-                                                                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block leading-tight">
-                                                                                Est. Real
-                                                                            </span>
-                                                                            <span className="font-bold text-sm text-slate-800 dark:text-slate-200 leading-tight block">
-                                                                                {it.estoqueReal} un
-                                                                            </span>
+                                                                        )}
+
+                                                                        <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40">
+                                                                            <div className="w-6 h-6 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                                                                <Database className="w-3 h-3" />
+                                                                            </div>
+                                                                            <div>
+                                                                                <span className="text-[9px] font-black uppercase text-blue-700 dark:text-blue-300 block leading-tight">
+                                                                                    Estoque PR
+                                                                                </span>
+                                                                                <span className="font-black text-xs text-blue-900 dark:text-blue-100 leading-tight block">
+                                                                                    {it.estoquePR} un
+                                                                                </span>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Linha 2: Localização em Linha Inteira (Nunca corta posições múltiplas) */}
-                                                                <div className="flex items-center gap-2 pt-2 border-t border-slate-200/50 dark:border-slate-700/40">
-                                                                    <div className="w-7 h-7 rounded-lg bg-slate-200/60 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400 flex items-center justify-center shrink-0">
-                                                                        <MapPin className="w-3.5 h-3.5" />
-                                                                    </div>
-                                                                    <div className="min-w-0 flex-1 flex items-baseline gap-1.5 flex-wrap">
-                                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 shrink-0">
-                                                                            Local:
-                                                                        </span>
-                                                                        <span className="font-mono font-bold text-xs sm:text-sm text-slate-900 dark:text-white break-words">
-                                                                            {it.local || 'SEM LOCAL'}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
 
-                                                {/* VISÃO DESKTOP & TABLET (>= md): TABELA AMPLIADA (Forçada no print para máxima economia de papel) */}
+                                                {/* VISÃO DESKTOP & TABLET (>= md): TABELA AMPLIADA */}
                                                 <div className="hidden md:block print:block w-full overflow-x-auto print:overflow-visible">
                                                     <table className="w-full text-left text-[14px] table-fixed print:text-[12px]">
                                                         <colgroup>
                                                             <col className="w-auto" />
-                                                            <col className="w-48 sm:w-52 print:w-32" />
-                                                            <col className="w-36 sm:w-40 print:w-28" />
-                                                            <col className="w-36 sm:w-40 print:w-24" />
+                                                            <col className="w-52 sm:w-56 print:w-36" />
+                                                            <col className="w-32 sm:w-36 print:w-24" />
+                                                            <col className="w-32 sm:w-36 print:w-24" />
                                                         </colgroup>
                                                         {/* Thead apenas para impressão em papel para repetir cabeçalhos entre páginas */}
                                                         <thead className="hidden print:table-header-group">
                                                             <tr className="print:bg-slate-100 print:text-slate-900 print:text-[11px] print:border-b print:border-slate-300">
                                                                 <th className="print:py-1.5 print:px-2 text-left">DESCRIÇÃO</th>
-                                                                <th className="print:py-1.5 print:px-1.5 text-center">QTD.</th>
-                                                                <th className="print:py-1.5 print:px-1.5 text-center">LOCAL</th>
-                                                                <th className="print:py-1.5 print:px-1.5 text-center">ESTOQUE</th>
+                                                                <th className="print:py-1.5 print:px-1.5 text-center">QTD NO CAMINHÃO</th>
+                                                                <th className="print:py-1.5 print:px-1 text-center">{tipoFilter === 'PR' ? 'LOCAL' : 'ESTOQUE SC'}</th>
+                                                                <th className="print:py-1.5 print:px-1 text-center">ESTOQUE PR</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium print:divide-slate-200">
@@ -715,9 +1273,42 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
                                                                             </div>
 
                                                                             <div className="min-w-0 flex-1">
-                                                                                <span className="font-black text-slate-900 dark:text-white text-base sm:text-[17px] block leading-snug print:text-[13px] print:font-bold print:leading-snug">
-                                                                                    {it.descricao || it.codigo}
-                                                                                </span>
+                                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                                    <span className="font-black text-slate-900 dark:text-white text-base sm:text-[17px] block leading-snug print:text-[13px] print:font-bold print:leading-snug">
+                                                                                        {it.descricao || it.codigo}
+                                                                                    </span>
+
+                                                                                    {/* MOSTRAR QUAL É DO PARANÁ E QUAL É DE SC NO MODO VER OS 2 JUNTOS */}
+                                                                                    {tipoFilter === 'TODOS' && (
+                                                                                        <div className="inline-flex items-center gap-1.5 print:inline-block print:text-[10px] print:font-black">
+                                                                                            {it.origemEstado === 'PR' && (
+                                                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                                                                                    <FlagPR className="w-3.5 h-2.5 print:hidden" />
+                                                                                                    <span>Carga PR</span>
+                                                                                                </span>
+                                                                                            )}
+                                                                                            {it.origemEstado === 'SC' && (
+                                                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                                                                                    <FlagSC className="w-3.5 h-2.5 print:hidden" />
+                                                                                                    <span>Carga SC</span>
+                                                                                                </span>
+                                                                                            )}
+                                                                                            {it.origemEstado === 'AMBOS' && (
+                                                                                                <div className="inline-flex items-center gap-1">
+                                                                                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-black uppercase bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                                                                                        <FlagPR className="w-3 h-2 print:hidden" />
+                                                                                                        <span>PR: {it.qtdPR}</span>
+                                                                                                    </span>
+                                                                                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                                                                                        <FlagSC className="w-3 h-2 print:hidden" />
+                                                                                                        <span>SC: {it.qtdSC}</span>
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+
                                                                                 {/* CÓDIGO OCULTO NO PRINT */}
                                                                                 <div className="flex items-center gap-2 mt-1 print:hidden">
                                                                                     <span className="font-mono text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200/80 dark:border-slate-700/60 inline-block">
@@ -728,7 +1319,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
                                                                         </div>
                                                                     </td>
 
-                                                                    {/* QUANTIDADE (Compacta no print em linha única com letras maiores) */}
+                                                                    {/* QUANTIDADE NO CAMINHÃO */}
                                                                     <td className="py-3.5 px-4 text-center whitespace-nowrap print:py-1 print:px-1.5">
                                                                         <div className="inline-flex flex-col items-center print:flex-row print:justify-center print:items-baseline print:gap-1.5">
                                                                             <div className="flex items-baseline gap-1">
@@ -742,22 +1333,40 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu }) 
                                                                             <span className="text-xs sm:text-sm font-bold text-slate-400 dark:text-slate-500 mt-0.5 print:mt-0 print:text-[11.5px] print:font-medium print:text-slate-600">
                                                                                 ({it.boxInfo.caixas} cx)
                                                                             </span>
+                                                                            {tipoFilter === 'TODOS' && it.origemEstado === 'AMBOS' && (
+                                                                                <div className="text-[10px] font-extrabold flex items-center gap-1 mt-0.5 print:hidden">
+                                                                                    <span className="text-blue-600 dark:text-blue-400">PR: {it.qtdPR}</span>
+                                                                                    <span className="text-slate-300">•</span>
+                                                                                    <span className="text-emerald-600 dark:text-emerald-400">SC: {it.qtdSC}</span>
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     </td>
 
-                                                                    {/* LOCALIZAÇÃO (Sem fundo/borda pesada no print com letras maiores) */}
-                                                                    <td className="py-3.5 px-4 text-center print:py-1 print:px-1.5">
-                                                                        <span className="font-mono font-black text-sm sm:text-base text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 inline-block shadow-2xs tracking-wide print:p-0 print:bg-transparent print:border-none print:text-[12.5px] print:font-black print:shadow-none">
-                                                                            {it.local || 'SEM LOCAL'}
-                                                                        </span>
-                                                                    </td>
+                                                                    {/* Estoques por estado */}
+                                                                    {tipoFilter === 'PR' ? (
+                                                                        <td className="py-3.5 px-3 text-center print:py-1 print:px-1">
+                                                                            <span className="font-mono font-black text-xs sm:text-sm text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 inline-block break-words max-w-full print:p-0 print:bg-transparent print:border-none print:text-[11.5px]">
+                                                                                {it.local || 'SEM LOCAL'}
+                                                                            </span>
+                                                                        </td>
+                                                                    ) : (
+                                                                        <>
+                                                                            {/* ESTOQUE SC */}
+                                                                            <td className="py-3.5 px-3 text-center print:py-1 print:px-1">
+                                                                                <span className="inline-flex items-center justify-center min-w-[50px] px-2.5 py-1 rounded-xl text-xs sm:text-sm font-black border shadow-2xs bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-200/90 dark:border-emerald-900/40 print:min-w-0 print:p-0 print:bg-transparent print:border-none print:text-[11.5px] print:font-black print:shadow-none print:text-slate-800">
+                                                                                    {it.estoqueSC === null ? 'Indisponível' : `${it.estoqueSC} un`}
+                                                                                </span>
+                                                                            </td>
+                                                                        </>
+                                                                    )}
 
-                                                                    {/* ESTOQUE DO BANCO */}
-                                                                    <td className="py-3.5 px-4 text-center print:py-1 print:px-1.5">
-                                                                        <span className="inline-flex items-center justify-center min-w-[54px] px-3 py-1.5 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200 text-sm sm:text-base font-black border border-indigo-100/90 dark:border-indigo-900/40 shadow-2xs print:min-w-0 print:p-0 print:bg-transparent print:border-none print:text-[12.5px] print:font-black print:shadow-none print:text-slate-800">
-                                                                            {it.estoqueReal} un
-                                                                        </span>
-                                                                    </td>
+                                                                            {/* ESTOQUE PR */}
+                                                                            <td className="py-3.5 px-3 text-center print:py-1 print:px-1">
+                                                                                <span className="inline-flex items-center justify-center min-w-[50px] px-2.5 py-1 rounded-xl text-xs sm:text-sm font-black border shadow-2xs bg-blue-50/80 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 border-blue-200/90 dark:border-blue-900/40 print:min-w-0 print:p-0 print:bg-transparent print:border-none print:text-[11.5px] print:font-black print:shadow-none print:text-slate-800">
+                                                                                    {it.estoquePR} un
+                                                                                </span>
+                                                                            </td>
                                                                 </tr>
                                                             ))}
                                                         </tbody>

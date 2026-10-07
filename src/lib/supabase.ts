@@ -43,7 +43,7 @@ export async function getInventory() {
     while (hasMore) {
       const { data, error } = await supabase
         .from('inventario_itens')
-        .select('codigo, descricao, local, quantidade')
+        .select('*')
         .range(page * pageSize, (page + 1) * pageSize - 1)
 
       if (error) {
@@ -92,13 +92,87 @@ function mapData(data: any[]) {
       localFormatado = 'Sem local';
     }
 
+    const qtd = Number(item.quantidade) || 0;
+    const estMk = Number(item.est_mk) || 0;
+    const estMoleri = Number(item.est_moleri) || 0;
+    const estSc = Number(item.est_sc ?? item.est_moleri ?? 0) || 0;
+    const estPr = Number(item.est_pr ?? item.est_mk ?? qtd) || 0;
+
     return {
       codigo: String(item.codigo || '').trim(),
       descricao: String(item.descricao || 'Sem descrição').trim(),
       local: localFormatado,
-      quantidade: Number(item.quantidade) || 0
+      quantidade: qtd,
+      est_mk: estMk,
+      est_moleri: estMoleri,
+      est_cm: Number(item.est_cm) || 0,
+      est_olimpo: Number(item.est_olimpo) || 0,
+      est_pr: estPr,
+      est_sc: estSc,
+      inventario_id: item.inventario_id ? String(item.inventario_id) : undefined
     };
   })
+}
+
+/**
+ * Busca inventário mapeando estoques separados para Paraná (PR) e Santa Catarina (SC)
+ */
+export async function getInventoryWithStateStock(): Promise<{
+  inventory: import('../types').StockItem[];
+  prMap: Map<string, number>;
+  scMap: Map<string, number>;
+  scStockAvailable: boolean;
+  stockUpdatedPR: string | null;
+  stockUpdatedSC: string | null;
+}> {
+  const inv = await getInventory();
+  const prMap = new Map<string, number>();
+  const scMap = new Map<string, number>();
+  let stockUpdatedPR: string | null = null;
+  let stockUpdatedSC: string | null = null;
+  try {
+    const ids = [...new Set((inv || []).map(item => item.inventario_id).filter((id): id is string => !!id))];
+    if (ids.length) {
+      const { data, error } = await supabase.from('inventarios').select('criado_em')
+        .in('id', ids).order('criado_em', { ascending: false }).limit(1);
+      if (!error) stockUpdatedPR = data?.[0]?.criado_em || null;
+    }
+  } catch (error) { console.warn('Data do estoque PR indisponivel:', error); }
+
+  if (inv && Array.isArray(inv)) {
+    inv.forEach((it: any) => {
+      const code = String(it.codigo || '').trim().toUpperCase();
+      if (!code) return;
+
+      // Mesmo saldo exibido em Localizacao, atualizado pelo inventario MK.
+      prMap.set(code, Number(it.quantidade) || 0);
+    });
+  }
+
+  try {
+    const pageSize = 1000;
+    for (let page = 0; ; page++) {
+      const { data, error } = await supabase
+        .from('romaneio_estoque_sc')
+        .select('codigo, quantidade, atualizado_em')
+        .order('codigo')
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+      if (error) throw error;
+      data?.forEach(item => {
+        const code = String(item.codigo || '').trim().toUpperCase();
+        if (code) scMap.set(code, Number(item.quantidade) || 0);
+        if (item.atualizado_em && Number.isFinite(Date.parse(item.atualizado_em)) &&
+          (!stockUpdatedSC || Date.parse(item.atualizado_em) > Date.parse(stockUpdatedSC))) {
+          stockUpdatedSC = item.atualizado_em;
+        }
+      });
+      if (!data || data.length < pageSize) break;
+    }
+    return { inventory: inv || [], prMap, scMap, scStockAvailable: true, stockUpdatedPR, stockUpdatedSC };
+  } catch (error) {
+    console.warn('Estoque SC do romaneio indisponivel:', error);
+    return { inventory: inv || [], prMap, scMap: new Map<string, number>(), scStockAvailable: false, stockUpdatedPR, stockUpdatedSC: null };
+  }
 }
 
 /**
@@ -1596,11 +1670,12 @@ export async function getCloudRomaneios(): Promise<any[] | null> {
             .select('*')
             .order('data_atualizacao', { ascending: false });
 
-        if (!error && Array.isArray(data) && data.length > 0) {
+        if (!error && Array.isArray(data)) {
             return data.map((row: any) => ({
                 id: row.id,
                 numero: row.numero,
                 titulo: row.titulo,
+                tipo: row.tipo || (row.titulo?.toUpperCase().includes('SC') || row.numero?.toUpperCase().includes('SC') ? 'SC' : 'PR'),
                 clienteOuDestino: row.cliente_ou_destino || '',
                 status: row.status || 'pendente',
                 totalItens: Number(row.total_itens) || (Array.isArray(row.itens) ? row.itens.length : 0),
@@ -1646,10 +1721,11 @@ export async function saveCloudRomaneio(romaneio: any, fullListSnapshot?: any[])
 
     // 1. Tentar salvar/atualizar na tabela 'romaneios' do Supabase
     try {
-        const payload = {
+        const payload: any = {
             id: romaneio.id,
             numero: romaneio.numero,
             titulo: romaneio.titulo,
+            tipo: romaneio.tipo || (romaneio.titulo?.toUpperCase().includes('SC') || romaneio.numero?.toUpperCase().includes('SC') ? 'SC' : 'PR'),
             cliente_ou_destino: romaneio.clienteOuDestino || '',
             status: romaneio.status || 'pendente',
             total_itens: Number(romaneio.totalItens) || (Array.isArray(romaneio.itens) ? romaneio.itens.length : 0),
@@ -1661,9 +1737,16 @@ export async function saveCloudRomaneio(romaneio: any, fullListSnapshot?: any[])
             data_atualizacao: romaneio.dataAtualizacao || new Date().toISOString()
         };
 
-        const { error } = await supabase
+        let { error } = await supabase
             .from('romaneios')
             .upsert(payload, { onConflict: 'id' });
+
+        if (error && error.message?.includes('tipo')) {
+            // Se a coluna 'tipo' ainda não existir na tabela SQL, salvar sem ela
+            delete payload.tipo;
+            const retry = await supabase.from('romaneios').upsert(payload, { onConflict: 'id' });
+            error = retry.error;
+        }
 
         if (!error) {
             savedInTable = true;
@@ -1690,7 +1773,8 @@ export async function saveCloudRomaneiosMirror(romaneios: any[]): Promise<boolea
             .from('fotos')
             .upload('sync/romaneios_data.json', blob, {
                 contentType: 'application/json',
-                upsert: true
+                upsert: true,
+                cacheControl: '0'
             });
 
         if (error) {
@@ -1716,6 +1800,7 @@ export async function saveCloudRomaneiosBatch(romaneios: any[]): Promise<boolean
             id: r.id,
             numero: r.numero,
             titulo: r.titulo,
+            tipo: r.tipo || (r.titulo?.toUpperCase().includes('SC') || r.numero?.toUpperCase().includes('SC') ? 'SC' : 'PR'),
             cliente_ou_destino: r.clienteOuDestino || '',
             status: r.status || 'pendente',
             total_itens: Number(r.totalItens) || (Array.isArray(r.itens) ? r.itens.length : 0),
@@ -1727,9 +1812,19 @@ export async function saveCloudRomaneiosBatch(romaneios: any[]): Promise<boolean
             data_atualizacao: r.dataAtualizacao || new Date().toISOString()
         }));
 
-        const { error } = await supabase
+        let { error } = await supabase
             .from('romaneios')
             .upsert(payload, { onConflict: 'id' });
+
+        if (error && error.message?.includes('tipo')) {
+            const stripped = payload.map((p: any) => {
+                const copy = { ...p };
+                delete copy.tipo;
+                return copy;
+            });
+            const retry = await supabase.from('romaneios').upsert(stripped, { onConflict: 'id' });
+            error = retry.error;
+        }
 
         if (error) {
             console.warn('Alerta ao salvar lote de romaneios no Supabase:', error.message);
@@ -1741,8 +1836,65 @@ export async function saveCloudRomaneiosBatch(romaneios: any[]): Promise<boolean
     }
 }
 
+export async function getCloudDeletedRomaneioIds(): Promise<Record<string, number>> {
+    if (USE_LOCAL_DB) return {};
+    try {
+        const { data: fileData, error } = await supabase.storage
+            .from('fotos')
+            .download('sync/romaneios_deleted_ids.json');
+
+        if (!error && fileData) {
+            const text = await fileData.text();
+            const parsed = JSON.parse(text);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                return parsed;
+            }
+        }
+    } catch {
+        // Silencioso se o arquivo de tombstones ainda não existir
+    }
+    return {};
+}
+
+export async function saveCloudDeletedRomaneioIds(deletedMap: Record<string, number>): Promise<boolean> {
+    if (USE_LOCAL_DB) return true;
+    try {
+        const blob = new Blob([JSON.stringify(deletedMap, null, 2)], { type: 'application/json' });
+        const { error } = await supabase.storage
+            .from('fotos')
+            .upload('sync/romaneios_deleted_ids.json', blob, {
+                contentType: 'application/json',
+                upsert: true,
+                cacheControl: '0'
+            });
+        return !error;
+    } catch {
+        return false;
+    }
+}
+
+export async function recordCloudRomaneioDeleted(id: string): Promise<void> {
+    if (USE_LOCAL_DB) return;
+    try {
+        const current = await getCloudDeletedRomaneioIds();
+        current[id] = Date.now();
+        // Manter histórico dos últimos 60 dias
+        const cutoff = Date.now() - 60 * 24 * 60 * 60 * 1000;
+        const pruned: Record<string, number> = {};
+        for (const [k, v] of Object.entries(current)) {
+            if (typeof v === 'number' && v > cutoff) {
+                pruned[k] = v;
+            }
+        }
+        await saveCloudDeletedRomaneioIds(pruned);
+    } catch (err) {
+        console.warn('Aviso ao registrar tombstone de romaneio:', err);
+    }
+}
+
 export async function deleteCloudRomaneio(id: string, updatedListSnapshot?: any[]): Promise<boolean> {
     if (USE_LOCAL_DB) return true;
+    let sqlSuccess = false;
     try {
         const { error } = await supabase
             .from('romaneios')
@@ -1750,17 +1902,27 @@ export async function deleteCloudRomaneio(id: string, updatedListSnapshot?: any[
             .eq('id', id);
 
         if (error) {
-            console.warn('Alerta ao deletar romaneio do Supabase:', error.message);
+            console.warn('Alerta ao deletar romaneio do Supabase (SQL):', error.message);
+        } else {
+            sqlSuccess = true;
         }
-
-        if (updatedListSnapshot && Array.isArray(updatedListSnapshot)) {
-            await saveCloudRomaneiosMirror(updatedListSnapshot);
-        }
-
-        return true;
     } catch (err: any) {
         console.warn('Erro ao deletar romaneio do Supabase:', err?.message || err);
-        return false;
     }
+
+    // Registrar o ID deletado no arquivo de tombstones da nuvem
+    try {
+        await recordCloudRomaneioDeleted(id);
+    } catch (err) {
+        console.warn('Erro ao gravar tombstone de romaneio:', err);
+    }
+
+    // Atualizar o espelho de romaneios no storage
+    let mirrorSuccess = false;
+    if (updatedListSnapshot && Array.isArray(updatedListSnapshot)) {
+        mirrorSuccess = await saveCloudRomaneiosMirror(updatedListSnapshot);
+    }
+
+    return sqlSuccess || mirrorSuccess;
 }
 

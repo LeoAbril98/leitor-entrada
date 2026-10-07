@@ -14,6 +14,9 @@ export interface StockItem {
   pend_olimpo?: number;
   preco?: number;
   fixa?: boolean;
+  est_sc?: number;
+  est_pr?: number;
+  inventario_id?: string;
 }
 
 export type Origin = 'DEVOLUÇÃO' | 'SC' | 'RS' | 'CM';

@@ -176,7 +176,10 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
 
             if (matches.length > 0) {
                 foundAny = true;
-                if (!romaneioTitulo) romaneioTitulo = r.titulo || r.numero || 'Carga Atual';
+                if (!romaneioTitulo) {
+                    const tag = (r.tipo || 'PR') === 'SC' ? '[SC] ' : '[PR] ';
+                    romaneioTitulo = tag + (r.titulo || r.numero || 'Carga Atual');
+                }
                 for (const m of matches) {
                     totalQtd += Number(m.quantidade) || 0;
                 }

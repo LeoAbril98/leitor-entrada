@@ -6,7 +6,9 @@ import {
     getCloudRomaneios,
     saveCloudRomaneio,
     saveCloudRomaneiosBatch,
-    deleteCloudRomaneio
+    deleteCloudRomaneio,
+    getCloudDeletedRomaneioIds,
+    saveCloudDeletedRomaneioIds
 } from '../lib/supabase';
 import { StockItem } from '../types';
 import { findStockMatchForItem } from '../components/ConferenceModule';
@@ -23,12 +25,18 @@ export interface RomaneioItem {
     isIdentified?: boolean;    // Se foi localizado e vinculado no banco MK
     observacao?: string;
     arquivosOrigem?: string[]; // Arquivos onde esse código apareceu
+    qtdPR?: number;            // Quantidade vinda de romaneios do Paraná
+    qtdSC?: number;            // Quantidade vinda de romaneios de Santa Catarina
+    origemEstado?: 'PR' | 'SC' | 'AMBOS'; // Identificação explícita de origem
 }
+
+export type RomaneioTipo = 'PR' | 'SC';
 
 export interface Romaneio {
     id: string;
     numero: string;
     titulo: string;
+    tipo?: RomaneioTipo;        // 'PR' (Paraná) ou 'SC' (Santa Catarina)
     clienteOuDestino?: string;
     dataCriacao: string;
     dataAtualizacao: string;
@@ -41,13 +49,64 @@ export interface Romaneio {
 }
 
 const STORAGE_KEY = 'mkr_romaneios_v1';
+const STORAGE_DELETED_KEY = 'mkr_romaneios_deleted_ids_v1';
 
-// Obter todos os romaneios salvos
+// Obter registro de romaneios excluídos (tombstones) para impedir que voltem na sincronização
+export function getDeletedRomaneioIds(): Record<string, number> {
+    try {
+        const raw = localStorage.getItem(STORAGE_DELETED_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch {
+        return {};
+    }
+}
+
+// Marcar um romaneio como permanentemente excluído
+export function markRomaneioAsDeleted(id: string): void {
+    const deleted = getDeletedRomaneioIds();
+    deleted[id] = Date.now();
+    // Limpar exclusões com mais de 60 dias para não acumular
+    const cutoff = Date.now() - 60 * 24 * 60 * 60 * 1000;
+    const pruned: Record<string, number> = {};
+    for (const [k, v] of Object.entries(deleted)) {
+        if (typeof v === 'number' && v > cutoff) {
+            pruned[k] = v;
+        }
+    }
+    localStorage.setItem(STORAGE_DELETED_KEY, JSON.stringify(pruned));
+}
+
+// Remover da lista de excluídos (caso um romaneio seja recriado)
+export function unmarkRomaneioAsDeleted(id: string): void {
+    const deleted = getDeletedRomaneioIds();
+    if (deleted[id]) {
+        delete deleted[id];
+        localStorage.setItem(STORAGE_DELETED_KEY, JSON.stringify(deleted));
+    }
+}
+
+// Obter todos os romaneios salvos (filtrando os excluídos)
 export function getRomaneios(): Romaneio[] {
     try {
         const data = localStorage.getItem(STORAGE_KEY);
         if (!data) return [];
-        return JSON.parse(data) as Romaneio[];
+        const parsed = JSON.parse(data) as Romaneio[];
+        const deletedMap = getDeletedRomaneioIds();
+        if (Object.keys(deletedMap).length === 0) return parsed;
+
+        // Filtrar qualquer romaneio presente na lista de exclusão
+        const filtrados = parsed.filter(r => {
+            const delTime = deletedMap[r.id];
+            if (!delTime) return true;
+            const itemTime = r.dataAtualizacao ? new Date(r.dataAtualizacao).getTime() : 0;
+            return itemTime > delTime;
+        });
+
+        if (filtrados.length !== parsed.length) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(filtrados));
+        }
+
+        return filtrados;
     } catch (error) {
         console.error('Erro ao carregar romaneios do localStorage:', error);
         return [];
@@ -64,6 +123,7 @@ export function getRomaneioById(id: string): Romaneio | null {
 export function saveRomaneio(romaneioData: {
     titulo: string;
     numero?: string;
+    tipo?: RomaneioTipo;
     clienteOuDestino?: string;
     itens: Omit<RomaneioItem, 'id' | 'conferido'>[];
     arquivos?: string[];
@@ -84,11 +144,15 @@ export function saveRomaneio(romaneioData: {
 
     const totalPecas = itensFormatados.reduce((acc, it) => acc + it.quantidade, 0);
 
+    const chosenTipo: RomaneioTipo = romaneioData.tipo ||
+        (romaneioData.titulo.toUpperCase().includes('SC') || (romaneioData.numero && romaneioData.numero.toUpperCase().includes('SC')) ? 'SC' : 'PR');
+
     const now = new Date().toISOString();
     const novoRomaneio: Romaneio = {
         id: `rom_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        numero: romaneioData.numero?.trim() || `ROM-${new Date().getFullYear()}-${String(list.length + 1).padStart(3, '0')}`,
-        titulo: romaneioData.titulo.trim() || 'Romaneio de Expedição',
+        numero: romaneioData.numero?.trim() || `ROM-${chosenTipo}-${new Date().getFullYear()}-${String(list.length + 1).padStart(3, '0')}`,
+        titulo: romaneioData.titulo.trim() || `Romaneio de Expedição (${chosenTipo})`,
+        tipo: chosenTipo,
         clienteOuDestino: romaneioData.clienteOuDestino?.trim() || '',
         dataCriacao: now,
         dataAtualizacao: now,
@@ -100,6 +164,7 @@ export function saveRomaneio(romaneioData: {
         arquivos: romaneioData.arquivos || []
     };
 
+    unmarkRomaneioAsDeleted(novoRomaneio.id);
     const novaLista = [novoRomaneio, ...list];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(novaLista));
 
@@ -252,21 +317,25 @@ export function scanItemBarcode(romaneioId: string, codigoEscaneado: string): { 
     };
 }
 
-// Excluir romaneio
-export function deleteRomaneio(id: string): boolean {
+// Excluir romaneio (com garantia de tombstone e propagação na nuvem)
+export async function deleteRomaneio(id: string): Promise<boolean> {
+    // 1. Gravar imediatamente como excluído (tombstone) para que qualquer sincronização concorrente o ignore
+    markRomaneioAsDeleted(id);
+
+    // 2. Remover do localStorage e notificar a interface instantaneamente
     const list = getRomaneios();
     const filtrados = list.filter(r => r.id !== id);
-    if (filtrados.length === list.length) return false;
-
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtrados));
     window.dispatchEvent(new CustomEvent('mkr_romaneios_updated'));
 
-    // Sincronizar exclusão na nuvem (Supabase)
-    deleteCloudRomaneio(id, filtrados).catch(err => {
+    // 3. Deletar do Supabase (SQL + Storage Mirror + Tombstones) e aguardar confirmação
+    try {
+        const ok = await deleteCloudRomaneio(id, filtrados);
+        return ok;
+    } catch (err) {
         console.warn('Alerta ao deletar romaneio no Supabase:', err);
-    });
-
-    return true;
+        return false;
+    }
 }
 
 // Exportar romaneio para Excel (.xlsx) com todas as colunas
@@ -583,25 +652,70 @@ export async function fetchAndSyncRomaneios(): Promise<Romaneio[]> {
             console.warn('Aviso ao sincronizar mapeamentos de códigos:', mapErr);
         }
 
-        // 2. Buscar romaneios da nuvem
-        const cloudRomaneios = await getCloudRomaneios();
-        const localRomaneios = getRomaneios();
+        // 2. Sincronizar registro de romaneios excluídos (Tombstones) da nuvem
+        const localDeleted = getDeletedRomaneioIds();
+        let cloudDeleted: Record<string, number> = {};
+        try {
+            cloudDeleted = await getCloudDeletedRomaneioIds();
+        } catch (e) {
+            console.warn('Aviso ao sincronizar tombstones da nuvem:', e);
+        }
 
-        if (cloudRomaneios && cloudRomaneios.length > 0) {
+        const allDeleted: Record<string, number> = { ...localDeleted, ...cloudDeleted };
+        localStorage.setItem(STORAGE_DELETED_KEY, JSON.stringify(allDeleted));
+
+        // Se local tinha exclusões novas que a nuvem ainda não tem, atualizar a nuvem
+        const hasNewDeletesForCloud = Object.keys(localDeleted).some(k => !cloudDeleted[k]);
+        if (hasNewDeletesForCloud) {
+            saveCloudDeletedRomaneioIds(allDeleted).catch(() => {});
+        }
+
+        const isItemDeleted = (id: string, updatedAtStr?: string) => {
+            const delTime = allDeleted[id];
+            if (!delTime) return false;
+            const itemTime = updatedAtStr ? new Date(updatedAtStr).getTime() : 0;
+            return delTime >= itemTime;
+        };
+
+        // 3. Buscar romaneios da nuvem e locais
+        const rawCloudRomaneios = await getCloudRomaneios();
+        const rawLocalRomaneios = getRomaneios();
+
+        // Limpar excluídos do armazenamento local
+        const localRomaneios = rawLocalRomaneios.filter(r => !isItemDeleted(r.id, r.dataAtualizacao));
+        if (localRomaneios.length !== rawLocalRomaneios.length) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(localRomaneios));
+        }
+
+        if (rawCloudRomaneios !== null) {
+            // Filtrar itens da nuvem que foram excluídos
+            const cloudRomaneios = rawCloudRomaneios.filter(r => !isItemDeleted(r.id, r.dataAtualizacao));
+
+            // Se a nuvem ainda continha registros excluídos (por latência ou falha anterior), expurgar na nuvem
+            if (rawCloudRomaneios.length > cloudRomaneios.length) {
+                const toExpunge = rawCloudRomaneios.filter(r => isItemDeleted(r.id, r.dataAtualizacao));
+                for (const r of toExpunge) {
+                    deleteCloudRomaneio(r.id).catch(() => {});
+                }
+            }
+
             const map = new Map<string, Romaneio>();
-            // Lista local como base
-            localRomaneios.forEach(r => map.set(r.id, r));
+            // Nuvem como base autoritativa de romaneios ativos
+            cloudRomaneios.forEach(cr => map.set(cr.id, cr));
 
-            // Nuvem tem precedência se mais recente ou novo
-            cloudRomaneios.forEach(cloudR => {
-                const localR = map.get(cloudR.id);
-                if (!localR) {
-                    map.set(cloudR.id, cloudR);
+            // Itens locais válidos que foram criados offline ou possuem edição mais recente
+            localRomaneios.forEach(lr => {
+                const cr = map.get(lr.id);
+                if (!cr) {
+                    // Item novo criado localmente neste dispositivo (e garantidamente não excluído)
+                    map.set(lr.id, lr);
+                    saveCloudRomaneio(lr).catch(() => {});
                 } else {
-                    const localTime = new Date(localR.dataAtualizacao || 0).getTime();
-                    const cloudTime = new Date(cloudR.dataAtualizacao || 0).getTime();
-                    if (cloudTime >= localTime) {
-                        map.set(cloudR.id, cloudR);
+                    const localTime = new Date(lr.dataAtualizacao || 0).getTime();
+                    const cloudTime = new Date(cr.dataAtualizacao || 0).getTime();
+                    if (localTime > cloudTime) {
+                        map.set(lr.id, lr);
+                        saveCloudRomaneio(lr).catch(() => {});
                     }
                 }
             });
@@ -613,12 +727,10 @@ export async function fetchAndSyncRomaneios(): Promise<Romaneio[]> {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedList));
             window.dispatchEvent(new CustomEvent('mkr_romaneios_updated'));
             return mergedList;
-        } else if (cloudRomaneios !== null && cloudRomaneios.length === 0 && localRomaneios.length > 0) {
-            // Nuvem está vazia mas este dispositivo tem romaneios locais: subir para a nuvem
-            await saveCloudRomaneiosBatch(localRomaneios);
-            return localRomaneios;
         }
 
+        // Se offline / falha no Supabase
+        window.dispatchEvent(new CustomEvent('mkr_romaneios_updated'));
         return localRomaneios;
     } catch (err) {
         console.warn('Erro ao sincronizar romaneios com o Supabase:', err);

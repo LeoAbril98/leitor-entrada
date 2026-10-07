@@ -8,11 +8,15 @@ create table if not exists public.romaneios (
   total_itens integer not null default 0,
   total_pecas integer not null default 0,
   total_conferido integer not null default 0,
+  tipo text not null default 'PR',
   itens jsonb not null default '[]'::jsonb,
   arquivos jsonb not null default '[]'::jsonb,
   data_criacao timestamptz not null default now(),
   data_atualizacao timestamptz not null default now()
 );
+
+-- Migração caso a tabela já exista:
+alter table if exists public.romaneios add column if not exists tipo text default 'PR';
 
 -- Habilitar Row Level Security (RLS)
 alter table public.romaneios enable row level security;

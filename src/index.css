@@ -9,6 +9,20 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
+  button:not(:disabled):not([aria-disabled="true"]),
+  [role="button"]:not([aria-disabled="true"]),
+  input:is([type="button"], [type="submit"], [type="reset"]):not(:disabled),
+  a[href]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  input:is([type="button"], [type="submit"], [type="reset"]):disabled {
+    cursor: not-allowed;
+  }
+
   body {
     @apply bg-slate-50 text-slate-900 font-sans antialiased dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200;
   }

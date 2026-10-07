@@ -239,23 +239,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                             </p>
                         </div>
 
-                        {/* 2. Módulo: Romaneio */}
-                        <div
-                            onClick={() => onSelectMode('romaneio')}
-                            className="col-span-1 bg-white dark:bg-slate-900 rounded-[24px] sm:rounded-[26px] p-4 sm:p-5 md:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] border border-slate-100/90 dark:border-slate-800/80 flex flex-col items-center text-center cursor-pointer active:scale-[0.96] transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 relative group"
-                        >
-                            <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 rounded-[18px] sm:rounded-[20px] md:rounded-[22px] bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white shadow-lg shadow-rose-500/25 mb-2.5 sm:mb-3 transition-transform group-hover:scale-105">
-                                <Truck className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 stroke-[2.2]" />
-                            </div>
-                            <h3 className="font-bold text-slate-900 dark:text-white text-[15px] sm:text-[16px] md:text-[17px] tracking-tight leading-tight">
-                                Romaneio
-                            </h3>
-                            <p className="text-[11px] sm:text-[12px] md:text-[13px] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug line-clamp-1 font-medium">
-                                Cargas e expedição
-                            </p>
-                        </div>
-
-                        {/* 3. Módulo: Localização */}
+                        {/* 2. Módulo: Localização */}
                         <div
                             onClick={() => onSelectMode('locator')}
                             className="col-span-1 bg-white dark:bg-slate-900 rounded-[24px] sm:rounded-[26px] p-4 sm:p-5 md:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] border border-slate-100/90 dark:border-slate-800/80 flex flex-col items-center text-center cursor-pointer active:scale-[0.96] transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
@@ -268,6 +252,22 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode }) => {
                             </h3>
                             <p className="text-[11px] sm:text-[12px] md:text-[13px] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug line-clamp-1 font-medium">
                                 Buscar posição
+                            </p>
+                        </div>
+
+                        {/* 3. Módulo: Romaneio */}
+                        <div
+                            onClick={() => onSelectMode('romaneio')}
+                            className="col-span-1 bg-white dark:bg-slate-900 rounded-[24px] sm:rounded-[26px] p-4 sm:p-5 md:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] border border-slate-100/90 dark:border-slate-800/80 flex flex-col items-center text-center cursor-pointer active:scale-[0.96] transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 relative group"
+                        >
+                            <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 rounded-[18px] sm:rounded-[20px] md:rounded-[22px] bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white shadow-lg shadow-rose-500/25 mb-2.5 sm:mb-3 transition-transform group-hover:scale-105">
+                                <Truck className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 stroke-[2.2]" />
+                            </div>
+                            <h3 className="font-bold text-slate-900 dark:text-white text-[15px] sm:text-[16px] md:text-[17px] tracking-tight leading-tight">
+                                Romaneio
+                            </h3>
+                            <p className="text-[11px] sm:text-[12px] md:text-[13px] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug line-clamp-1 font-medium">
+                                Cargas e expedição
                             </p>
                         </div>
 

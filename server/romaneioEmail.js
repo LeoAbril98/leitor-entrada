@@ -1,6 +1,8 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
+import { jsPDF } from 'jspdf';
+import * as XLSX from 'xlsx';
 
 const sender = 'leoabril98@gmail.com';
 const origins = ['SC', 'CM'];
@@ -41,7 +43,7 @@ export function createRomaneioEmailHandler({ env = process.env, db: providedDb, 
             if (typeof body === 'string') { try { body = JSON.parse(body); } catch { throw fail('Solicitacao invalida.'); } }
             if (!body || typeof body !== 'object' || Array.isArray(body)) throw fail('Solicitacao invalida.');
             const { action, origem } = body;
-            if (!['read-settings', 'save-settings', 'send'].includes(action)) throw fail('Acao invalida.');
+            if (!['read-settings', 'save-settings', 'test-gmail', 'send'].includes(action)) throw fail('Acao invalida.');
             if (!providedDb && (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY)) throw fail('Servidor de e-mail ainda nao configurado.', 503);
             const db = providedDb || createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
             if (action !== 'send') {
@@ -50,6 +52,40 @@ export function createRomaneioEmailHandler({ env = process.env, db: providedDb, 
                 const expected = createHash('sha256').update(env.ROMANEIO_EMAIL_ADMIN_PASSWORD).digest();
                 const actual = createHash('sha256').update(typeof body.password === 'string' ? body.password : '').digest();
                 if (!timingSafeEqual(expected, actual)) throw fail('Senha de configuracao incorreta.', 401);
+                if (action === 'test-gmail') {
+                    if (!env.GMAIL_APP_PASSWORD && !providedTransport) throw fail('A senha de app do Gmail ainda nao foi cadastrada.', 503);
+                    const pdf = new jsPDF();
+                    pdf.setFontSize(16);
+                    pdf.text(`TESTE DE ENVIO - PEDIDO ${origem}`, 14, 20);
+                    pdf.setFontSize(10);
+                    pdf.text('Documento ficticio. Nao representa um pedido de rodas.', 14, 30);
+                    pdf.text('CODIGO: TESTE | DESCRICAO: Roda de teste | QUANTIDADE: 1', 14, 42);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet([
+                        { Codigo: 'TESTE', Descricao: 'Roda ficticia - nao e um pedido', Quantidade: 1 }
+                    ]), 'Teste');
+                    const transport = providedTransport || nodemailer.createTransport({
+                        host: 'smtp.gmail.com', port: 465, secure: true,
+                        auth: { user: sender, pass: env.GMAIL_APP_PASSWORD.replace(/\s/g, '') },
+                        connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 20000
+                    });
+                    try {
+                        const result = await transport.sendMail({
+                            from: `Pedidos de Rodas <${sender}>`, to: [sender],
+                            subject: `TESTE - Envio dos pedidos de rodas ${origem}`,
+                            text: 'Teste da conexao com o Gmail. Os anexos PDF e Excel sao ficticios e nao representam um pedido.',
+                            attachments: [
+                                { filename: 'teste-pedido.pdf', content: Buffer.from(pdf.output('arraybuffer')), contentType: 'application/pdf' },
+                                { filename: 'teste-pedido.xlsx', content: Buffer.from(XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })), contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+                            ],
+                            disableFileAccess: true, disableUrlAccess: true
+                        });
+                        if (!result.accepted?.length) throw new Error('Envio nao aceito');
+                    } catch (error) {
+                        throw fail(error.code === 'EAUTH' ? 'O Gmail recusou a senha de app. Confira a configuracao na Vercel.' : 'Nao foi possivel confirmar o teste. Confira o Gmail antes de repetir.', 503);
+                    }
+                    return reply({ enviado: true, destinatario: sender });
+                }
                 if (action === 'save-settings') {
                     const recipients = normalizeRecipients(body.destinatarios);
                     if (typeof body.ativo !== 'boolean' || (body.ativo && !recipients.length)) throw fail('Adicione pelo menos um destinatario para ativar.');

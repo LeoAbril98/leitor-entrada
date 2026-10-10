@@ -27,6 +27,8 @@ export const readOrderEmailSettings = (origem: LoadOrderOrigin, password: string
     emailRequest<OrderEmailSettings>({ action: 'read-settings', origem, password });
 export const saveOrderEmailSettings = (origem: LoadOrderOrigin, password: string, ativo: boolean, destinatarios: string[]) =>
     emailRequest<OrderEmailSettings>({ action: 'save-settings', origem, password, ativo, destinatarios });
+export const testOrderGmail = (origem: LoadOrderOrigin, password: string) =>
+    emailRequest<{ enviado: boolean; destinatario: string }>({ action: 'test-gmail', origem, password });
 
 export async function sendOrderEmail(pedidoId: string): Promise<OrderEmailResult> {
     try { return await emailRequest<OrderEmailResult>({ action: 'send', pedidoId }); }

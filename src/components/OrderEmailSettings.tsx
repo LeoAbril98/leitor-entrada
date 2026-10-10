@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Loader2, LockKeyhole, Mail, Plus, Save, Trash2, X } from 'lucide-react';
+import { Loader2, LockKeyhole, Mail, Plus, Save, Send, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { readOrderEmailSettings, saveOrderEmailSettings, type OrderEmailSettings as EmailSettings } from '../services/romaneioEmailService';
+import { readOrderEmailSettings, saveOrderEmailSettings, testOrderGmail, type OrderEmailSettings as EmailSettings } from '../services/romaneioEmailService';
 import type { LoadOrderOrigin } from '../services/scLoadOrderService';
 
 export function OrderEmailSettings({ origem }: { origem: LoadOrderOrigin }) {
@@ -43,6 +43,15 @@ export function OrderEmailSettings({ origem }: { origem: LoadOrderOrigin }) {
         } catch (err) { setError(err instanceof Error ? err.message : 'Falha ao salvar destinatarios.'); }
         finally { setBusy(false); }
     };
+    const test = async () => {
+        if (busy) return;
+        setBusy(true); setError('');
+        try {
+            const result = await testOrderGmail(origem, password);
+            toast.success(`PDF e Excel de teste enviados para ${result.destinatario}.`, { duration: 8000 });
+        } catch (err) { setError(err instanceof Error ? err.message : 'Falha no teste do Gmail.'); }
+        finally { setBusy(false); }
+    };
     return <>
         <button onClick={() => setOpen(true)} title={`Configurar destinatarios ${origem}`} className="inline-flex items-center gap-2 h-10 px-3 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800"><Mail className="w-4 h-4" />Destinatarios</button>
         {open && <div className="fixed inset-0 z-[60] bg-slate-950/60 flex items-center justify-center p-4" onClick={event => { event.stopPropagation(); if (event.target === event.currentTarget) close(); }}>
@@ -65,7 +74,7 @@ export function OrderEmailSettings({ origem }: { origem: LoadOrderOrigin }) {
                     </>}
                     {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
                 </div>
-                {settings && <footer className="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end"><button onClick={save} disabled={busy} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-700 text-white text-sm font-semibold disabled:opacity-50">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}Salvar destinatarios</button></footer>}
+                {settings && <footer className="p-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap gap-2 justify-end"><button onClick={test} disabled={busy || !settings.pronto} title="Enviar PDF e Excel ficticios para leoabril98@gmail.com" className="inline-flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-semibold disabled:opacity-50"><Send className="w-4 h-4" />Testar Gmail</button><button onClick={save} disabled={busy} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-700 text-white text-sm font-semibold disabled:opacity-50">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}Salvar destinatarios</button></footer>}
             </section>
         </div>}
     </>;

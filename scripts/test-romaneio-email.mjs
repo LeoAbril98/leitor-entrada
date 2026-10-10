@@ -61,6 +61,13 @@ function fixture() {
 assert.deepEqual(normalizeRecipients([' A@example.com ', 'a@example.com']), ['a@example.com']);
 assert.throws(() => normalizeRecipients(['a@example.com\nb@example.com']));
 const settings = fixture();
+assert.equal((await settings.call({ action: 'test-gmail', origem: 'CM', password: 'wrong' })).status, 401);
+assert.equal(settings.state.messages.length, 0);
+assert.equal((await settings.call({ action: 'test-gmail', origem: 'CM', password: env.ROMANEIO_EMAIL_ADMIN_PASSWORD })).enviado, true);
+assert.deepEqual(settings.state.messages[0].to, ['leoabril98@gmail.com']);
+assert.equal(settings.state.messages[0].attachments.length, 2);
+assert.match(settings.state.messages[0].attachments[0].content.toString(), /^%PDF/);
+assert.equal(settings.state.delivery, null, 'O teste nao pode criar um pedido');
 assert.equal((await settings.call({ action: 'read-settings', origem: 'CM', password: 'wrong' })).status, 401);
 assert.equal((await settings.call({ action: 'save-settings', origem: 'CM', password: env.ROMANEIO_EMAIL_ADMIN_PASSWORD, ativo: true, destinatarios: [] })).status, 400);
 assert.equal((await settings.call({ action: 'save-settings', origem: 'CM', password: env.ROMANEIO_EMAIL_ADMIN_PASSWORD, ativo: true, destinatarios: [' NEW@example.com '] })).status, 200);

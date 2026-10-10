@@ -57,7 +57,7 @@ const stock = [
                 }
                 if (body.password !== 'email-test') return json({ message: 'Senha de configuracao incorreta.' }, 401);
                 if (body.action === 'save-settings') emailSettings.set(body.origem, { origem: body.origem, ativo: body.ativo, destinatarios: body.destinatarios });
-                return json({ ...(emailSettings.get(body.origem) || { origem: body.origem, ativo: false, destinatarios: [] }), remetente: 'leoabril98@gmail.com', pronto: true });
+                return json({ ...(emailSettings.get(body.origem) || { origem: body.origem, ativo: false, destinatarios: [] }), remetente: 'mkrrodascuritiba@gmail.com', pronto: true });
             }
             if (url.origin === baseURL) return route.continue();
             if (req.method() === 'OPTIONS') return route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' } });
@@ -86,7 +86,8 @@ const stock = [
                         return json([]);
                     }
                     const uf = url.searchParams.get('origem')?.replace(/^eq\./, '');
-                    return json([...receivedOrders.values()].filter(row => !uf || row.origem === uf));
+                    const id = url.searchParams.get('id')?.replace(/^eq\./, '');
+                    return json([...receivedOrders.values()].filter(row => (!uf || row.origem === uf) && (!id || row.id === id)));
                 }
                 if (table === 'romaneios') {
                     if (req.method() === 'POST') {
@@ -175,6 +176,11 @@ const stock = [
         await page.getByLabel('Buscar roda', { exact: true }).fill('C10-B');
         assert.equal(await page.getByRole('button', { name: 'Pedir', exact: true }).count(), 1);
         await page.getByLabel('Buscar roda', { exact: true }).fill('');
+        await page.setViewportSize({ width: 768, height: 1024 });
+        assert.equal(await page.getByRole('button', { name: /Enviar pedido/ }).isVisible(), true, 'Empty tablet order must still show the send button');
+        assert.equal(await page.getByRole('button', { name: /Enviar pedido/ }).isDisabled(), true, 'Empty orders cannot be sent');
+        await page.screenshot({ path: path.join(output, 'tablet-empty.png') });
+        await page.setViewportSize({ width: 1440, height: 900 });
         await page.screenshot({ path: path.join(output, 'desktop.png'), fullPage: true });
         await page.getByText('C10-A', { exact: true }).locator('..').locator('..').locator('..').getByRole('button', { name: 'Pedir', exact: true }).click();
         await page.getByRole('spinbutton', { name: 'Quantidade pedida' }).fill('999');
@@ -198,6 +204,11 @@ const stock = [
         await page.getByRole('heading', { name: 'Romaneio', exact: true }).click();
         await page.getByRole('button', { name: `Pedir Rodas de ${origin}`, exact: true }).click();
         await page.getByRole('button', { name: '4 pedidas', exact: true }).waitFor();
+        const resumeDialog = page.getByRole('dialog', { name: `Continuar pedido de ${origin}?`, exact: true });
+        await resumeDialog.waitFor();
+        assert.match(await resumeDialog.innerText(), /4 unidades/);
+        await page.screenshot({ path: path.join(output, 'resume-desktop.png') });
+        await resumeDialog.getByRole('button', { name: 'Continuar pedido', exact: true }).click();
         await page.getByText('Pedido salvo na nuvem', { exact: true }).waitFor();
         await page.getByLabel('Somente no pedido', { exact: true }).check();
         assert.equal(await page.getByRole('button', { name: 'Pedir', exact: true }).count(), 0);
@@ -212,6 +223,7 @@ const stock = [
         await page.getByRole('heading', { name: 'Romaneio', exact: true }).click();
         await page.getByRole('button', { name: `Pedir Rodas de ${origin}`, exact: true }).click();
         await page.getByRole('button', { name: '8 pedidas', exact: true }).waitFor();
+        await resumeDialog.getByRole('button', { name: 'Continuar pedido', exact: true }).click();
         await page.getByText('Copia local salva. Nuvem pendente.', { exact: true }).waitFor();
         failCloud = false;
         await page.getByRole('button', { name: 'Tentar salvar na nuvem' }).click();
@@ -236,7 +248,29 @@ const stock = [
         await page.reload();
         await page.getByRole('heading', { name: 'Romaneio', exact: true }).click();
         await page.getByRole('button', { name: `Pedir Rodas de ${origin}`, exact: true }).click();
+        await resumeDialog.waitFor();
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.screenshot({ path: path.join(output, 'resume-mobile.png') });
+        const abandonedId = await page.evaluate(key => JSON.parse(localStorage.getItem(key)).id, draftKey);
+        await resumeDialog.getByRole('button', { name: 'Começar do zero', exact: true }).click();
+        await page.getByText('Rascunho sincronizado', { exact: true }).waitFor();
+        assert.equal(await page.evaluate(key => localStorage.getItem(key), draftKey), null, 'Starting over must clear the local draft');
+        assert.equal([...cloudDrafts.values()].filter(row => row.rascunho?.origem === origin).length, 0, 'Starting over must clear the cloud draft');
+        assert.equal(receivedOrders.size, 0, 'Starting over must not publish an order');
+        await page.getByText('C10-A', { exact: true }).locator('..').locator('..').locator('..').getByRole('button', { name: 'Pedir', exact: true }).click();
+        await page.getByRole('spinbutton', { name: 'Quantidade pedida' }).fill('8');
+        await page.getByRole('button', { name: 'Confirmar pedido', exact: true }).click();
+        assert.notEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).id, draftKey), abandonedId, 'New order must have a new ID');
         await page.getByRole('button', { name: /Enviar pedido/ }).waitFor();
+        for (const viewport of [{ width: 768, height: 1024 }, { width: 820, height: 1180 }]) {
+            await page.setViewportSize(viewport);
+            const sendButton = page.getByRole('button', { name: /Enviar pedido/ });
+            assert.equal(await sendButton.isEnabled(), true, 'Tablet send button must be enabled with items');
+            await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+            const box = await sendButton.boundingBox();
+            assert.ok(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width && box.y + box.height <= viewport.height, 'Tablet send button must stay inside the viewport after scrolling');
+            await page.screenshot({ path: path.join(output, `tablet-portrait-${viewport.width}.png`) });
+        }
         await page.setViewportSize({ width: 390, height: 844 });
         await page.getByRole('button', { name: '8 pedidas', exact: true }).waitFor();
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'Mobile must not overflow');
@@ -276,6 +310,17 @@ const stock = [
         assert.equal([...cloudDrafts.values()].filter(row => row.rascunho?.origem === origin).length, 0, 'Sending must clear the cloud draft');
         const recordKey = [...storage.keys()].find(key => key.includes('/registros/'));
         const order = JSON.parse(storage.get(recordKey).body.toString());
+        await page.evaluate(({ key, saved }) => {
+            localStorage.setItem(key, JSON.stringify(saved));
+            localStorage.setItem(`${key}:versao`, String(Date.now() + 100));
+        }, { key: draftKey, saved: order });
+        await page.reload();
+        await page.getByRole('heading', { name: 'Romaneio', exact: true }).click();
+        await page.getByRole('button', { name: `Pedir Rodas de ${origin}`, exact: true }).click();
+        await page.getByText('Rascunho sincronizado', { exact: true }).waitFor();
+        assert.equal(await resumeDialog.count(), 0, 'Completed orders must not show the resume dialog');
+        assert.equal(await page.evaluate(key => localStorage.getItem(key), draftKey), null, 'Completed drafts must be cleared during restoration');
+        assert.equal(receivedOrders.size, 1, 'Clearing a completed draft must preserve the received order');
         assert.equal(order.itens.length, 1);
         assert.equal(order.itens[0].quantidade, 8);
         assert.equal(order.itens[0].quantidadeCarga, 24);

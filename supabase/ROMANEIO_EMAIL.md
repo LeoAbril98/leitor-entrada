@@ -1,6 +1,6 @@
 # Envio dos pedidos pelo Gmail
 
-Remetente: leoabril98@gmail.com. Os destinatarios SC e CM sao configurados
+Remetente: mkrrodascuritiba@gmail.com. Os destinatarios SC e CM sao configurados
 separadamente em Gestao de Romaneios > Pedidos de Rodas > Destinatarios.
 As configuracoes ficam no Supabase e nao sao acessiveis pela chave publica.
 

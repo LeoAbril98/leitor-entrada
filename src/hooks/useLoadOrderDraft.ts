@@ -71,6 +71,21 @@ export function useLoadOrderDraft(origin: LoadOrderOrigin) {
                 } else if (current.current.version > Number(cloud?.versao || 0)) {
                     void save(current.current);
                 } else setStatus('saved');
+                // A completed order must not return if the browser closed before clearing its draft.
+                const restoredDraft = current.current.draft;
+                if (restoredDraft?.itens.length) {
+                    const received = await supabase.from('pedidos_romaneio').select('id')
+                        .eq('id', restoredDraft.id).eq('origem', origin).limit(1)
+                        .abortSignal(AbortSignal.timeout(5000));
+                    if (cancelled) return;
+                    if (!received.error && received.data?.some(order => order.id === restoredDraft.id)) {
+                        const value = { draft: null, version: Math.max(Date.now(), current.current.version + 1, readLocal(origin).version + 1) };
+                        writeLocal(origin, null, value.version);
+                        current.current = value;
+                        setState(null);
+                        void save(value);
+                    }
+                }
             } catch (error) {
                 console.warn('Nao foi possivel restaurar o rascunho da nuvem:', error);
                 if (!cancelled) setStatus('offline');

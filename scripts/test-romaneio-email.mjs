@@ -64,7 +64,9 @@ const settings = fixture();
 assert.equal((await settings.call({ action: 'test-gmail', origem: 'CM', password: 'wrong' })).status, 401);
 assert.equal(settings.state.messages.length, 0);
 assert.equal((await settings.call({ action: 'test-gmail', origem: 'CM', password: env.ROMANEIO_EMAIL_ADMIN_PASSWORD })).enviado, true);
-assert.deepEqual(settings.state.messages[0].to, ['leoabril98@gmail.com']);
+assert.deepEqual(settings.state.messages[0].to, ['mkrrodascuritiba@gmail.com']);
+assert.equal(settings.state.messages[0].from, 'Pedidos de Rodas <mkrrodascuritiba@gmail.com>');
+assert.equal((await settings.call({ action: 'read-settings', origem: 'CM', password: env.ROMANEIO_EMAIL_ADMIN_PASSWORD })).remetente, 'mkrrodascuritiba@gmail.com');
 assert.equal(settings.state.messages[0].attachments.length, 2);
 assert.match(settings.state.messages[0].attachments[0].content.toString(), /^%PDF/);
 assert.equal(settings.state.delivery, null, 'O teste nao pode criar um pedido');
@@ -78,6 +80,7 @@ const results = await Promise.all([sent.call({ action: 'send', pedidoId: id }), 
 assert.ok(results.some(result => result.estado === 'enviado'));
 assert.equal(sent.state.messages.length, 1);
 const message = sent.state.messages[0];
+assert.equal(message.from, 'Pedidos de Rodas <mkrrodascuritiba@gmail.com>');
 assert.deepEqual(message.to, ['destinatario@example.com']);
 assert.equal(message.attachments.length, 2);
 assert.match(message.attachments[0].filename, /\.pdf$/);

@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
 
-const sender = 'leoabril98@gmail.com';
+const sender = 'mkrrodascuritiba@gmail.com';
 const origins = ['SC', 'CM'];
 const fail = (message, status = 400) => Object.assign(new Error(message), { status });
 const checked = result => {

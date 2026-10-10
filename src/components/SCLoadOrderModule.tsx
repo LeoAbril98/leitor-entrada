@@ -31,7 +31,10 @@ export function SCLoadOrderModule({ onBack, origem = 'SC' }: { onBack: () => voi
     const [reviewing, setReviewing] = useState(false);
     const [sending, setSending] = useState(false);
     const [sentLoadNumber, setSentLoadNumber] = useState<string | null>(null);
+    const [resumeChoiceMade, setResumeChoiceMade] = useState(false);
     const sendingRef = useRef(false);
+    const resumeButton = useRef<HTMLButtonElement>(null);
+    const needsResumeChoice = !restoring && !resumeChoiceMade && !!draft?.itens.length;
 
     const refresh = async () => {
         setLoading(true); setError('');
@@ -49,6 +52,10 @@ export function SCLoadOrderModule({ onBack, origem = 'SC' }: { onBack: () => voi
     };
     useEffect(() => { void refresh(); }, []);
     useEffect(() => { if (draft?.cargaId) setSelectedId(draft.cargaId); }, [draft?.cargaId]);
+    useEffect(() => {
+        if (!restoring && !draft?.itens.length) setResumeChoiceMade(true);
+    }, [restoring, draft?.itens.length]);
+    useEffect(() => { if (needsResumeChoice) resumeButton.current?.focus(); }, [needsResumeChoice]);
 
     const load = loads.find(item => item.id === selectedId);
     const items = useMemo(() => load ? getSCLoadItems(load) : [], [load]);
@@ -59,7 +66,7 @@ export function SCLoadOrderModule({ onBack, origem = 'SC' }: { onBack: () => voi
         (!onlyOrdered || quantityFor(item.codigo) > 0));
 
     const changeQuantity = (item: SCOrderItem, quantity: number) => {
-        if (!Number.isSafeInteger(quantity) || quantity < 0 || sendingRef.current || restoring) return false;
+        if (!Number.isSafeInteger(quantity) || quantity < 0 || sendingRef.current || restoring || needsResumeChoice) return false;
         const currentItem = items.find(row => row.codigo === item.codigo) || item;
         if (quantity > currentItem.quantidadeCarga) {
             toast.error(`Esta roda tem apenas ${currentItem.quantidadeCarga} unidades no caminhão.`);
@@ -80,7 +87,7 @@ export function SCLoadOrderModule({ onBack, origem = 'SC' }: { onBack: () => voi
         return true;
     };
     const send = async () => {
-        if (!draft?.itens.length || sendingRef.current || restoring) return;
+        if (!draft?.itens.length || sendingRef.current || restoring || needsResumeChoice) return;
         if (load && draft.itens.some(item => item.quantidade > (items.find(row => row.codigo === item.codigo)?.quantidadeCarga ?? 0))) {
             toast.error('A quantidade na carga mudou. Revise as quantidades pedidas antes de enviar.');
             return;
@@ -169,10 +176,38 @@ export function SCLoadOrderModule({ onBack, origem = 'SC' }: { onBack: () => voi
                     </>
                 )}
             </main>
-            {!!draft?.itens.length && (
-                <button onClick={() => setReviewing(true)} disabled={sending} className="fixed bottom-5 right-4 sm:right-6 z-30 max-w-[calc(100%-2rem)] flex items-center gap-3 bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-3 rounded-lg shadow-lg">
-                    <ShoppingCart className="w-5 h-5 shrink-0" /><span className="text-left"><strong className="block text-sm">Enviar pedido</strong><span className="text-xs">{draft.itens.length} {draft.itens.length === 1 ? 'modelo' : 'modelos'} · {total} un</span></span><Send className="w-4 h-4 shrink-0" />
-                </button>
+            <button onClick={() => setReviewing(true)} disabled={sending || restoring || needsResumeChoice || !draft?.itens.length}
+                style={{ bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
+                className="fixed right-4 sm:right-6 z-30 max-w-[calc(100%-2rem)] flex items-center gap-3 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-600 disabled:cursor-not-allowed text-white px-5 py-3 rounded-lg shadow-lg">
+                <ShoppingCart className="w-5 h-5 shrink-0" /><span className="text-left"><strong className="block text-sm">Enviar pedido</strong><span className="text-xs">{draft?.itens.length || 0} {draft?.itens.length === 1 ? 'modelo' : 'modelos'} · {total} un</span></span><Send className="w-4 h-4 shrink-0" />
+            </button>
+            {needsResumeChoice && (
+                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+                    <section role="dialog" aria-modal="true" aria-labelledby="resume-order-title" aria-describedby="resume-order-summary"
+                        onKeyDown={event => {
+                            if (event.key !== 'Tab') return;
+                            const buttons = event.currentTarget.querySelectorAll('button') as NodeListOf<HTMLButtonElement>;
+                            if (event.shiftKey && document.activeElement === buttons[0]) { event.preventDefault(); buttons[buttons.length - 1]?.focus(); }
+                            else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) { event.preventDefault(); buttons[0]?.focus(); }
+                        }}
+                        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-lg shadow-xl">
+                        <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-800">
+                            <ShoppingCart className="w-5 h-5 shrink-0 text-emerald-700" />
+                            <h2 id="resume-order-title" className="font-bold">Continuar pedido de {origem}?</h2>
+                        </div>
+                        <div id="resume-order-summary" className="p-4 space-y-2 text-sm">
+                            <p className="text-slate-500">Existe um pedido em andamento.</p>
+                            <p className="font-semibold break-words">{draft?.cargaNumero}</p>
+                            <p>{draft?.itens.length} {draft?.itens.length === 1 ? 'modelo' : 'modelos'} · {total} unidades</p>
+                        </div>
+                        <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-end gap-3">
+                            <button onClick={() => { setDraft(null); setOnlyOrdered(false); setResumeChoiceMade(true); }}
+                                className="px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">Começar do zero</button>
+                            <button ref={resumeButton} onClick={() => setResumeChoiceMade(true)}
+                                className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-sm font-semibold">Continuar pedido</button>
+                        </div>
+                    </section>
+                </div>
             )}
             {reviewing && (
                 <div className="fixed inset-0 z-40 bg-black/50 flex items-center justify-center p-3">

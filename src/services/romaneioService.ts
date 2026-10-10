@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { romaneioOrigin } from '../utils/romaneioOrigin';
 import {
     getInventory,
     getCloudCargaCodeMappings,
@@ -30,7 +31,7 @@ export interface RomaneioItem {
     origemEstado?: 'PR' | 'SC' | 'AMBOS'; // Identificação explícita de origem
 }
 
-export type RomaneioTipo = 'PR' | 'SC';
+export type RomaneioTipo = 'PR' | 'SC' | 'CM';
 
 export interface Romaneio {
     id: string;
@@ -90,7 +91,7 @@ export function getRomaneios(): Romaneio[] {
     try {
         const data = localStorage.getItem(STORAGE_KEY);
         if (!data) return [];
-        const parsed = JSON.parse(data) as Romaneio[];
+        const parsed = (JSON.parse(data) as Romaneio[]).map(r => ({ ...r, tipo: romaneioOrigin(r) }));
         const deletedMap = getDeletedRomaneioIds();
         if (Object.keys(deletedMap).length === 0) return parsed;
 
@@ -144,8 +145,7 @@ export function saveRomaneio(romaneioData: {
 
     const totalPecas = itensFormatados.reduce((acc, it) => acc + it.quantidade, 0);
 
-    const chosenTipo: RomaneioTipo = romaneioData.tipo ||
-        (romaneioData.titulo.toUpperCase().includes('SC') || (romaneioData.numero && romaneioData.numero.toUpperCase().includes('SC')) ? 'SC' : 'PR');
+    const chosenTipo: RomaneioTipo = romaneioOrigin(romaneioData);
 
     const now = new Date().toISOString();
     const novoRomaneio: Romaneio = {

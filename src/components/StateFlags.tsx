@@ -34,6 +34,31 @@ export const FlagSC: React.FC<{ className?: string }> = ({ className = "w-5 h-3.
     </svg>
 );
 
+// Bandeira oficial vetorial do Estado de São Paulo (SP / Campinas)
+export const FlagSP: React.FC<{ className?: string }> = ({ className = "w-5 h-3.5" }) => (
+    <svg className={cn("rounded-[3px] shadow-xs overflow-hidden shrink-0 select-none", className)} viewBox="0 0 20 14" fill="none">
+        {/* 13 listras alternadas preto e branco */}
+        <rect width="20" height="14" fill="#000000" />
+        <rect y="1.08" width="20" height="1.08" fill="#FFFFFF" />
+        <rect y="3.24" width="20" height="1.08" fill="#FFFFFF" />
+        <rect y="5.40" width="20" height="1.08" fill="#FFFFFF" />
+        <rect y="7.56" width="20" height="1.08" fill="#FFFFFF" />
+        <rect y="9.72" width="20" height="1.08" fill="#FFFFFF" />
+        <rect y="11.88" width="20" height="1.08" fill="#FFFFFF" />
+        {/* Cantão vermelho superior esquerdo */}
+        <rect width="7.5" height="5.5" fill="#DE2010" />
+        {/* Círculo branco */}
+        <circle cx="3.75" cy="2.75" r="1.7" fill="#FFFFFF" />
+        {/* Globo azul interno */}
+        <circle cx="3.75" cy="2.75" r="1.1" fill="#002776" />
+        {/* 4 estrelinhas amarelas */}
+        <circle cx="1.2" cy="1.2" r="0.4" fill="#FEDF00" />
+        <circle cx="6.3" cy="1.2" r="0.4" fill="#FEDF00" />
+        <circle cx="1.2" cy="4.3" r="0.4" fill="#FEDF00" />
+        <circle cx="6.3" cy="4.3" r="0.4" fill="#FEDF00" />
+    </svg>
+);
+
 // Bandeira do Brasil (para opção Todos)
 export const FlagBR: React.FC<{ className?: string }> = ({ className = "w-5 h-3.5" }) => (
     <svg className={cn("rounded-[3px] shadow-xs overflow-hidden shrink-0 select-none", className)} viewBox="0 0 20 14" fill="none">

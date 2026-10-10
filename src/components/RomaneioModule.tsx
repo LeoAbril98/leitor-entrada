@@ -33,10 +33,12 @@ import { matchesStockFilter, type StockFilter } from '../utils/stockFilters';
 import { extractAro, extractModel, extractFuracao } from '../utils/wheelVariations';
 import { getWheelPhotoUrl } from '../utils/photoUtils';
 import { FlagPR, FlagSC, FlagBR } from './StateFlags';
+import { FlagCM } from './FlagCM';
 
 interface RomaneioModuleProps {
     onBackToMenu: () => void;
     onOpenSCOrder?: () => void;
+    onOpenCMOrder?: () => void;
 }
 
 // Cálculo de caixas baseado na regra da MKR Rodas (Aros 13, 14 e 15x6 são caixa dupla)
@@ -94,15 +96,19 @@ function sortWheelItems(a: RomaneioItem, b: RomaneioItem): number {
     return (a.codigo || '').localeCompare(b.codigo || '', 'pt-BR', { numeric: true, sensitivity: 'base' });
 }
 
-export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, onOpenSCOrder }) => {
+export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, onOpenSCOrder, onOpenCMOrder }) => {
     const [romaneios, setRomaneios] = useState<Romaneio[]>([]);
     const [selectedRomaneioId, setSelectedRomaneioId] = useState<string | null>(null);
-    const [tipoFilter, setTipoFilter] = useState<'PR' | 'SC' | 'TODOS'>('PR');
+    const [tipoFilter, setTipoFilter] = useState<'PR' | 'SC' | 'CM' | 'TODOS'>('PR');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedAroFilter, setSelectedAroFilter] = useState<string>('todos');
     const [dbStockMapPR, setDbStockMapPR] = useState<Map<string, number>>(new Map());
     const [dbStockMapSC, setDbStockMapSC] = useState<Map<string, number>>(new Map());
     const [scStockAvailable, setSCStockAvailable] = useState(false);
+    const [cmStockAvailable, setCMStockAvailable] = useState(false);
+    const [dbStockMapCM, setDbStockMapCM] = useState<Map<string, number>>(new Map());
+    const [stockUpdatedCM, setStockUpdatedCM] = useState<string | null>(null);
+    const foreignOrigin = tipoFilter === 'CM' ? 'CM' : 'SC';
     const [stockUpdatedPR, setStockUpdatedPR] = useState<string | null>(null);
     const [stockUpdatedSC, setStockUpdatedSC] = useState<string | null>(null);
     const [stockFilter, setStockFilter] = useState<StockFilter>('all');
@@ -125,6 +131,8 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
     const countPR = useMemo(() => romaneios.filter(r => (r.tipo || 'PR') === 'PR').length, [romaneios]);
     const countSC = useMemo(() => romaneios.filter(r => (r.tipo || 'PR') === 'SC').length, [romaneios]);
 
+    const countCM = useMemo(() => romaneios.filter(r => r.tipo === 'CM').length, [romaneios]);
+
     // Romaneios filtrados pelo tipo selecionado (PR ou SC)
     const filteredRomaneios = useMemo(() => {
         if (tipoFilter === 'TODOS') return romaneios;
@@ -132,7 +140,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
     }, [romaneios, tipoFilter]);
 
     // Trocar aba de tipo e sincronizar o romaneio selecionado
-    const handleSelectTipo = (tipo: 'PR' | 'SC' | 'TODOS') => {
+    const handleSelectTipo = (tipo: 'PR' | 'SC' | 'CM' | 'TODOS') => {
         setTipoFilter(tipo);
         setSearchTerm('');
         setSelectedAroFilter('todos');
@@ -159,7 +167,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
     const handleManualSync = async () => {
         setIsSyncing(true);
         try {
-            const [list, { prMap, scMap, scStockAvailable, stockUpdatedPR, stockUpdatedSC }] = await Promise.all([
+            const [list, { prMap, scMap, scStockAvailable, stockUpdatedPR, stockUpdatedSC, cmMap, cmStockAvailable, stockUpdatedCM }] = await Promise.all([
                 fetchAndSyncRomaneios(),
                 getInventoryWithStateStock()
             ]);
@@ -167,6 +175,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
             setDbStockMapPR(prMap);
             setDbStockMapSC(scMap);
             setSCStockAvailable(scStockAvailable);
+            setDbStockMapCM(cmMap); setCMStockAvailable(cmStockAvailable); setStockUpdatedCM(stockUpdatedCM);
             setStockUpdatedPR(stockUpdatedPR); setStockUpdatedSC(stockUpdatedSC);
         } catch (e) {
             console.warn('Erro na sincronização com Supabase:', e);
@@ -190,8 +199,8 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
         if (romaneios.length > 0) {
             const hasPR = romaneios.some(r => (r.tipo || 'PR') === 'PR');
             const hasSC = romaneios.some(r => (r.tipo || 'PR') === 'SC');
-            if (!hasPR && hasSC && tipoFilter === 'PR') {
-                setTipoFilter('SC');
+            if (!hasPR && tipoFilter === 'PR') {
+                setTipoFilter(hasSC ? 'SC' : romaneios.some(r => r.tipo === 'CM') ? 'CM' : 'PR');
             }
         }
     }, [romaneios]);
@@ -202,6 +211,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
 
         const prRomaneios = romaneios.filter(r => (r.tipo || 'PR') === 'PR');
         const scRomaneios = romaneios.filter(r => (r.tipo || 'PR') === 'SC');
+        if (!prRomaneios.length && !scRomaneios.length) return null;
 
         // Mapear por estado + código para não juntar a mesma roda entre PR e SC.
         const map = new Map<string, {
@@ -345,7 +355,8 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
 
             const codigoKey = it.codigo.trim().toUpperCase();
             const estoquePR = dbStockMapPR.get(codigoKey) ?? 0;
-            const estoqueSC = scStockAvailable ? dbStockMapSC.get(codigoKey) ?? 0 : null;
+            const estoqueSC = (tipoFilter === 'CM' ? cmStockAvailable : scStockAvailable)
+                ? (tipoFilter === 'CM' ? dbStockMapCM : dbStockMapSC).get(codigoKey) ?? 0 : null;
             if (!matchesStockFilter(stockFilter, estoquePR, estoqueSC)) return;
 
             const qtdPR = it.qtdPR !== undefined
@@ -409,7 +420,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
             totalCaixas: sumCaixas,
             availableAros: sortedArosList
         };
-    }, [activeRomaneio, searchTerm, selectedAroFilter, dbStockMapPR, dbStockMapSC, scStockAvailable, tipoFilter, stockFilter]);
+    }, [activeRomaneio, searchTerm, selectedAroFilter, dbStockMapPR, dbStockMapSC, scStockAvailable, tipoFilter, stockFilter, cmStockAvailable, dbStockMapCM]);
 
     // Data formatada
     const dataDisplay = activeRomaneio?.dataCriacao
@@ -497,9 +508,11 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                                     "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shrink-0 border",
                                     tipoFilter === 'TODOS'
                                         ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800"
-                                        : (activeRomaneio.tipo || 'PR') === 'SC'
-                                            ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
-                                            : "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800"
+                                        : activeRomaneio.tipo === 'CM'
+                                            ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800"
+                                            : (activeRomaneio.tipo || 'PR') === 'SC'
+                                                ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
+                                                : "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800"
                                 )}>
                                     {tipoFilter === 'TODOS' ? (
                                         <>
@@ -509,8 +522,8 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                                         </>
                                     ) : (
                                         <>
-                                            {(activeRomaneio.tipo || 'PR') === 'SC' ? <FlagSC className="w-3.5 h-2.5" /> : <FlagPR className="w-3.5 h-2.5" />}
-                                            <span>{(activeRomaneio.tipo || 'PR') === 'SC' ? 'SC' : 'PR'}</span>
+                                            {activeRomaneio.tipo === 'CM' ? <FlagCM className="w-3.5 h-2.5" /> : (activeRomaneio.tipo || 'PR') === 'SC' ? <FlagSC className="w-3.5 h-2.5" /> : <FlagPR className="w-3.5 h-2.5" />}
+                                            <span>{activeRomaneio.tipo === 'CM' ? 'CM' : (activeRomaneio.tipo || 'PR') === 'SC' ? 'SC' : 'PR'}</span>
                                         </>
                                     )}
                                 </span>
@@ -555,6 +568,20 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                                     <FlagSC className="w-3.5 h-2.5" />
                                     <span>SC</span>
                                     {countSC > 0 && <span className="text-[9px] opacity-80">({countSC})</span>}
+                                </button>
+                                <button
+                                    onClick={() => handleSelectTipo('CM')}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-lg transition text-[11px] flex items-center gap-1.5",
+                                        tipoFilter === 'CM'
+                                            ? "bg-rose-600 text-white shadow-2xs font-black"
+                                            : "text-rose-700 dark:text-rose-400 hover:bg-rose-50/50 dark:hover:bg-rose-950/30"
+                                    )}
+                                    title="Filtrar por cargas de Campinas (CM)"
+                                >
+                                    <FlagCM className="w-3.5 h-2.5" />
+                                    <span>CM</span>
+                                    {countCM > 0 && <span className="text-[9px] opacity-80">({countCM})</span>}
                                 </button>
                                 <button
                                     onClick={() => handleSelectTipo('TODOS')}
@@ -636,11 +663,13 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                     </div>
                 )}
 
+                {onOpenCMOrder && <div className="flex justify-end print:hidden"><button onClick={onOpenCMOrder} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-sm font-semibold"><Truck className="w-4 h-4" />Pedir Rodas de CM</button></div>}
+
                 {/* SELETOR HERO DE ESTADO (PARANÁ / SANTA CATARINA / TODOS) - ESTILO MÓDULO DE CONTAGEM */}
                 {romaneios.length > 0 && (
                     <div className="space-y-3.5 print:hidden">
                         {/* Grade de Cards de Estado (3 colunas: Paraná, Santa Catarina e Ver os 2 Juntos) */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-4xl mx-auto">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto">
                             {/* CARD PARANÁ */}
                             <button
                                 type="button"
@@ -725,6 +754,40 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                                 </span>
                             </button>
 
+                            <button
+                                type="button"
+                                onClick={() => handleSelectTipo('CM')}
+                                className={cn(
+                                    "relative p-3.5 sm:p-5 rounded-[22px] sm:rounded-[24px] border-2 transition-all duration-200 flex flex-col items-center text-center cursor-pointer active:scale-95 group",
+                                    tipoFilter === 'CM'
+                                        ? "border-rose-500 dark:border-rose-400 ring-2 ring-rose-500/20 bg-rose-50/70 dark:bg-rose-950/30 shadow-md"
+                                        : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-slate-200 dark:hover:border-slate-700 hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
+                                )}
+                            >
+                                {tipoFilter === 'CM' && (
+                                    <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm">
+                                        <Check className="w-3 h-3 stroke-[3]" />
+                                    </span>
+                                )}
+                                <div className="relative mb-2.5">
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-[18px] sm:rounded-[20px] bg-gradient-to-br from-rose-600 to-red-700 flex items-center justify-center text-white transition-transform group-hover:scale-105 shadow-md shadow-rose-500/25">
+                                        <span className="text-[18px] sm:text-[21px] font-black tracking-wider drop-shadow-sm font-sans select-none">CM</span>
+                                    </div>
+                                    <div className="absolute -bottom-1 -right-1 ring-2 ring-white dark:ring-slate-900 rounded-[4px] overflow-hidden shadow-sm">
+                                        <FlagCM className="w-5 h-3.5 sm:w-6 sm:h-4" />
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-center gap-1.5">
+                                    <h3 className="font-extrabold text-slate-900 dark:text-white text-[14px] sm:text-[16px] tracking-tight">Campinas (CM)</h3>
+                                </div>
+                                <p className="text-[11px] sm:text-[12px] text-slate-400 dark:text-slate-500 font-medium leading-tight mt-0.5">
+                                    {countCM} {countCM === 1 ? 'carga cadastrada' : 'cargas cadastradas'}
+                                </p>
+                                <span className="mt-2 text-[10px] font-black uppercase tracking-wider text-rose-600 dark:text-rose-400 bg-rose-100/60 dark:bg-rose-900/40 px-2 py-0.5 rounded-full">
+                                    Estoque CM • Estoque PR
+                                </span>
+                            </button>
+
                             {/* CARD VER OS 2 JUNTOS */}
                             <button
                                 type="button"
@@ -798,11 +861,11 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                             <div className="bg-white dark:bg-slate-900 rounded-[20px] sm:rounded-[22px] p-3.5 sm:p-4 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                                        {activeRomaneio?.tipo === 'SC' ? <FlagSC className="w-6 h-4" /> : <FlagPR className="w-6 h-4" />}
+                                        {activeRomaneio?.tipo === 'CM' ? <FlagCM className="w-6 h-4" /> : activeRomaneio?.tipo === 'SC' ? <FlagSC className="w-6 h-4" /> : <FlagPR className="w-6 h-4" />}
                                     </div>
                                     <div className="min-w-0">
                                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block leading-tight">
-                                            Carga Ativa na Tela ({tipoFilter === 'SC' ? 'Santa Catarina' : 'Paraná'}):
+                                            Carga Ativa na Tela ({tipoFilter === 'CM' ? 'Campinas' : tipoFilter === 'SC' ? 'Santa Catarina' : 'Paraná'}):
                                         </span>
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span className="text-sm font-black text-slate-900 dark:text-white truncate">
@@ -832,13 +895,15 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                                                     className={cn(
                                                         "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border active:scale-95 shadow-2xs",
                                                         isCurrent
-                                                            ? r.tipo === 'SC'
-                                                                ? "bg-emerald-600 text-white border-emerald-700 font-black shadow-emerald-500/20"
-                                                                : "bg-blue-600 text-white border-blue-700 font-black shadow-blue-500/20"
+                                                            ? r.tipo === 'CM'
+                                                                ? "bg-rose-600 text-white border-rose-700 font-black shadow-rose-500/20"
+                                                                : r.tipo === 'SC'
+                                                                    ? "bg-emerald-600 text-white border-emerald-700 font-black shadow-emerald-500/20"
+                                                                    : "bg-blue-600 text-white border-blue-700 font-black shadow-blue-500/20"
                                                             : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                                                     )}
                                                 >
-                                                    {r.tipo === 'SC' ? <FlagSC className="w-4 h-2.5" /> : <FlagPR className="w-4 h-2.5" />}
+                                                    {r.tipo === 'CM' ? <FlagCM className="w-4 h-2.5" /> : r.tipo === 'SC' ? <FlagSC className="w-4 h-2.5" /> : <FlagPR className="w-4 h-2.5" />}
                                                     <span className="truncate max-w-[120px] sm:max-w-[160px]">{r.numero || r.titulo}</span>
                                                     <span className="text-[10px] opacity-80">({r.totalPecas} un)</span>
                                                 </button>
@@ -858,7 +923,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                             <Truck className="w-8 h-8" />
                         </div>
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                            Nenhum Romaneio de {tipoFilter === 'SC' ? 'Santa Catarina (SC)' : 'Paraná (PR)'}
+                            Nenhum Romaneio de {tipoFilter === 'CM' ? 'Campinas (CM)' : tipoFilter === 'SC' ? 'Santa Catarina (SC)' : 'Paraná (PR)'}
                         </h2>
                         <p className="text-sm text-slate-400 dark:text-slate-500 mt-1 max-w-md mx-auto">
                             Existem romaneios cadastrados no outro estado. Você pode alternar o estado abaixo ou importar novas planilhas no Painel Administrativo.
@@ -905,6 +970,8 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                                         <h1 className="text-lg sm:text-2xl font-black text-[#1E293B] dark:text-white tracking-tight uppercase truncate print:text-xl print:font-black print:tracking-normal">
                                             {tipoFilter === 'TODOS'
                                                 ? 'RELATÓRIO CONSOLIDADO • PARANÁ + SANTA CATARINA'
+                                                : tipoFilter === 'CM'
+                                                    ? 'RELATORIO DE CAMINHAO · CAMPINAS (CM)'
                                                 : tipoFilter === 'SC'
                                                     ? 'RELATÓRIO DE CAMINHÃO • SANTA CATARINA (SC)'
                                                     : 'RELATÓRIO DE CAMINHÃO • PARANÁ (PR)'}
@@ -919,11 +986,15 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                                             ) : (
                                                 <span className={cn(
                                                     "inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shrink-0 print:hidden",
-                                                    (activeRomaneio.tipo || 'PR') === 'SC'
-                                                        ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
-                                                        : "bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800"
+                                                    activeRomaneio.tipo === 'CM'
+                                                        ? "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800"
+                                                        : (activeRomaneio.tipo || 'PR') === 'SC'
+                                                            ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
+                                                            : "bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800"
                                                 )}>
-                                                    {(activeRomaneio.tipo || 'PR') === 'SC' ? (
+                                                    {activeRomaneio.tipo === 'CM' ? (
+                                                        <><FlagCM className="w-4 h-2.5" /><span>CAMPINAS (CM)</span></>
+                                                    ) : (activeRomaneio.tipo || 'PR') === 'SC' ? (
                                                         <>
                                                             <FlagSC className="w-4 h-2.5" />
                                                             <span>SANTA CATARINA (SC)</span>
@@ -1011,7 +1082,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                         </div>
 
                         {/* FILTROS E BUSCA */}
-                        <StockFreshness pr={stockUpdatedPR} sc={stockUpdatedSC} scAvailable={scStockAvailable} />
+                        <StockFreshness pr={stockUpdatedPR} sc={tipoFilter === 'CM' ? stockUpdatedCM : stockUpdatedSC} scAvailable={tipoFilter === 'CM' ? cmStockAvailable : scStockAvailable} origin={foreignOrigin} />
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-1 print:hidden">
                             <div className="relative w-full sm:flex-1">
                                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -1026,7 +1097,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                             </div>
 
                             <select aria-label="Filtrar estoque do romaneio" value={stockFilter} onChange={event => setStockFilter(event.target.value as StockFilter)} className="w-full sm:w-auto max-w-full h-10 sm:h-11 px-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
-                                <option value="all">Todos os estoques</option><option value="sc">Com estoque SC</option><option value="pr">Com estoque PR</option><option value="none">Sem estoque PR e SC</option>
+                                <option value="all">Todos os estoques</option><option value="sc">Com estoque {foreignOrigin}</option><option value="pr">Com estoque PR</option><option value="none">Sem estoque PR e {foreignOrigin}</option>
                             </select>
 
                             {/* Dropdown Filtro por Aro */}
@@ -1104,7 +1175,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                                                                 {tipoFilter === 'PR' ? (
                                                                     <th className="py-2.5 px-3 text-center">LOCAL</th>
                                                                 ) : (
-                                                                    <th className="py-2.5 px-3 text-center text-emerald-600 dark:text-emerald-400">ESTOQUE SC</th>
+                                                                    <th className="py-2.5 px-3 text-center text-emerald-600 dark:text-emerald-400">ESTOQUE {foreignOrigin}</th>
                                                                 )}
                                                                 <th className="py-2.5 px-3 text-center text-blue-600 dark:text-blue-400">ESTOQUE PR</th>
                                                             </tr>
@@ -1203,9 +1274,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                                                                                 <Database className="w-3 h-3" />
                                                                             </div>
                                                                             <div>
-                                                                                <span className="text-[9px] font-black uppercase text-emerald-700 dark:text-emerald-300 block leading-tight">
-                                                                                    Estoque SC
-                                                                                </span>
+                                                                                <span className="text-[9px] font-black uppercase text-emerald-700 dark:text-emerald-300 block leading-tight">Estoque {foreignOrigin}</span>
                                                                                 <span className="font-black text-xs text-emerald-900 dark:text-emerald-100 leading-tight block">
                                                                                     {it.estoqueSC === null ? 'Indisponível' : `${it.estoqueSC} un`}
                                                                                 </span>
@@ -1247,7 +1316,7 @@ export const RomaneioModule: React.FC<RomaneioModuleProps> = ({ onBackToMenu, on
                                                             <tr className="print:bg-slate-100 print:text-slate-900 print:text-[11px] print:border-b print:border-slate-300">
                                                                 <th className="print:py-1.5 print:px-2 text-left">DESCRIÇÃO</th>
                                                                 <th className="print:py-1.5 print:px-1.5 text-center">QTD NO CAMINHÃO</th>
-                                                                <th className="print:py-1.5 print:px-1 text-center">{tipoFilter === 'PR' ? 'LOCAL' : 'ESTOQUE SC'}</th>
+                                                                <th className="print:py-1.5 print:px-1 text-center">{tipoFilter === 'PR' ? 'LOCAL' : `ESTOQUE ${foreignOrigin}`}</th>
                                                                 <th className="print:py-1.5 print:px-1 text-center">ESTOQUE PR</th>
                                                             </tr>
                                                         </thead>

@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import type { Romaneio } from './romaneioService';
+import { sendOrderEmail, type OrderEmailResult } from './romaneioEmailService';
 
 export interface SCOrderItem {
     codigo: string;
@@ -13,6 +14,7 @@ export interface SCOrderItem {
 }
 
 export interface SCLoadOrder {
+    origem?: LoadOrderOrigin;
     id: string;
     dataCriacao: string;
     cargaId: string;
@@ -20,10 +22,24 @@ export interface SCLoadOrder {
     itens: SCOrderItem[];
     pdfPath: string;
     excelPath: string;
+    email?: OrderEmailResult;
 }
 
 export const SC_ORDER_DRAFT_KEY = 'mkr_pedido_rodas_sc_rascunho_v1';
-const ROOT = 'pedidos-rodas-sc';
+export type LoadOrderOrigin = 'SC' | 'CM';
+export type LoadOrderDraft = Omit<SCLoadOrder, 'pdfPath' | 'excelPath'>;
+export const getOrderDraftKey = (origem: LoadOrderOrigin) => origem === 'SC' ? SC_ORDER_DRAFT_KEY : 'mkr_pedido_rodas_cm_rascunho_v1';
+const rootFor = (origem: LoadOrderOrigin) => `pedidos-rodas-${origem.toLowerCase()}`;
+
+async function persistReceivedOrder(order: SCLoadOrder) {
+    const { error } = await supabase.from('pedidos_romaneio').upsert({
+        id: order.id, origem: order.origem || 'SC', carga_id: order.cargaId,
+        carga_numero: order.cargaNumero, itens: order.itens,
+        pdf_path: order.pdfPath, excel_path: order.excelPath,
+        data_criacao: order.dataCriacao, data_atualizacao: new Date().toISOString()
+    });
+    if (error) throw new Error('Os arquivos foram enviados, mas o registro do pedido falhou. Tente enviar novamente.');
+}
 
 export function getSCLoadItems(carga: Romaneio): SCOrderItem[] {
     const byCode = new Map<string, SCOrderItem>();
@@ -41,11 +57,12 @@ export function getSCLoadItems(carga: Romaneio): SCOrderItem[] {
 }
 
 export async function generateSCOrderFiles(order: SCLoadOrder): Promise<{ pdf: Blob; excel: Blob }> {
+    const origem = order.origem || 'SC';
     const doc = new jsPDF();
     const total = order.itens.reduce((sum, item) => sum + item.quantidade, 0);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
-    doc.text('PEDIDO DE RODAS SC', 14, 20);
+    doc.text(`PEDIDO DE RODAS ${origem}`, 14, 20);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(80);
@@ -86,7 +103,7 @@ export async function generateSCOrderFiles(order: SCLoadOrder): Promise<{ pdf: B
     })));
     sheet['!cols'] = [{ wch: 22 }, { wch: 65 }, { wch: 16 }];
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, sheet, 'Pedido SC');
+    XLSX.utils.book_append_sheet(workbook, sheet, `Pedido ${origem}`);
     return {
         pdf: doc.output('blob'),
         excel: new Blob([XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })], {
@@ -96,6 +113,7 @@ export async function generateSCOrderFiles(order: SCLoadOrder): Promise<{ pdf: B
 }
 
 export async function sendSCLoadOrder(draft: Omit<SCLoadOrder, 'pdfPath' | 'excelPath'>): Promise<SCLoadOrder> {
+    if (draft.origem && draft.origem !== 'SC' && draft.origem !== 'CM') throw new Error('Origem do pedido invalida.');
     if (!draft.itens.length || draft.itens.some(item => !Number.isSafeInteger(item.quantidade) || item.quantidade <= 0)) {
         throw new Error('Informe quantidades inteiras maiores que zero.');
     }
@@ -103,18 +121,23 @@ export async function sendSCLoadOrder(draft: Omit<SCLoadOrder, 'pdfPath' | 'exce
         throw new Error('A quantidade pedida não pode ser maior que a quantidade no caminhão.');
     }
     const storage = supabase.storage.from('fotos');
+    const origem = draft.origem || 'SC';
+    const ROOT = rootFor(origem);
+    const suffix = origem.toLowerCase();
     const recordPath = `${ROOT}/registros/${draft.id}.json`;
     const order: SCLoadOrder = {
         ...draft,
-        pdfPath: `${ROOT}/arquivos/${draft.id}/pedido-sc.pdf`,
-        excelPath: `${ROOT}/arquivos/${draft.id}/pedido-sc.xlsx`
+        origem,
+        pdfPath: `${ROOT}/arquivos/${draft.id}/pedido-${suffix}.pdf`,
+        excelPath: `${ROOT}/arquivos/${draft.id}/pedido-${suffix}.xlsx`
     };
     // A stable draft ID makes retries safe when the previous response was lost.
     const previous = await storage.download(recordPath);
     if (previous.data) {
         const saved = JSON.parse(await previous.data.text()) as SCLoadOrder;
         if (JSON.stringify(saved.itens) !== JSON.stringify(order.itens)) throw new Error('Este pedido ja foi recebido. Inicie um novo pedido.');
-        return saved;
+        await persistReceivedOrder({ ...saved, origem });
+        return { ...saved, email: await sendOrderEmail(saved.id) };
     }
     const files = await generateSCOrderFiles(order);
     for (const [path, blob] of [[order.pdfPath, files.pdf], [order.excelPath, files.excel]] as const) {
@@ -126,11 +149,13 @@ export async function sendSCLoadOrder(draft: Omit<SCLoadOrder, 'pdfPath' | 'exce
         upsert: true, contentType: 'application/json', cacheControl: '0'
     });
     if (error) throw new Error(`Nao foi possivel concluir o envio: ${error.message}`);
-    window.dispatchEvent(new Event('mkr_sc_orders_updated'));
-    return order;
+    await persistReceivedOrder(order);
+    window.dispatchEvent(new Event(`mkr_${suffix}_orders_updated`));
+    return { ...order, email: await sendOrderEmail(order.id) };
 }
 
-export async function getSCLoadOrders(): Promise<SCLoadOrder[]> {
+export async function getSCLoadOrders(origem: LoadOrderOrigin = 'SC'): Promise<SCLoadOrder[]> {
+    const ROOT = rootFor(origem);
     const storage = supabase.storage.from('fotos');
     const records: { name: string }[] = [];
     for (let offset = 0; ; offset += 100) {
@@ -148,7 +173,19 @@ export async function getSCLoadOrders(): Promise<SCLoadOrder[]> {
         }));
         orders.push(...batch);
     }
-    return orders.sort((a, b) => b.dataCriacao.localeCompare(a.dataCriacao));
+    // Os JSONs antigos continuam acessiveis; pedidos novos tambem ficam na tabela.
+    const byId = new Map(orders.map(order => [order.id, { ...order, origem }]));
+    for (let offset = 0; ; offset += 1000) {
+        const { data, error } = await supabase.from('pedidos_romaneio').select('*').eq('origem', origem)
+            .order('data_criacao', { ascending: false }).range(offset, offset + 999);
+        if (error) throw new Error('Nao foi possivel carregar a tabela de pedidos.');
+        data?.forEach(row => byId.set(row.id, {
+            id: row.id, origem, cargaId: row.carga_id, cargaNumero: row.carga_numero,
+            itens: row.itens, pdfPath: row.pdf_path, excelPath: row.excel_path, dataCriacao: row.data_criacao
+        }));
+        if (!data || data.length < 1000) break;
+    }
+    return [...byId.values()].sort((a, b) => b.dataCriacao.localeCompare(a.dataCriacao));
 }
 
 export async function downloadSCOrderFile(order: SCLoadOrder, type: 'pdf' | 'excel'): Promise<void> {
@@ -156,13 +193,16 @@ export async function downloadSCOrderFile(order: SCLoadOrder, type: 'pdf' | 'exc
     if (error || !data) throw new Error('Nao foi possivel baixar o arquivo.');
     const carga = order.cargaNumero.replace(/[^a-zA-Z0-9-]/g, '-').slice(0, 40);
     const date = new Date(order.dataCriacao).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }).replace(/\//g, '-');
-    saveAs(data, `pedido-sc-${carga}-${date}-${order.id.slice(0, 8)}.${type === 'pdf' ? 'pdf' : 'xlsx'}`);
+    saveAs(data, `pedido-${(order.origem || 'SC').toLowerCase()}-${carga}-${date}-${order.id.slice(0, 8)}.${type === 'pdf' ? 'pdf' : 'xlsx'}`);
 }
 
 export async function deleteSCLoadOrder(order: SCLoadOrder): Promise<void> {
+    const origem = order.origem || 'SC';
+    const { error: rowError } = await supabase.from('pedidos_romaneio').delete().eq('id', order.id).eq('origem', origem);
+    if (rowError) throw new Error('Nao foi possivel apagar o registro do pedido.');
     const { error } = await supabase.storage.from('fotos').remove([
-        `${ROOT}/registros/${order.id}.json`, order.pdfPath, order.excelPath
+        `${rootFor(origem)}/registros/${order.id}.json`, order.pdfPath, order.excelPath
     ]);
     if (error) throw new Error('Nao foi possivel apagar o pedido. Tente novamente.');
-    window.dispatchEvent(new Event('mkr_sc_orders_updated'));
+    window.dispatchEvent(new Event(`mkr_${origem.toLowerCase()}_orders_updated`));
 }

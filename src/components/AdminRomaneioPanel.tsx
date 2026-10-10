@@ -44,8 +44,9 @@ import {
 import { getInventory, saveCloudCargaCodeMapping } from '../lib/supabase';
 import { StockItem } from '../types';
 import { getWheelPhotoUrl } from '../utils/photoUtils';
-import { FlagPR, FlagSC } from './StateFlags';
+import { FlagPR, FlagSC, FlagSP } from './StateFlags';
 import { SCLoadOrdersAdmin } from './SCLoadOrdersAdmin';
+import { romaneioOrigin } from '../utils/romaneioOrigin';
 
 interface AdminRomaneioPanelProps {
     onBack: () => void;
@@ -97,7 +98,7 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
     const [formDestino, setFormDestino] = useState('');
     const [pendingUploadTipo, setPendingUploadTipo] = useState<RomaneioTipo>('PR');
     const [formTipo, setFormTipo] = useState<RomaneioTipo>('PR');
-    const [selectedTab, setSelectedTab] = useState<'TODOS' | 'PR' | 'SC'>('TODOS');
+    const [selectedTab, setSelectedTab] = useState<'TODOS' | 'PR' | 'SC' | 'CM'>('TODOS');
 
     // Anexar planilha a um romaneio existente
     const [targetRomaneioIdForAppend, setTargetRomaneioIdForAppend] = useState<string | null>(null);
@@ -432,25 +433,27 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
     // Alternar tipo da carga diretamente no card
     const handleToggleTipo = (r: Romaneio, e: React.MouseEvent) => {
         e.stopPropagation();
-        const currentTipo: RomaneioTipo = r.tipo || (r.titulo.toUpperCase().includes('SC') ? 'SC' : 'PR');
-        const nextTipo: RomaneioTipo = currentTipo === 'PR' ? 'SC' : 'PR';
+        const currentTipo: RomaneioTipo = romaneioOrigin(r);
+        const nextTipo: RomaneioTipo = currentTipo === 'PR' ? 'SC' : currentTipo === 'SC' ? 'CM' : 'PR';
         updateRomaneio(r.id, { tipo: nextTipo });
-        toast.success(`Carga alterada para ${nextTipo === 'PR' ? 'Paraná (PR)' : 'Santa Catarina (SC)'}!`, { duration: 2500 });
+        toast.success(`Carga alterada para ${nextTipo === 'PR' ? 'Paraná (PR)' : nextTipo === 'SC' ? 'Santa Catarina (SC)' : 'Campinas (CM)'}!`, { duration: 2500 });
         loadList();
     };
 
     const countPR = useMemo(() => {
-        return romaneios.filter(r => (r.tipo || (r.titulo.toUpperCase().includes('SC') ? 'SC' : 'PR')) === 'PR').length;
+        return romaneios.filter(r => (romaneioOrigin(r)) === 'PR').length;
     }, [romaneios]);
 
     const countSC = useMemo(() => {
-        return romaneios.filter(r => (r.tipo || (r.titulo.toUpperCase().includes('SC') ? 'SC' : 'PR')) === 'SC').length;
+        return romaneios.filter(r => (romaneioOrigin(r)) === 'SC').length;
     }, [romaneios]);
 
-    // Filtragem na busca e por Aba (TODOS / PR / SC)
+    const countCM = useMemo(() => romaneios.filter(r => romaneioOrigin(r) === 'CM').length, [romaneios]);
+
+    // Filtragem na busca e por Aba (TODOS / PR / SC / CM)
     const filteredRomaneios = useMemo(() => {
         return romaneios.filter(r => {
-            const rTipo = r.tipo || (r.titulo.toUpperCase().includes('SC') ? 'SC' : 'PR');
+            const rTipo = romaneioOrigin(r);
             if (selectedTab !== 'TODOS' && rTipo !== selectedTab) {
                 return false;
             }
@@ -532,10 +535,10 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                     onChange={(e) => handleFilesSelected(e.target.files)}
                 />
 
-                <SCLoadOrdersAdmin />
+                <div className="flex flex-wrap justify-end gap-3"><SCLoadOrdersAdmin /><SCLoadOrdersAdmin origem="CM" /></div>
 
                 {/* CARDS VISUAIS DE UPLOAD POR ESTADO: PARANÁ (PR) & SANTA CATARINA (SC) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     {/* CARD UPLOAD PARANÁ */}
                     <div
                         onClick={() => !isLoadingFiles && handleTriggerUpload('PR')}
@@ -623,6 +626,49 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                             </div>
                         </div>
                     </div>
+                    {/* CARD UPLOAD CAMPINAS */}
+                    <div
+                        onClick={() => !isLoadingFiles && handleTriggerUpload('CM')}
+                        role="button"
+                        tabIndex={0}
+                        className="group relative overflow-hidden p-5 sm:p-6 rounded-[26px] border-2 border-rose-200/90 dark:border-rose-900/60 bg-gradient-to-br from-rose-50/90 via-red-50/40 to-white dark:from-rose-950/40 dark:via-red-950/20 dark:to-slate-900 hover:border-rose-400 dark:hover:border-rose-500 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-rose-500/10 cursor-pointer active:scale-[0.98] select-none"
+                    >
+                        <div className="flex items-start justify-between gap-3 mb-4">
+                            <div className="relative">
+                                <div className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-rose-600 to-red-700 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-rose-500/30 group-hover:scale-105 transition-transform">
+                                    CM
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 ring-2 ring-white dark:ring-slate-900 rounded-[4px] overflow-hidden shadow-sm">
+                                    <FlagSP className="w-6 h-4" />
+                                </div>
+                            </div>
+
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                <FileSpreadsheet className="w-3.5 h-3.5" />
+                                {countCM} {countCM === 1 ? 'Carga Ativa' : 'Cargas Ativas'}
+                            </span>
+                        </div>
+
+                        <div>
+                            <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                                <span>Upload Carga Campinas</span>
+                                <span className="text-xs px-2 py-0.5 rounded-md bg-rose-600 text-white font-black">CM</span>
+                            </h3>
+                            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
+                                Importe múltiplas planilhas da filial de Campinas. Gera romaneios com código <code className="font-bold text-rose-600 dark:text-rose-400">ROM-CM</code>.
+                            </p>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-rose-100 dark:border-rose-900/40 flex items-center justify-between">
+                            <span className="text-xs font-bold text-rose-600 dark:text-rose-400 group-hover:underline flex items-center gap-1">
+                                <Plus className="w-4 h-4 stroke-[2.5]" />
+                                Selecionar Planilhas Excel
+                            </span>
+                            <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-600/30 group-hover:translate-x-1 transition-transform">
+                                <UploadCloud className="w-4 h-4 stroke-[2.5]" />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* BARRA DE PESQUISA & ESTATÍSTICAS RÁPIDAS */}
@@ -655,7 +701,7 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
 
                 {/* ABAS DE SELEÇÃO: TODOS / PR / SC */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs">
+                    <div className="flex flex-wrap items-center gap-1.5 p-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs">
                         <button
                             type="button"
                             onClick={() => setSelectedTab('TODOS')}
@@ -714,6 +760,25 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                                 {countSC}
                             </span>
                         </button>
+                        <button
+                            type="button"
+                            onClick={() => setSelectedTab('CM')}
+                            className={cn(
+                                "px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2",
+                                selectedTab === 'CM'
+                                    ? "bg-rose-600 text-white shadow-xs"
+                                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                            )}
+                        >
+                            <FlagSP className="w-4 h-2.5" />
+                            <span>Campinas (CM)</span>
+                            <span className={cn(
+                                "px-1.5 py-0.5 rounded-md text-[10px]",
+                                selectedTab === 'CM' ? "bg-white/20" : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300"
+                            )}>
+                                {countCM}
+                            </span>
+                        </button>
                     </div>
 
                     <span className="text-xs font-bold text-slate-400">
@@ -764,11 +829,13 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                                         <div className="flex items-start justify-between gap-2 mb-3">
                                             <div className="flex flex-wrap items-center gap-1.5">
                                                 {/* Badge do Tipo (PR / SC) com clique para alternar */}
-                                                {(romaneio.tipo === 'SC' || romaneio.titulo.toUpperCase().includes('SC') || romaneio.numero.toUpperCase().includes('SC')) ? (
+                                                {romaneioOrigin(romaneio) === 'CM' ? (
+                                                    <button onClick={(e) => handleToggleTipo(romaneio, e)} title="Alterar destino da carga CM" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300">CM</button>
+                                                ) : romaneioOrigin(romaneio) === 'SC' ? (
                                                     <button
                                                         type="button"
                                                         onClick={(e) => handleToggleTipo(romaneio, e)}
-                                                        title="Carga de SC. Clique para alterar para PR se necessário."
+                                                        title="Carga de SC. Clique para alterar para CM se necessario."
                                                         className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800 hover:scale-105 transition flex items-center gap-1.5 shadow-2xs"
                                                     >
                                                         <FlagSC className="w-3.5 h-2.5" />
@@ -947,44 +1014,8 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                                         Tipo / Destino da Carga *
                                     </label>
-                                    <div className="grid grid-cols-2 gap-2.5">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setFormTipo('PR');
-                                                if (formNumero.includes('-SC-')) {
-                                                    setFormNumero(formNumero.replace('-SC-', '-PR-'));
-                                                }
-                                            }}
-                                            className={cn(
-                                                "py-3 px-3.5 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2.5 transition border",
-                                                formTipo === 'PR'
-                                                    ? "bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-500/25"
-                                                    : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
-                                            )}
-                                        >
-                                            <FlagPR className="w-5 h-3.5" />
-                                            <span>Paraná (PR)</span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setFormTipo('SC');
-                                                if (formNumero.includes('-PR-')) {
-                                                    setFormNumero(formNumero.replace('-PR-', '-SC-'));
-                                                }
-                                            }}
-                                            className={cn(
-                                                "py-3 px-3.5 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2.5 transition border",
-                                                formTipo === 'SC'
-                                                    ? "bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-500/25"
-                                                    : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
-                                            )}
-                                        >
-                                            <FlagSC className="w-5 h-3.5" />
-                                            <span>Santa Catarina (SC)</span>
-                                        </button>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                        {(['PR', 'SC', 'CM'] as RomaneioTipo[]).map(tipo => <button key={tipo} type="button" onClick={() => { setFormTipo(tipo); setFormNumero(formNumero.replace(/-(PR|SC|CM)-/, `-${tipo}-`)); }} className={cn("py-3 px-3 rounded-lg font-bold text-xs border", formTipo === tipo ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900" : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700")}>{tipo === 'PR' ? 'Parana (PR)' : tipo === 'SC' ? 'Santa Catarina (SC)' : 'Campinas (CM)'}</button>)}
                                     </div>
                                 </div>
 
@@ -1332,7 +1363,7 @@ export const AdminRomaneioPanel: React.FC<AdminRomaneioPanelProps> = ({ onBack }
                                                 ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 border-emerald-200 dark:border-emerald-800"
                                                 : "text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border-blue-200 dark:border-blue-800"
                                         )}>
-                                            {selectedRomaneioForView.tipo === 'SC' ? 'SC (Santa Catarina)' : 'PR (Paraná)'}
+                                            {romaneioOrigin(selectedRomaneioForView) === 'CM' ? 'CM (Campinas)' : selectedRomaneioForView.tipo === 'SC' ? 'SC (Santa Catarina)' : 'PR (Paraná)'}
                                         </span>
                                         <span className="text-[11px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950 px-2.5 py-0.5 rounded-md">
                                             {selectedRomaneioForView.numero}

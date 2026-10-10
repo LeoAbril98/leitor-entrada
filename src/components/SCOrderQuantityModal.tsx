@@ -7,6 +7,7 @@ import { motion } from 'motion/react';
 import { FlagSC } from './StateFlags';
 
 interface Props {
+    origem?: 'SC' | 'CM';
     item: SCOrderItem | null;
     currentQty: number;
     estoqueSC: number | null;
@@ -15,7 +16,7 @@ interface Props {
     onConfirm: (quantity: number) => boolean;
 }
 
-export function SCOrderQuantityModal({ item, currentQty, estoqueSC, estoquePR, onClose, onConfirm }: Props) {
+export function SCOrderQuantityModal({ item, currentQty, estoqueSC, estoquePR, onClose, onConfirm, origem = 'SC' }: Props) {
     const [quantity, setQuantity] = useState(currentQty);
     const limit = Math.max(0, Math.floor(item?.quantidadeCarga || 0));
     useEffect(() => { setQuantity(Math.min(currentQty, limit)); }, [item?.codigo, currentQty, limit]);
@@ -31,8 +32,8 @@ export function SCOrderQuantityModal({ item, currentQty, estoqueSC, estoquePR, o
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-6" onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
             <motion.section initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} role="dialog" aria-modal="true" aria-labelledby="sc-quantity-title" className="max-w-lg md:max-w-4xl w-full max-h-[94dvh] bg-white dark:bg-slate-900 rounded-2xl md:rounded-[2rem] shadow-2xl text-slate-900 dark:text-slate-100 flex flex-col overflow-hidden">
                 <header className="bg-amber-500 px-3 py-3 md:p-4 flex items-center gap-3 text-white shrink-0">
-                    <div className="w-10 h-10 rounded-xl bg-white overflow-hidden flex items-center justify-center border border-white/30 shadow-lg"><FlagSC className="w-full h-full" /></div>
-                    <div className="flex-1"><h2 id="sc-quantity-title" className="text-lg md:text-xl font-black uppercase leading-tight">Rodas de SC</h2><p className="text-[10px] font-bold uppercase mt-0.5">Santa Catarina</p></div>
+                    <div className="w-10 h-10 rounded-xl bg-white overflow-hidden flex items-center justify-center border border-white/30 shadow-lg">{origem === 'SC' ? <FlagSC className="w-full h-full" /> : <span className="text-rose-700 font-bold">CM</span>}</div>
+                    <div className="flex-1"><h2 id="sc-quantity-title" className="text-lg md:text-xl font-black uppercase leading-tight">Rodas de {origem}</h2><p className="text-[10px] font-bold uppercase mt-0.5">{origem === 'CM' ? 'Campinas' : 'Santa Catarina'}</p></div>
                     <button onClick={onClose} title="Fechar" aria-label="Fechar quantidade" className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/20 hover:bg-white/30"><X className="w-4 h-4" /></button>
                 </header>
                 <div className="flex flex-col md:flex-row overflow-y-auto">
@@ -42,7 +43,7 @@ export function SCOrderQuantityModal({ item, currentQty, estoqueSC, estoquePR, o
                         <p className="font-mono text-[10px] md:text-xs text-slate-500 text-center mt-2 break-all">CÓDIGO: {item.codigo}</p>
                     <div className="grid grid-cols-3 text-center py-3 mt-3 border-t border-slate-200 dark:border-slate-800 text-sm">
                         <div><span className="block text-xs text-slate-500">Na carga</span><strong className="text-lg">{item.quantidadeCarga}</strong></div>
-                        <div><span className="block text-xs text-slate-500">Estoque SC</span><strong className="text-lg text-emerald-700 dark:text-emerald-400">{estoqueSC ?? '-'}</strong></div>
+                        <div><span className="block text-xs text-slate-500">Estoque {origem}</span><strong className="text-lg text-emerald-700 dark:text-emerald-400">{estoqueSC ?? '-'}</strong></div>
                         <div><span className="block text-xs text-slate-500">Estoque PR</span><strong className="text-lg text-blue-700 dark:text-blue-400">{estoquePR}</strong></div>
                     </div>
                     </div>

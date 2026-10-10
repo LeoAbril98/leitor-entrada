@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import { createClient } from '@supabase/supabase-js'
+import { romaneioOrigin } from '../utils/romaneioOrigin';
 
 export const clearLocalInventoryCache = () => {
     localStorage.removeItem('@MK_INVENTORY_CACHE');
@@ -124,12 +125,18 @@ export async function getInventoryWithStateStock(): Promise<{
   scStockAvailable: boolean;
   stockUpdatedPR: string | null;
   stockUpdatedSC: string | null;
+  cmMap: Map<string, number>;
+  cmStockAvailable: boolean;
+  stockUpdatedCM: string | null;
 }> {
   const inv = await getInventory();
   const prMap = new Map<string, number>();
   const scMap = new Map<string, number>();
   let stockUpdatedPR: string | null = null;
   let stockUpdatedSC: string | null = null;
+  const cmMap = new Map<string, number>();
+  let cmStockAvailable = false;
+  let stockUpdatedCM: string | null = null;
   try {
     const ids = [...new Set((inv || []).map(item => item.inventario_id).filter((id): id is string => !!id))];
     if (ids.length) {
@@ -150,6 +157,24 @@ export async function getInventoryWithStateStock(): Promise<{
   }
 
   try {
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await supabase.from('romaneio_estoque_cm')
+        .select('codigo, quantidade, atualizado_em').order('codigo').range(offset, offset + 999);
+      if (error) throw error;
+      data?.forEach(item => {
+        const code = String(item.codigo || '').trim().toUpperCase();
+        if (code) cmMap.set(code, Number(item.quantidade) || 0);
+        if (item.atualizado_em && Number.isFinite(Date.parse(item.atualizado_em)) &&
+          (!stockUpdatedCM || Date.parse(item.atualizado_em) > Date.parse(stockUpdatedCM))) stockUpdatedCM = item.atualizado_em;
+      });
+      if (!data || data.length < 1000) break;
+    }
+    cmStockAvailable = true;
+  } catch (error) {
+    console.warn('Estoque CM do romaneio indisponivel:', error);
+    cmMap.clear(); stockUpdatedCM = null;
+  }
+  try {
     const pageSize = 1000;
     for (let page = 0; ; page++) {
       const { data, error } = await supabase
@@ -168,10 +193,10 @@ export async function getInventoryWithStateStock(): Promise<{
       });
       if (!data || data.length < pageSize) break;
     }
-    return { inventory: inv || [], prMap, scMap, scStockAvailable: true, stockUpdatedPR, stockUpdatedSC };
+    return { inventory: inv || [], prMap, scMap, scStockAvailable: true, stockUpdatedPR, stockUpdatedSC, cmMap, cmStockAvailable, stockUpdatedCM };
   } catch (error) {
     console.warn('Estoque SC do romaneio indisponivel:', error);
-    return { inventory: inv || [], prMap, scMap: new Map<string, number>(), scStockAvailable: false, stockUpdatedPR, stockUpdatedSC: null };
+    return { inventory: inv || [], prMap, scMap: new Map<string, number>(), scStockAvailable: false, stockUpdatedPR, stockUpdatedSC: null, cmMap, cmStockAvailable, stockUpdatedCM };
   }
 }
 
@@ -1675,7 +1700,7 @@ export async function getCloudRomaneios(): Promise<any[] | null> {
                 id: row.id,
                 numero: row.numero,
                 titulo: row.titulo,
-                tipo: row.tipo || (row.titulo?.toUpperCase().includes('SC') || row.numero?.toUpperCase().includes('SC') ? 'SC' : 'PR'),
+                tipo: romaneioOrigin(row),
                 clienteOuDestino: row.cliente_ou_destino || '',
                 status: row.status || 'pendente',
                 totalItens: Number(row.total_itens) || (Array.isArray(row.itens) ? row.itens.length : 0),
@@ -1725,7 +1750,7 @@ export async function saveCloudRomaneio(romaneio: any, fullListSnapshot?: any[])
             id: romaneio.id,
             numero: romaneio.numero,
             titulo: romaneio.titulo,
-            tipo: romaneio.tipo || (romaneio.titulo?.toUpperCase().includes('SC') || romaneio.numero?.toUpperCase().includes('SC') ? 'SC' : 'PR'),
+            tipo: romaneioOrigin(romaneio),
             cliente_ou_destino: romaneio.clienteOuDestino || '',
             status: romaneio.status || 'pendente',
             total_itens: Number(romaneio.totalItens) || (Array.isArray(romaneio.itens) ? romaneio.itens.length : 0),
@@ -1800,7 +1825,7 @@ export async function saveCloudRomaneiosBatch(romaneios: any[]): Promise<boolean
             id: r.id,
             numero: r.numero,
             titulo: r.titulo,
-            tipo: r.tipo || (r.titulo?.toUpperCase().includes('SC') || r.numero?.toUpperCase().includes('SC') ? 'SC' : 'PR'),
+            tipo: romaneioOrigin(r),
             cliente_ou_destino: r.clienteOuDestino || '',
             status: r.status || 'pendente',
             total_itens: Number(r.totalItens) || (Array.isArray(r.itens) ? r.itens.length : 0),

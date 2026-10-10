@@ -19,7 +19,7 @@ import { LabelsModule } from './components/LabelsModule';
 import { getPhotoOverrides } from './lib/supabase';
 import { setPhotoOverrides } from './utils/photoUtils';
 
-type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'sc-load-order' | 'update-wheels' | 'conference' | 'romaneio' | 'labels' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history' | 'admin-settings' | 'admin-complete' | 'admin-romaneio';
+type AppMode = 'menu' | 'counting' | 'locator' | 'pendencies' | 'sc-load-order' | 'cm-load-order' | 'update-wheels' | 'conference' | 'romaneio' | 'labels' | 'admin-login' | 'admin-dashboard' | 'admin-management' | 'admin-panel' | 'admin-history' | 'admin-settings' | 'admin-complete' | 'admin-romaneio';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('menu');
@@ -80,8 +80,8 @@ export default function App() {
     return <PendenciesModule onBackToMenu={handleBackToMenu} />;
   }
 
-  if (mode === 'sc-load-order') {
-    return <SCLoadOrderModule onBack={() => setMode('romaneio')} />;
+  if (mode === 'sc-load-order' || mode === 'cm-load-order') {
+    return <SCLoadOrderModule origem={mode === 'cm-load-order' ? 'CM' : 'SC'} onBack={() => setMode('romaneio')} />;
   }
 
   if (mode === 'update-wheels') {
@@ -120,7 +120,7 @@ export default function App() {
   }
 
   if (mode === 'romaneio') {
-    return <RomaneioModule onBackToMenu={handleBackToMenu} onOpenSCOrder={() => setMode('sc-load-order')} />;
+    return <RomaneioModule onBackToMenu={handleBackToMenu} onOpenSCOrder={() => setMode('sc-load-order')} onOpenCMOrder={() => setMode('cm-load-order')} />;
   }
 
   if (mode === 'labels') {

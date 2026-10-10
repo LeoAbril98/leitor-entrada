@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Clock, TriangleAlert } from 'lucide-react';
 
-export function StockFreshness({ pr, sc, scAvailable }: {
-    pr: string | null; sc: string | null; scAvailable: boolean;
+export function StockFreshness({ pr, sc, scAvailable, origin = 'SC' }: {
+    pr: string | null; sc: string | null; scAvailable: boolean; origin?: 'SC' | 'CM';
 }) {
     const [now, setNow] = useState(Date.now);
     useEffect(() => {
@@ -10,12 +10,12 @@ export function StockFreshness({ pr, sc, scAvailable }: {
         return () => window.clearInterval(timer);
     }, []);
     return <div aria-label="Atualizacao dos estoques" className="flex flex-wrap gap-x-6 gap-y-2 py-3 text-xs print:hidden">
-        {(['PR', 'SC'] as const).map(uf => {
+        {(['PR', origin] as const).map(uf => {
             const value = uf === 'PR' ? pr : sc;
             const date = value ? new Date(value) : null;
             const valid = date && Number.isFinite(date.getTime());
             const stale = !!valid && now - date.getTime() > 24 * 60 * 60 * 1000;
-            const unavailable = uf === 'SC' && !scAvailable;
+            const unavailable = uf !== 'PR' && !scAvailable;
             const Icon = stale ? TriangleAlert : Clock;
             return <div key={uf} className={`flex items-center gap-1.5 min-w-0 ${stale ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}`}>
                 <Icon className="w-3.5 h-3.5 shrink-0" />

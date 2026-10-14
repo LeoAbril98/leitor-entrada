@@ -42,7 +42,12 @@ class StockTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             robot.enviar_para_supabase(('', '', '', ''), [])
 
-    def test_sc_nao_mexe_em_pr_e_zera_ausentes(self):
+    def test_filiais_isoladas_e_zeram_ausentes(self):
+        for origem in ('SC', 'CM'):
+            with self.subTest(origem=origem):
+                self.verificar_filial(origem)
+
+    def verificar_filial(self, origem):
         page1 = Mock()
         page1.json.return_value = [{'codigo': 'A'}, {'codigo': 'B'}]
         page2 = Mock()
@@ -50,13 +55,13 @@ class StockTests(unittest.TestCase):
         with patch.object(robot, '_sb_headers', return_value={}), patch.object(
             robot.requests, 'get', create=True, side_effect=[page1, page2]
         ) as get, patch.object(robot, '_sb_upsert_batch') as upsert:
-            result = robot.enviar_estoque_sc([
-                {'codigo': 'A', 'descricao': 'Roda', 'quantidade': 4}], 'sc.xml')
+            result = robot.enviar_estoque_filial([
+                {'codigo': 'A', 'descricao': 'Roda', 'quantidade': 4}], 'estoque.xml', origem)
             self.assertEqual(result['codigos_zerados'], 1)
             for call in get.call_args_list:
-                self.assertIn('/romaneio_estoque_sc', call.args[0])
+                self.assertTrue(call.args[0].endswith(f'/romaneio_estoque_{origem.lower()}'))
             for call in upsert.call_args_list:
-                self.assertEqual(call.args[0], 'romaneio_estoque_sc')
+                self.assertEqual(call.args[0], f'romaneio_estoque_{origem.lower()}')
             self.assertEqual(upsert.call_args_list[1].args[1][0]['quantidade'], 0)
             self.assertEqual(upsert.call_args_list[1].args[1][0]['codigo'], 'B')
 
@@ -81,13 +86,48 @@ class StockTests(unittest.TestCase):
             self.assertEqual(download.call_args.kwargs['nome_arquivo'], 'inventario_sc.xml')
             self.assertEqual(download.call_args.kwargs['programa_id'], '#SGM428_000')
 
-    def test_falha_pr_ainda_tenta_sc(self):
+    def test_cm_usa_empresa_e_arquivo_separados(self):
+        with patch.object(robot, 'gerar_xml_e_baixar', return_value=Path('inventario_cm.xml')) as download, patch.object(
+            robot, 'parse_xml_items', return_value=('CM', '', '', '', [])
+        ), patch.object(robot, 'enviar_estoque_cm', return_value={'itens': 1}) as send:
+            robot.pipeline_atualizar_cm(headless=True)
+            self.assertEqual(download.call_args.kwargs['empresa'], 'TREINAMENTO - CM')
+            self.assertEqual(download.call_args.kwargs['usuario'], robot.CM_USUARIO)
+            self.assertEqual(download.call_args.kwargs['senha'], robot.CM_SENHA)
+            self.assertEqual(download.call_args.kwargs['nome_arquivo'], 'inventario_cm.xml')
+            self.assertEqual(download.call_args.kwargs['programa_id'], '#SGM428_000')
+            self.assertTrue(download.call_args.kwargs['headless'])
+            send.assert_called_once_with([], Path('inventario_cm.xml'))
+
+    def test_cm_rejeita_vazio_e_negativo_antes_de_enviar(self):
+        for items in ([], [{'codigo': 'A', 'descricao': '', 'quantidade': -1}]):
+            with patch.object(robot, '_sb_headers') as headers, self.assertRaises(RuntimeError):
+                robot.enviar_estoque_cm(items, 'cm.xml')
+            headers.assert_not_called()
+
+    def test_falha_pr_ainda_tenta_sc_e_cm(self):
         with patch.object(robot, 'pipeline_atualizar', side_effect=RuntimeError('PR indisponivel')), patch.object(
             robot, 'pipeline_atualizar_sc', return_value={'itens': 2}
-        ) as sc, patch('builtins.print'):
-            with self.assertRaisesRegex(RuntimeError, 'Estados concluidos: SC'):
+        ) as sc, patch.object(robot, 'pipeline_atualizar_cm', return_value={'itens': 3}) as cm, patch('builtins.print'):
+            with self.assertRaisesRegex(RuntimeError, 'Estados concluidos: SC, CM'):
                 robot.atualizar_estoques()
             sc.assert_called_once()
+            cm.assert_called_once()
+
+    def test_execucao_somente_cm(self):
+        with patch.object(robot, 'pipeline_atualizar') as pr, patch.object(robot, 'pipeline_atualizar_sc') as sc, patch.object(
+            robot, 'pipeline_atualizar_cm', return_value={'itens': 3}
+        ), patch('builtins.print'):
+            self.assertEqual(robot.atualizar_estoques('cm')['CM']['itens'], 3)
+            pr.assert_not_called()
+            sc.assert_not_called()
+
+    def test_ambos_preserva_pr_e_sc_sem_cm(self):
+        with patch.object(robot, 'pipeline_atualizar', return_value={'itens': 1}), patch.object(
+            robot, 'pipeline_atualizar_sc', return_value={'itens': 2}
+        ), patch.object(robot, 'pipeline_atualizar_cm') as cm, patch('builtins.print'):
+            self.assertEqual(set(robot.atualizar_estoques('ambos')), {'PR', 'SC'})
+            cm.assert_not_called()
 
     def test_execucao_somente_sc(self):
         with patch.object(robot, 'pipeline_atualizar') as pr, patch.object(

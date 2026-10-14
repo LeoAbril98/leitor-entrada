@@ -23,6 +23,10 @@ SC_EMPRESA = os.getenv("MK_SC_EMPRESA", "TREINAMENTO - MOLERI")
 SC_USUARIO = os.getenv("MK_SC_USUARIO", "LEO")
 SC_SENHA = os.getenv("MK_SC_SENHA", "")
 TBL_SC = "romaneio_estoque_sc"
+CM_EMPRESA = os.getenv("MK_CM_EMPRESA", "TREINAMENTO - CM")
+CM_USUARIO = os.getenv("MK_CM_USUARIO", "LEO")
+CM_SENHA = os.getenv("MK_CM_SENHA", "")
+TBL_CM = "romaneio_estoque_cm"
 
 DOWNLOAD_DIR = Path(os.getenv("MK_DOWNLOAD_DIR", "/tmp" if os.name != 'nt' else str(Path.home() / "Downloads")))
 
@@ -303,17 +307,17 @@ def pipeline_atualizar(grupo_ini="050", grupo_fin="051", situacao="A", deposito=
         print(f"\n❌ ERRO DETALHADO NO PIPELINE:\n{err_msg}", flush=True)
         raise
 
-def preparar_itens_sc(items, arquivo_origem):
+def preparar_itens_filial(items, arquivo_origem, origem):
     if not items:
-        raise RuntimeError("XML SC sem itens. Estoque anterior preservado.")
+        raise RuntimeError(f"XML {origem} sem itens. Estoque anterior preservado.")
     por_codigo = {}
     for item in items:
         codigo = item["codigo"].strip().upper()
         if not codigo:
-            raise RuntimeError("Codigo SC vazio. Estoque anterior preservado.")
+            raise RuntimeError(f"Codigo {origem} vazio. Estoque anterior preservado.")
         quantidade = item["quantidade"]
         if quantidade < 0:
-            raise RuntimeError(f"Quantidade SC negativa para {codigo}. Revise o XML.")
+            raise RuntimeError(f"Quantidade {origem} negativa para {codigo}. Revise o XML.")
         if codigo not in por_codigo:
             por_codigo[codigo] = {
                 "codigo": codigo, "descricao": item["descricao"],
@@ -323,15 +327,23 @@ def preparar_itens_sc(items, arquivo_origem):
     return list(por_codigo.values())
 
 
-def enviar_estoque_sc(items, xml_path):
-    rows = preparar_itens_sc(items, Path(xml_path).name)
+def preparar_itens_sc(items, arquivo_origem):
+    return preparar_itens_filial(items, arquivo_origem, "SC")
+
+
+def enviar_estoque_filial(items, xml_path, origem):
+    tabelas = {"SC": TBL_SC, "CM": TBL_CM}
+    if origem not in tabelas:
+        raise ValueError("Origem deve ser SC ou CM.")
+    tabela = tabelas[origem]
+    rows = preparar_itens_filial(items, Path(xml_path).name, origem)
     h = _sb_headers()
     # Leia todos os codigos anteriores antes de alterar qualquer saldo.
     anteriores = set()
     offset = 0
     while True:
         r = requests.get(
-            f"{SUPABASE_URL}/rest/v1/{TBL_SC}", headers=h,
+            f"{SUPABASE_URL}/rest/v1/{tabela}", headers=h,
             params={"select": "codigo", "order": "codigo", "offset": offset, "limit": 1000},
             timeout=60,
         )
@@ -342,7 +354,7 @@ def enviar_estoque_sc(items, xml_path):
             break
         offset += len(page)
     for batch in _chunks(rows, BATCH_SIZE):
-        _sb_upsert_batch(TBL_SC, batch, on_conflict="codigo")
+        _sb_upsert_batch(tabela, batch, on_conflict="codigo")
 
     # Somente depois do envio, zere itens ausentes do novo relatorio.
     ausentes = sorted(anteriores - {row["codigo"] for row in rows})
@@ -351,8 +363,16 @@ def enviar_estoque_sc(items, xml_path):
         for codigo in ausentes
     ]
     for batch in _chunks(zeros, BATCH_SIZE):
-        _sb_upsert_batch(TBL_SC, batch, on_conflict="codigo")
+        _sb_upsert_batch(tabela, batch, on_conflict="codigo")
     return {"itens": len(rows), "codigos_zerados": len(zeros), "xml_path": str(xml_path)}
+
+
+def enviar_estoque_sc(items, xml_path):
+    return enviar_estoque_filial(items, xml_path, "SC")
+
+
+def enviar_estoque_cm(items, xml_path):
+    return enviar_estoque_filial(items, xml_path, "CM")
 
 
 def pipeline_atualizar_sc(headless=False):
@@ -366,9 +386,20 @@ def pipeline_atualizar_sc(headless=False):
     return resultado
 
 
-def atualizar_estoques(estado="ambos", headless=False):
-    if estado not in ("ambos", "pr", "sc"):
-        raise ValueError("Estado deve ser ambos, pr ou sc.")
+def pipeline_atualizar_cm(headless=False):
+    xml_path = gerar_xml_e_baixar(
+        headless=headless, empresa=CM_EMPRESA, usuario=CM_USUARIO,
+        senha=CM_SENHA, nome_arquivo="inventario_cm.xml", programa_id="#SGM428_000",
+    )
+    empresa, filial, equipe, depositos, items = parse_xml_items(xml_path)
+    resultado = enviar_estoque_cm(items, xml_path)
+    resultado.update({"empresa": empresa, "filial": filial})
+    return resultado
+
+
+def atualizar_estoques(estado="todos", headless=False):
+    if estado not in ("todos", "ambos", "pr", "sc", "cm"):
+        raise ValueError("Estado deve ser todos, ambos, pr, sc ou cm.")
     if BATCH_SIZE <= 0:
         raise ValueError("SB_BATCH_SIZE deve ser maior que zero.")
     resultados = {}
@@ -376,9 +407,12 @@ def atualizar_estoques(estado="ambos", headless=False):
     tarefas = {
         "PR": lambda: pipeline_atualizar(headless=headless),
         "SC": lambda: pipeline_atualizar_sc(headless=headless),
+        "CM": lambda: pipeline_atualizar_cm(headless=headless),
     }
     for uf, tarefa in tarefas.items():
-        if estado != "ambos" and estado.upper() != uf:
+        if estado == "ambos" and uf == "CM":
+            continue
+        if estado not in ("todos", "ambos") and estado.upper() != uf:
             continue
         print(f"Atualizando estoque {uf}...", flush=True)
         try:
@@ -397,8 +431,9 @@ def atualizar_estoques(estado="ambos", headless=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Atualiza PR e SC separadamente no Supabase.")
-    parser.add_argument("--estado", choices=["ambos", "pr", "sc"], default="ambos")
+    parser = argparse.ArgumentParser(description="Atualiza PR, SC e CM separadamente no Supabase.")
+    parser.add_argument("--estado", choices=["todos", "ambos", "pr", "sc", "cm"], default="todos",
+                        help="todos: PR + SC + CM (padrao); ambos: somente PR + SC")
     parser.add_argument("--headless", action="store_true")
     args = parser.parse_args()
     atualizar_estoques(estado=args.estado, headless=args.headless)

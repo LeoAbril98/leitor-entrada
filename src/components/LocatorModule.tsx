@@ -23,6 +23,7 @@ import { CameraScannerModal } from './CameraScannerModal';
 import { WheelVariationsSelector } from './WheelVariationsSelector';
 import { LocatorBottomNav } from './LocatorBottomNav';
 import { LocatorHistoryModal, LocatorHistoryItem } from './LocatorHistoryModal';
+import { OtherBranchStock } from './OtherBranchStock';
 import { getInventory } from '../lib/supabase';
 import { StockItem } from '../types';
 import { getWheelPhotoUrl } from '../utils/photoUtils';
@@ -96,6 +97,7 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
     useEffect(() => {
         if (!isManualAddOpen && !isPhotoZoomOpen && !isHistoryOpen && !isCameraOpen) {
             const focusInput = () => {
+                if (document.activeElement?.closest('details')) return;
                 if (document.activeElement?.tagName !== 'INPUT' || document.activeElement === inputRef.current) {
                     inputRef.current?.focus({ preventScroll: true });
                 }
@@ -452,6 +454,7 @@ export const LocatorModule: React.FC<LocatorModuleProps> = ({ onBackToMenu }) =>
                                                     {scannedItem.quantidade === 1 ? "un" : "un"}
                                                 </span>
                                             </div>
+                                            <OtherBranchStock key={scannedItem.codigo} codigo={scannedItem.codigo} />
                                         </div>
 
                                         {/* CARD LOCALIZAÇÃO */}

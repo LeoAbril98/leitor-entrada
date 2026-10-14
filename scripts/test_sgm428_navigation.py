@@ -14,6 +14,7 @@ with sync_playwright() as p:
     for uf, cartao_id, frame_name, cards in [
         ('PR', 'SGM428_008', 'iframe_tab2', 8),
         ('SC', 'SGM428_000', 'iframe_tab2', 0),
+        ('CM', 'SGM428_000', 'iframe_tab2', 0),
     ]:
         other_cards = '<button>Outro programa</button>' * cards
         page.set_content(f'''
